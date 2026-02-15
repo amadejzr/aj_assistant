@@ -115,19 +115,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _resolveUser(User user, Emitter<AuthState> emit) async {
-    var appUser = await _userService.getUser(user.uid);
-    if (appUser == null) {
-      Log.d('no Firestore profile for ${user.uid}, creating', tag: _tag);
-      appUser = AppUser(
-        uid: user.uid,
-        email: user.email ?? '',
-        displayName: user.displayName,
-        photoUrl: user.photoURL,
-      );
-      await _userService.createUser(appUser);
+    try {
+      var appUser = await _userService.getUser(user.uid);
+      if (appUser == null) {
+        Log.d('no Firestore profile for ${user.uid}, creating', tag: _tag);
+        appUser = AppUser(
+          uid: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName,
+          photoUrl: user.photoURL,
+        );
+        await _userService.createUser(appUser);
+      }
+      Log.i('authenticated: ${appUser.uid}', tag: _tag);
+      emit(AuthAuthenticated(appUser));
+    } catch (e, st) {
+      Log.e('failed to resolve user profile', tag: _tag, error: e, stackTrace: st);
+      emit(const AuthError('Unable to connect. Please try again.'));
     }
-    Log.i('authenticated: ${appUser.uid}', tag: _tag);
-    emit(AuthAuthenticated(appUser));
   }
 
   String _mapFirebaseError(String code) {
