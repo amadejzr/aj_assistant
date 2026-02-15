@@ -113,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
   void _tryNavigate() {
     if (_navigated || _controller.value < 0.8) return;
     final state = context.read<AuthBloc>().state;
-    if (state is AuthInitial || state is AuthLoading) return;
+    if (state is AuthInitial) return;
 
     _navigated = true;
     context.go(state is AuthAuthenticated ? '/home' : '/login');

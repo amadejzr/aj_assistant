@@ -21,8 +21,7 @@ GoRouter createRouter(AuthBloc authBloc) {
       final authState = authBloc.state;
       final location = state.matchedLocation;
 
-      final isResolving =
-          authState is AuthInitial || authState is AuthLoading;
+      final isResolving = authState is AuthInitial;
       final isAuthenticated = authState is AuthAuthenticated;
       final isOnAuth =
           location == '/login' || location == '/signup';
