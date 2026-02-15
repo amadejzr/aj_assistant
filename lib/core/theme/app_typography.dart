@@ -9,43 +9,47 @@ abstract final class AppTypography {
     final muted = colors.onBackgroundMuted;
 
     return TextTheme(
-      displayLarge: GoogleFonts.bricolageGrotesque(
-        fontSize: 32,
+      // Headlines — Cormorant Garamond: calligraphic serif, ink-like quality
+      displayLarge: GoogleFonts.cormorantGaramond(
+        fontSize: 34,
         fontWeight: FontWeight.w600,
         color: onBg,
-        height: 1.2,
+        height: 1.15,
+        letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.bricolageGrotesque(
-        fontSize: 24,
+      headlineMedium: GoogleFonts.cormorantGaramond(
+        fontSize: 26,
         fontWeight: FontWeight.w600,
         color: onBg,
-        height: 1.3,
+        height: 1.25,
       ),
-      titleMedium: GoogleFonts.dmSans(
+      // Body — Karla: warm geometric sans, clean and readable
+      titleMedium: GoogleFonts.karla(
         fontSize: 18,
         fontWeight: FontWeight.w500,
         color: onBg,
         height: 1.4,
       ),
-      bodyLarge: GoogleFonts.dmSans(
+      bodyLarge: GoogleFonts.karla(
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: onBg,
-        height: 1.5,
+        height: 1.55,
       ),
-      bodyMedium: GoogleFonts.dmSans(
+      bodyMedium: GoogleFonts.karla(
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: muted,
-        height: 1.5,
+        height: 1.55,
       ),
-      labelSmall: GoogleFonts.dmSans(
+      labelSmall: GoogleFonts.karla(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: muted,
         height: 1.4,
       ),
-      labelLarge: GoogleFonts.dmMono(
+      // Mono — IBM Plex Mono: slightly warmer than most monospace
+      labelLarge: GoogleFonts.ibmPlexMono(
         fontSize: 13,
         fontWeight: FontWeight.w400,
         color: onBg,
