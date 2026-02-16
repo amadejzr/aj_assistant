@@ -32,6 +32,7 @@ import 'builders/conditional_builder.dart';
 import 'builders/progress_bar_builder.dart';
 import 'builders/chart_builder.dart';
 import 'builders/divider_builder.dart';
+import 'builders/reference_picker_builder.dart';
 
 typedef WidgetBuilder = Widget Function(
   BlueprintNode node,
@@ -93,5 +94,6 @@ class WidgetRegistry {
     register('progress_bar', buildProgressBar);
     register('chart', buildChart);
     register('divider', buildDividerWidget);
+    register('reference_picker', buildReferencePicker);
   }
 }

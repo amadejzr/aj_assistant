@@ -10,6 +10,9 @@ import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
 import '../renderer/blueprint_renderer.dart';
 import '../renderer/render_context.dart';
+import 'field_editor_screen.dart';
+import 'module_settings_screen.dart';
+import 'schema_editor_screen.dart';
 
 class ModuleViewerScreen extends StatelessWidget {
   final String moduleId;
@@ -63,6 +66,20 @@ class _LoadedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final bloc = context.read<ModuleViewerBloc>();
     final screenId = state.currentScreenId;
+
+    // Route special settings screen IDs
+    if (screenId.startsWith('_')) {
+      return switch (screenId) {
+        '_settings' => const ModuleSettingsScreen(),
+        '_schema_editor' => const SchemaEditorScreen(),
+        '_field_editor' => const FieldEditorScreen(),
+        _ => Scaffold(
+            appBar: AppBar(title: const Text('Unknown')),
+            body: const Center(child: Text('Unknown settings screen')),
+          ),
+      };
+    }
+
     final blueprint = state.module.screens[screenId];
 
     if (blueprint == null) {

@@ -11,67 +11,117 @@ Module createMockExpenseModule() {
     icon: 'wallet',
     color: '#D94E33',
     sortOrder: 1,
-    schema: ModuleSchema(
-      version: 1,
-      fields: {
-        'entryType': FieldDefinition(
-          key: 'entryType',
-          type: FieldType.enumType,
-          label: 'Type',
-          required: true,
-          options: ['expense', 'income', 'allocation'],
-        ),
-        'amount': FieldDefinition(
-          key: 'amount',
-          type: FieldType.number,
-          label: 'Amount',
-          required: true,
-          constraints: {'min': 0},
-        ),
-        'date': FieldDefinition(
-          key: 'date',
-          type: FieldType.datetime,
-          label: 'Date',
-          required: true,
-        ),
-        'category': FieldDefinition(
-          key: 'category',
-          type: FieldType.enumType,
-          label: 'Category',
-          options: [
-            'Food',
-            'Transport',
-            'Entertainment',
-            'Utilities',
-            'Shopping',
-            'Subscriptions',
-            'Health',
-            'Other',
-          ],
-        ),
-        'account': FieldDefinition(
-          key: 'account',
-          type: FieldType.enumType,
-          label: 'Account',
-          options: [
-            'Emergency Fund',
-            'Investing',
-            'Travel Fund',
-            'Golf Clubs',
-          ],
-        ),
-        'description': FieldDefinition(
-          key: 'description',
-          type: FieldType.text,
-          label: 'Description',
-        ),
-        'notes': FieldDefinition(
-          key: 'notes',
-          type: FieldType.text,
-          label: 'Notes',
-        ),
-      },
-    ),
+    schemas: {
+      // ─── Accounts: savings buckets / envelopes ───
+      'account': ModuleSchema(
+        label: 'Account',
+        icon: 'piggyBank',
+        fields: {
+          'name': FieldDefinition(
+            key: 'name',
+            type: FieldType.text,
+            label: 'Account Name',
+            required: true,
+          ),
+          'goal': FieldDefinition(
+            key: 'goal',
+            type: FieldType.number,
+            label: 'Goal Amount',
+            constraints: {'min': 0},
+          ),
+          'color': FieldDefinition(
+            key: 'color',
+            type: FieldType.text,
+            label: 'Color',
+          ),
+          'icon': FieldDefinition(
+            key: 'icon',
+            type: FieldType.text,
+            label: 'Icon',
+          ),
+        },
+      ),
+
+      // ─── Categories ───
+      'category': ModuleSchema(
+        label: 'Category',
+        icon: 'tag',
+        fields: {
+          'name': FieldDefinition(
+            key: 'name',
+            type: FieldType.text,
+            label: 'Category Name',
+            required: true,
+          ),
+          'icon': FieldDefinition(
+            key: 'icon',
+            type: FieldType.text,
+            label: 'Icon',
+          ),
+          'color': FieldDefinition(
+            key: 'color',
+            type: FieldType.text,
+            label: 'Color',
+          ),
+          'budget': FieldDefinition(
+            key: 'budget',
+            type: FieldType.number,
+            label: 'Monthly Budget',
+            constraints: {'min': 0},
+          ),
+        },
+      ),
+
+      // ─── Expenses / income / allocations ───
+      'expense': ModuleSchema(
+        label: 'Expense',
+        icon: 'receipt',
+        fields: {
+          'entryType': FieldDefinition(
+            key: 'entryType',
+            type: FieldType.enumType,
+            label: 'Type',
+            required: true,
+            options: ['expense', 'income', 'allocation'],
+          ),
+          'amount': FieldDefinition(
+            key: 'amount',
+            type: FieldType.number,
+            label: 'Amount',
+            required: true,
+            constraints: {'min': 0},
+          ),
+          'date': FieldDefinition(
+            key: 'date',
+            type: FieldType.datetime,
+            label: 'Date',
+            required: true,
+          ),
+          'category': FieldDefinition(
+            key: 'category',
+            type: FieldType.reference,
+            label: 'Category',
+            constraints: {'schemaKey': 'category'},
+          ),
+          'account': FieldDefinition(
+            key: 'account',
+            type: FieldType.reference,
+            label: 'Account',
+            constraints: {'schemaKey': 'account'},
+          ),
+          'description': FieldDefinition(
+            key: 'description',
+            type: FieldType.text,
+            label: 'Description',
+          ),
+          'notes': FieldDefinition(
+            key: 'notes',
+            type: FieldType.text,
+            label: 'Notes',
+          ),
+        },
+      ),
+    },
     screens: {
       // ─── Main: Overview, Accounts, Calendar ───
       'main': {
@@ -94,12 +144,14 @@ Module createMockExpenseModule() {
                         {
                           'type': 'stat_card',
                           'label': 'Income',
+                          'schemaKey': 'expense',
                           'stat': 'sum_amount',
                           'filter': {'entryType': 'income'},
                         },
                         {
                           'type': 'stat_card',
                           'label': 'Expenses',
+                          'schemaKey': 'expense',
                           'stat': 'sum_amount',
                           'filter': {'entryType': 'expense'},
                         },
@@ -111,11 +163,13 @@ Module createMockExpenseModule() {
                         {
                           'type': 'stat_card',
                           'label': 'Transactions',
+                          'schemaKey': 'expense',
                           'stat': 'count',
                         },
                         {
                           'type': 'stat_card',
                           'label': 'Allocated',
+                          'schemaKey': 'expense',
                           'stat': 'sum_amount',
                           'filter': {'entryType': 'allocation'},
                         },
@@ -129,6 +183,7 @@ Module createMockExpenseModule() {
                   'children': [
                     {
                       'type': 'entry_list',
+                      'schemaKey': 'expense',
                       'query': {
                         'orderBy': 'date',
                         'direction': 'desc',
@@ -153,12 +208,23 @@ Module createMockExpenseModule() {
               'type': 'scroll_column',
               'children': [
                 {
-                  'type': 'card_grid',
-                  'fieldKey': 'account',
-                  'action': {
-                    'type': 'navigate',
-                    'screen': 'account_detail',
-                    'paramKey': 'account',
+                  'type': 'button',
+                  'label': 'New Account',
+                  'icon': 'plus',
+                  'style': 'outlined',
+                  'action': {'type': 'navigate', 'screen': 'add_account'},
+                },
+                {
+                  'type': 'entry_list',
+                  'schemaKey': 'account',
+                  'query': {'orderBy': 'name', 'direction': 'asc'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{name}}',
+                    'subtitle': 'Goal: {{goal}}',
+                    'onTap': {
+                      'screen': 'account_detail',
+                    },
                   },
                 },
               ],
@@ -172,7 +238,34 @@ Module createMockExpenseModule() {
               'children': [
                 {
                   'type': 'date_calendar',
+                  'schemaKey': 'expense',
                   'dateField': 'date',
+                },
+              ],
+            },
+          },
+          {
+            'label': 'Categories',
+            'icon': 'tag',
+            'content': {
+              'type': 'scroll_column',
+              'children': [
+                {
+                  'type': 'button',
+                  'label': 'New Category',
+                  'icon': 'plus',
+                  'style': 'outlined',
+                  'action': {'type': 'navigate', 'screen': 'add_category'},
+                },
+                {
+                  'type': 'entry_list',
+                  'schemaKey': 'category',
+                  'query': {'orderBy': 'name', 'direction': 'asc'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{name}}',
+                    'subtitle': 'Budget: {{budget}}',
+                  },
                 },
               ],
             },
@@ -185,10 +278,10 @@ Module createMockExpenseModule() {
         },
       },
 
-      // ─── Account Detail: filtered by account from screenParams ───
+      // ─── Account Detail ───
       'account_detail': {
         'type': 'tab_screen',
-        'title': 'Account',
+        'title': '{{name}}',
         'tabs': [
           {
             'label': 'Activity',
@@ -202,6 +295,7 @@ Module createMockExpenseModule() {
                   'children': [
                     {
                       'type': 'entry_list',
+                      'schemaKey': 'expense',
                       'query': {
                         'orderBy': 'date',
                         'direction': 'desc',
@@ -223,6 +317,7 @@ Module createMockExpenseModule() {
                   'children': [
                     {
                       'type': 'entry_list',
+                      'schemaKey': 'expense',
                       'query': {
                         'orderBy': 'date',
                         'direction': 'desc',
@@ -257,29 +352,16 @@ Module createMockExpenseModule() {
                         {
                           'type': 'stat_card',
                           'label': 'Allocated',
+                          'schemaKey': 'expense',
                           'stat': 'sum_amount',
                           'filter': {'entryType': 'allocation'},
                         },
                         {
                           'type': 'stat_card',
                           'label': 'Spent',
+                          'schemaKey': 'expense',
                           'stat': 'sum_amount',
                           'filter': {'entryType': 'expense'},
-                        },
-                      ],
-                    },
-                    {
-                      'type': 'row',
-                      'children': [
-                        {
-                          'type': 'stat_card',
-                          'label': 'Transactions',
-                          'stat': 'count',
-                        },
-                        {
-                          'type': 'stat_card',
-                          'label': 'This Month',
-                          'stat': 'this_month',
                         },
                       ],
                     },
@@ -296,16 +378,41 @@ Module createMockExpenseModule() {
         },
       },
 
+      // ─── Add Account ───
+      'add_account': {
+        'type': 'form_screen',
+        'title': 'New Account',
+        'schemaKey': 'account',
+        'submitLabel': 'Create Account',
+        'children': [
+          {'type': 'text_input', 'fieldKey': 'name'},
+          {'type': 'number_input', 'fieldKey': 'goal'},
+        ],
+      },
+
+      // ─── Add Category ───
+      'add_category': {
+        'type': 'form_screen',
+        'title': 'New Category',
+        'schemaKey': 'category',
+        'submitLabel': 'Create Category',
+        'children': [
+          {'type': 'text_input', 'fieldKey': 'name'},
+          {'type': 'number_input', 'fieldKey': 'budget'},
+        ],
+      },
+
       // ─── Add Expense ───
       'add_expense': {
         'type': 'form_screen',
         'title': 'Add Expense',
+        'schemaKey': 'expense',
         'submitLabel': 'Save Expense',
         'defaults': {'entryType': 'expense'},
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
-          {'type': 'enum_selector', 'fieldKey': 'category'},
-          {'type': 'enum_selector', 'fieldKey': 'account'},
+          {'type': 'reference_picker', 'fieldKey': 'category', 'schemaKey': 'category'},
+          {'type': 'reference_picker', 'fieldKey': 'account', 'schemaKey': 'account'},
           {'type': 'date_picker', 'fieldKey': 'date'},
           {'type': 'text_input', 'fieldKey': 'description'},
           {'type': 'text_input', 'fieldKey': 'notes', 'multiline': true},
@@ -333,6 +440,7 @@ Module createMockExpenseModule() {
       'add_income': {
         'type': 'form_screen',
         'title': 'Add Income',
+        'schemaKey': 'expense',
         'submitLabel': 'Save Income',
         'defaults': {'entryType': 'income'},
         'children': [
@@ -364,11 +472,12 @@ Module createMockExpenseModule() {
       'allocate': {
         'type': 'form_screen',
         'title': 'Allocate to Account',
+        'schemaKey': 'expense',
         'submitLabel': 'Allocate',
         'defaults': {'entryType': 'allocation'},
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
-          {'type': 'enum_selector', 'fieldKey': 'account'},
+          {'type': 'reference_picker', 'fieldKey': 'account', 'schemaKey': 'account'},
           {'type': 'date_picker', 'fieldKey': 'date'},
           {'type': 'text_input', 'fieldKey': 'description'},
         ],

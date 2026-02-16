@@ -24,7 +24,7 @@ class _EntryListWidget extends StatelessWidget {
       listNode.filter,
       ctx.screenParams,
     );
-    var entries = result.entries;
+    var entries = List.of(result.entries);
 
     // Sort
     final orderBy = listNode.query['orderBy'] as String?;

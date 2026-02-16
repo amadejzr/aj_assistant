@@ -29,8 +29,13 @@ class RenderContext {
     this.resolvedExpressions = const {},
   });
 
-  FieldDefinition? getFieldDefinition(String fieldKey) {
+  FieldDefinition? getFieldDefinition(String fieldKey, {String? schemaKey}) {
+    if (schemaKey != null) return module.schemas[schemaKey]?.fields[fieldKey];
     return module.schema.fields[fieldKey];
+  }
+
+  Map<String, FieldDefinition> getSchemaFields(String schemaKey) {
+    return module.schemas[schemaKey]?.fields ?? {};
   }
 
   dynamic getFormValue(String fieldKey) {

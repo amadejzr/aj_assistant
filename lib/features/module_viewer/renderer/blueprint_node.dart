@@ -362,6 +362,21 @@ class DividerNode extends BlueprintNode {
   const DividerNode({super.properties}) : super(type: 'divider');
 }
 
+// ─── Reference ───
+
+class ReferencePickerNode extends BlueprintNode {
+  final String fieldKey;
+  final String schemaKey;
+  final String displayField;
+
+  const ReferencePickerNode({
+    required this.fieldKey,
+    required this.schemaKey,
+    this.displayField = 'name',
+    super.properties,
+  }) : super(type: 'reference_picker');
+}
+
 // ─── Fallback ───
 
 class UnknownNode extends BlueprintNode {

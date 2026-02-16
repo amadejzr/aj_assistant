@@ -74,6 +74,15 @@ class _TabScreenShell extends StatelessWidget {
                   )
                 : null,
             iconTheme: IconThemeData(color: colors.onBackground),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
+                onPressed: () => ctx.onNavigateToScreen(
+                  '_settings',
+                  params: const {},
+                ),
+              ),
+            ],
             bottom: TabBar(
               indicatorColor: colors.accent,
               indicatorWeight: 2.5,

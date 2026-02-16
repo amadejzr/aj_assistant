@@ -10,7 +10,7 @@ class Module extends Equatable {
   final String icon;
   final String color;
   final int sortOrder;
-  final ModuleSchema schema;
+  final Map<String, ModuleSchema> schemas;
   final Map<String, Map<String, dynamic>> screens;
   final Map<String, dynamic> settings;
 
@@ -21,10 +21,36 @@ class Module extends Equatable {
     this.icon = 'cube',
     this.color = '#D94E33',
     this.sortOrder = 0,
-    this.schema = const ModuleSchema(),
+    this.schemas = const {'default': ModuleSchema()},
     this.screens = const {},
     this.settings = const {},
   });
+
+  ModuleSchema get schema => schemas['default'] ?? const ModuleSchema();
+
+  Module copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? icon,
+    String? color,
+    int? sortOrder,
+    Map<String, ModuleSchema>? schemas,
+    Map<String, Map<String, dynamic>>? screens,
+    Map<String, dynamic>? settings,
+  }) {
+    return Module(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      sortOrder: sortOrder ?? this.sortOrder,
+      schemas: schemas ?? this.schemas,
+      screens: screens ?? this.screens,
+      settings: settings ?? this.settings,
+    );
+  }
 
   factory Module.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -35,9 +61,7 @@ class Module extends Equatable {
       icon: data['icon'] as String? ?? 'cube',
       color: data['color'] as String? ?? '#D94E33',
       sortOrder: data['sortOrder'] as int? ?? 0,
-      schema: ModuleSchema.fromJson(
-        Map<String, dynamic>.from(data['schema'] as Map? ?? {}),
-      ),
+      schemas: _parseSchemas(data['schemas']),
       screens: _parseScreens(data['screens']),
       settings: Map<String, dynamic>.from(data['settings'] as Map? ?? {}),
     );
@@ -50,10 +74,23 @@ class Module extends Equatable {
       'icon': icon,
       'color': color,
       'sortOrder': sortOrder,
-      'schema': schema.toJson(),
+      'schemas': schemas.map(
+        (key, schema) => MapEntry(key, schema.toJson()),
+      ),
       'screens': screens,
       'settings': settings,
     };
+  }
+
+  static Map<String, ModuleSchema> _parseSchemas(dynamic raw) {
+    if (raw == null) return const {'default': ModuleSchema()};
+    final map = Map<String, dynamic>.from(raw as Map);
+    return map.map(
+      (key, value) => MapEntry(
+        key,
+        ModuleSchema.fromJson(Map<String, dynamic>.from(value as Map)),
+      ),
+    );
   }
 
   static Map<String, Map<String, dynamic>> _parseScreens(dynamic raw) {
@@ -75,7 +112,7 @@ class Module extends Equatable {
         icon,
         color,
         sortOrder,
-        schema,
+        schemas,
         screens,
         settings,
       ];

@@ -36,6 +36,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
   final Map<String, dynamic> screenParams;
   final List<ScreenEntry> screenStack;
   final bool isSubmitting;
+  final ({String fieldKey, String entryId})? pendingAutoSelect;
 
   const ModuleViewerLoaded({
     required this.module,
@@ -45,6 +46,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
     this.screenParams = const {},
     this.screenStack = const [],
     this.isSubmitting = false,
+    this.pendingAutoSelect,
   });
 
   bool get canGoBack => screenStack.isNotEmpty;
@@ -57,6 +59,8 @@ class ModuleViewerLoaded extends ModuleViewerState {
     Map<String, dynamic>? screenParams,
     List<ScreenEntry>? screenStack,
     bool? isSubmitting,
+    ({String fieldKey, String entryId})? pendingAutoSelect,
+    bool clearPendingAutoSelect = false,
   }) {
     return ModuleViewerLoaded(
       module: module ?? this.module,
@@ -66,6 +70,9 @@ class ModuleViewerLoaded extends ModuleViewerState {
       screenParams: screenParams ?? this.screenParams,
       screenStack: screenStack ?? this.screenStack,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      pendingAutoSelect: clearPendingAutoSelect
+          ? null
+          : (pendingAutoSelect ?? this.pendingAutoSelect),
     );
   }
 
@@ -78,6 +85,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
         screenParams,
         screenStack,
         isSubmitting,
+        pendingAutoSelect,
       ];
 }
 

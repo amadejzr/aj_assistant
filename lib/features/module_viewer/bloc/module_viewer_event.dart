@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../core/models/entry.dart';
+import '../../../core/models/field_definition.dart';
+import '../../../core/models/module_schema.dart';
 
 sealed class ModuleViewerEvent extends Equatable {
   const ModuleViewerEvent();
@@ -66,4 +68,95 @@ class ModuleViewerEntriesUpdated extends ModuleViewerEvent {
 
   @override
   List<Object?> get props => [entries];
+}
+
+class ModuleViewerSchemaUpdated extends ModuleViewerEvent {
+  final String schemaKey;
+  final ModuleSchema schema;
+
+  const ModuleViewerSchemaUpdated(this.schemaKey, this.schema);
+
+  @override
+  List<Object?> get props => [schemaKey, schema];
+}
+
+class ModuleViewerSchemaAdded extends ModuleViewerEvent {
+  final String schemaKey;
+  final ModuleSchema schema;
+
+  const ModuleViewerSchemaAdded(this.schemaKey, this.schema);
+
+  @override
+  List<Object?> get props => [schemaKey, schema];
+}
+
+class ModuleViewerSchemaDeleted extends ModuleViewerEvent {
+  final String schemaKey;
+
+  const ModuleViewerSchemaDeleted(this.schemaKey);
+
+  @override
+  List<Object?> get props => [schemaKey];
+}
+
+class ModuleViewerFieldUpdated extends ModuleViewerEvent {
+  final String schemaKey;
+  final String fieldKey;
+  final FieldDefinition field;
+
+  const ModuleViewerFieldUpdated(this.schemaKey, this.fieldKey, this.field);
+
+  @override
+  List<Object?> get props => [schemaKey, fieldKey, field];
+}
+
+class ModuleViewerFieldAdded extends ModuleViewerEvent {
+  final String schemaKey;
+  final String fieldKey;
+  final FieldDefinition field;
+
+  const ModuleViewerFieldAdded(this.schemaKey, this.fieldKey, this.field);
+
+  @override
+  List<Object?> get props => [schemaKey, fieldKey, field];
+}
+
+class ModuleViewerFieldDeleted extends ModuleViewerEvent {
+  final String schemaKey;
+  final String fieldKey;
+
+  const ModuleViewerFieldDeleted(this.schemaKey, this.fieldKey);
+
+  @override
+  List<Object?> get props => [schemaKey, fieldKey];
+}
+
+class ModuleViewerQuickEntryCreated extends ModuleViewerEvent {
+  final String schemaKey;
+  final Map<String, dynamic> data;
+  final String? autoSelectFieldKey;
+
+  const ModuleViewerQuickEntryCreated({
+    required this.schemaKey,
+    required this.data,
+    this.autoSelectFieldKey,
+  });
+
+  @override
+  List<Object?> get props => [schemaKey, data, autoSelectFieldKey];
+}
+
+class ModuleViewerQuickEntryUpdated extends ModuleViewerEvent {
+  final String entryId;
+  final String schemaKey;
+  final Map<String, dynamic> data;
+
+  const ModuleViewerQuickEntryUpdated({
+    required this.entryId,
+    required this.schemaKey,
+    required this.data,
+  });
+
+  @override
+  List<Object?> get props => [entryId, schemaKey, data];
 }

@@ -60,6 +60,15 @@ class _ScreenShell extends StatelessWidget {
                 )
               : null,
           iconTheme: IconThemeData(color: colors.onBackground),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
+              onPressed: () => ctx.onNavigateToScreen(
+                '_settings',
+                params: const {},
+              ),
+            ),
+          ],
         ),
         body: Stack(
           children: [

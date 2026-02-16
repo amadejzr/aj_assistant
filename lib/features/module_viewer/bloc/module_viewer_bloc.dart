@@ -29,6 +29,14 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerFormReset>(_onFormReset);
     on<ModuleViewerEntryDeleted>(_onEntryDeleted);
     on<ModuleViewerEntriesUpdated>(_onEntriesUpdated);
+    on<ModuleViewerSchemaUpdated>(_onSchemaUpdated);
+    on<ModuleViewerSchemaAdded>(_onSchemaAdded);
+    on<ModuleViewerSchemaDeleted>(_onSchemaDeleted);
+    on<ModuleViewerFieldUpdated>(_onFieldUpdated);
+    on<ModuleViewerFieldAdded>(_onFieldAdded);
+    on<ModuleViewerFieldDeleted>(_onFieldDeleted);
+    on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
+    on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
   }
 
   Future<void> _onStarted(
@@ -109,7 +117,16 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
     final updated = Map<String, dynamic>.from(current.formValues);
     updated[event.fieldKey] = event.value;
-    emit(current.copyWith(formValues: updated));
+
+    // Clear pendingAutoSelect if this change satisfies it
+    final pending = current.pendingAutoSelect;
+    final shouldClear =
+        pending != null && pending.fieldKey == event.fieldKey;
+
+    emit(current.copyWith(
+      formValues: updated,
+      clearPendingAutoSelect: shouldClear,
+    ));
   }
 
   Future<void> _onFormSubmitted(
@@ -127,6 +144,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         ..removeWhere((key, _) => key.startsWith('_'));
 
       final entryId = current.screenParams['_entryId'] as String?;
+      final schemaKey =
+          current.screenParams['_schemaKey'] as String? ?? 'default';
 
       if (entryId != null && entryId.isNotEmpty) {
         // Update existing entry — merge new form values into existing data
@@ -141,6 +160,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           id: entryId,
           data: mergedData,
           schemaVersion: current.module.schema.version,
+          schemaKey: existing?.schemaKey ?? schemaKey,
         );
         await entryRepository.updateEntry(userId, current.module.id, updated);
       } else {
@@ -149,6 +169,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           id: '',
           data: data,
           schemaVersion: current.module.schema.version,
+          schemaKey: schemaKey,
         );
         await entryRepository.createEntry(userId, current.module.id, entry);
       }
@@ -217,6 +238,168 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     emit(current.copyWith(entries: event.entries));
+  }
+
+  Future<void> _onSchemaUpdated(
+    ModuleViewerSchemaUpdated event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+    if (!current.module.schemas.containsKey(event.schemaKey)) return;
+
+    final schemas = Map.of(current.module.schemas);
+    schemas[event.schemaKey] = event.schema;
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onSchemaAdded(
+    ModuleViewerSchemaAdded event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    final schemas = Map.of(current.module.schemas);
+    schemas[event.schemaKey] = event.schema;
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onSchemaDeleted(
+    ModuleViewerSchemaDeleted event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    final schemas = Map.of(current.module.schemas);
+    schemas.remove(event.schemaKey);
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onFieldUpdated(
+    ModuleViewerFieldUpdated event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+    final schema = current.module.schemas[event.schemaKey];
+    if (schema == null) return;
+
+    final fields = Map.of(schema.fields);
+    fields[event.fieldKey] = event.field;
+    final updatedSchema = schema.copyWith(fields: fields);
+    final schemas = Map.of(current.module.schemas);
+    schemas[event.schemaKey] = updatedSchema;
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onFieldAdded(
+    ModuleViewerFieldAdded event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+    final schema = current.module.schemas[event.schemaKey];
+    if (schema == null) return;
+
+    final fields = Map.of(schema.fields);
+    fields[event.fieldKey] = event.field;
+    final updatedSchema = schema.copyWith(fields: fields);
+    final schemas = Map.of(current.module.schemas);
+    schemas[event.schemaKey] = updatedSchema;
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onFieldDeleted(
+    ModuleViewerFieldDeleted event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+    final schema = current.module.schemas[event.schemaKey];
+    if (schema == null) return;
+
+    final fields = Map.of(schema.fields);
+    fields.remove(event.fieldKey);
+    final updatedSchema = schema.copyWith(fields: fields);
+    final schemas = Map.of(current.module.schemas);
+    schemas[event.schemaKey] = updatedSchema;
+    final updatedModule = current.module.copyWith(schemas: schemas);
+    await moduleRepository.updateModule(userId, updatedModule);
+    emit(current.copyWith(module: updatedModule));
+  }
+
+  Future<void> _onQuickEntryCreated(
+    ModuleViewerQuickEntryCreated event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    try {
+      final entry = Entry(
+        id: '',
+        data: event.data,
+        schemaVersion:
+            current.module.schemas[event.schemaKey]?.version ?? 1,
+        schemaKey: event.schemaKey,
+      );
+      final newId = await entryRepository.createEntry(
+        userId,
+        current.module.id,
+        entry,
+      );
+
+      if (event.autoSelectFieldKey != null) {
+        emit(current.copyWith(
+          pendingAutoSelect: (
+            fieldKey: event.autoSelectFieldKey!,
+            entryId: newId,
+          ),
+        ));
+      }
+    } catch (e) {
+      Log.e('Failed to create quick entry', tag: 'ModuleViewer', error: e);
+    }
+  }
+
+  Future<void> _onQuickEntryUpdated(
+    ModuleViewerQuickEntryUpdated event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    try {
+      final existing = current.entries
+          .where((e) => e.id == event.entryId)
+          .firstOrNull;
+      final mergedData = {
+        if (existing != null) ...existing.data,
+        ...event.data,
+      };
+      final updated = Entry(
+        id: event.entryId,
+        data: mergedData,
+        schemaVersion:
+            current.module.schemas[event.schemaKey]?.version ?? 1,
+        schemaKey: event.schemaKey,
+      );
+      await entryRepository.updateEntry(userId, current.module.id, updated);
+    } catch (e) {
+      Log.e('Failed to update quick entry', tag: 'ModuleViewer', error: e);
+    }
   }
 
   @override

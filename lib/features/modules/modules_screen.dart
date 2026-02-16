@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,8 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/dev/mock_expense_module.dart';
-import '../../core/dev/mock_fitness_module.dart';
-import '../../core/dev/mock_hike_module.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
@@ -62,13 +61,13 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
       parent: _animController,
       curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     );
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
-    ));
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack),
+          ),
+        );
 
     _animController.forward();
   }
@@ -97,26 +96,27 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppSpacing.md),
-                _buildHeader(colors, textTheme),
+                _buildHeader(textTheme),
                 const SizedBox(height: AppSpacing.lg),
                 Expanded(
                   child: BlocBuilder<ModulesListBloc, ModulesListState>(
                     builder: (context, state) {
                       return switch (state) {
-                        ModulesListInitial() ||
-                        ModulesListLoading() =>
+                        ModulesListInitial() || ModulesListLoading() =>
                           const Center(child: CircularProgressIndicator()),
                         ModulesListLoaded(:final modules) =>
                           modules.isEmpty
                               ? _buildEmptyState(colors, textTheme)
-                              : _buildModuleGridWithDev(context, colors, modules),
-                        ModulesListError() =>
-                          _buildEmptyState(colors, textTheme),
+                              : _buildModuleGrid(context, colors, modules),
+                        ModulesListError() => _buildEmptyState(
+                          colors,
+                          textTheme,
+                        ),
                       };
                     },
                   ),
                 ),
-                const SizedBox(height: 120), // FAB clearance
+                const SizedBox(height: 120),
               ],
             ),
           ),
@@ -125,7 +125,7 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
     );
   }
 
-  Widget _buildHeader(AppColors colors, TextTheme textTheme) {
+  Widget _buildHeader(TextTheme textTheme) {
     return SlideTransition(
       position: _titleSlide,
       child: FadeTransition(
@@ -135,10 +135,7 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
           children: [
             Text('Modules', style: textTheme.displayLarge),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Your collection of tools',
-              style: textTheme.bodyMedium,
-            ),
+            Text('Your collection of tools', style: textTheme.bodyMedium),
           ],
         ),
       ),
@@ -168,124 +165,34 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
             textAlign: TextAlign.center,
             style: textTheme.bodyMedium,
           ),
-          const SizedBox(height: AppSpacing.lg),
-          // Dev: seed fitness module
-          TextButton.icon(
-            onPressed: () async {
-              final authState = context.read<AuthBloc>().state;
-              if (authState is! AuthAuthenticated) return;
-              final repo = context.read<ModuleRepository>();
-              final module = createMockFitnessModule();
-              await repo.createModule(authState.user.uid, module);
-            },
-            icon: Icon(
-              PhosphorIcons.barbell(PhosphorIconsStyle.bold),
-              size: 16,
-              color: colors.accent,
-            ),
-            label: Text(
-              'Add Fitness Module',
-              style: GoogleFonts.karla(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+          if (kDebugMode) ...[
+            const SizedBox(height: AppSpacing.lg),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockExpenseModule(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.bug(PhosphorIconsStyle.bold),
+                size: 16,
                 color: colors.accent,
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextButton.icon(
-            onPressed: () async {
-              final authState = context.read<AuthBloc>().state;
-              if (authState is! AuthAuthenticated) return;
-              final repo = context.read<ModuleRepository>();
-              final module = createMockExpenseModule();
-              await repo.createModule(authState.user.uid, module);
-            },
-            icon: Icon(
-              PhosphorIcons.wallet(PhosphorIconsStyle.bold),
-              size: 16,
-              color: colors.accent,
-            ),
-            label: Text(
-              'Add Finances Module',
-              style: GoogleFonts.karla(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: colors.accent,
+              label: Text(
+                'Seed Expense Module',
+                style: GoogleFonts.karla(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildModuleGridWithDev(
-    BuildContext context,
-    AppColors colors,
-    List<Module> modules,
-  ) {
-    final existingIds = modules.map((m) => m.id).toSet();
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildModuleGrid(context, colors, modules),
-          const SizedBox(height: AppSpacing.lg),
-          // Dev: add mock modules
-          if (!existingIds.contains('fitness'))
-            _devAddButton(
-              context,
-              colors,
-              icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
-              label: 'Add Fitness Module',
-              createModule: createMockFitnessModule,
-            ),
-          if (!existingIds.contains('expenses'))
-            _devAddButton(
-              context,
-              colors,
-              icon: PhosphorIcons.wallet(PhosphorIconsStyle.bold),
-              label: 'Add Finances Module',
-              createModule: createMockExpenseModule,
-            ),
-          if (!existingIds.contains('hikes'))
-            _devAddButton(
-              context,
-              colors,
-              icon: PhosphorIcons.mountains(PhosphorIconsStyle.bold),
-              label: 'Add Hikes Module',
-              createModule: createMockHikeModule,
-            ),
-          const SizedBox(height: 120),
-        ],
-      ),
-    );
-  }
-
-  Widget _devAddButton(
-    BuildContext context,
-    AppColors colors, {
-    required IconData icon,
-    required String label,
-    required Module Function() createModule,
-  }) {
-    return TextButton.icon(
-      onPressed: () async {
-        final authState = context.read<AuthBloc>().state;
-        if (authState is! AuthAuthenticated) return;
-        final repo = context.read<ModuleRepository>();
-        final module = createModule();
-        await repo.createModule(authState.user.uid, module);
-      },
-      icon: Icon(icon, size: 16, color: colors.accent),
-      label: Text(
-        label,
-        style: GoogleFonts.karla(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: colors.accent,
-        ),
       ),
     );
   }
@@ -296,8 +203,6 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
     List<Module> modules,
   ) {
     return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: AppSpacing.md,

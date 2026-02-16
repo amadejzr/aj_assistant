@@ -37,6 +37,7 @@ class BlueprintParser {
       'progress_bar' => _parseProgressBar(properties),
       'chart' => _parseChart(properties),
       'divider' => _parseDivider(properties),
+      'reference_picker' => _parseReferencePicker(properties),
       _ => UnknownNode(type: type, properties: properties),
     };
   }
@@ -322,5 +323,16 @@ class BlueprintParser {
 
   DividerNode _parseDivider(Map<String, dynamic> json) {
     return DividerNode(properties: json);
+  }
+
+  // ─── Reference ───
+
+  ReferencePickerNode _parseReferencePicker(Map<String, dynamic> json) {
+    return ReferencePickerNode(
+      fieldKey: json['fieldKey'] as String? ?? '',
+      schemaKey: json['schemaKey'] as String? ?? '',
+      displayField: json['displayField'] as String? ?? 'name',
+      properties: json,
+    );
   }
 }

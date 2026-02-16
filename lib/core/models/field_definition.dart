@@ -32,6 +32,24 @@ class FieldDefinition extends Equatable {
     );
   }
 
+  FieldDefinition copyWith({
+    String? key,
+    FieldType? type,
+    String? label,
+    bool? required,
+    Map<String, dynamic>? constraints,
+    List<String>? options,
+  }) {
+    return FieldDefinition(
+      key: key ?? this.key,
+      type: type ?? this.type,
+      label: label ?? this.label,
+      required: required ?? this.required,
+      constraints: constraints ?? this.constraints,
+      options: options ?? this.options,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),

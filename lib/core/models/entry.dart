@@ -5,6 +5,7 @@ class Entry extends Equatable {
   final String id;
   final Map<String, dynamic> data;
   final int schemaVersion;
+  final String schemaKey;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -12,6 +13,7 @@ class Entry extends Equatable {
     required this.id,
     required this.data,
     this.schemaVersion = 1,
+    this.schemaKey = 'default',
     this.createdAt,
     this.updatedAt,
   });
@@ -22,6 +24,7 @@ class Entry extends Equatable {
       id: doc.id,
       data: Map<String, dynamic>.from(raw['data'] as Map? ?? {}),
       schemaVersion: raw['schemaVersion'] as int? ?? 1,
+      schemaKey: raw['schemaKey'] as String? ?? 'default',
       createdAt: _toDateTime(raw['createdAt']),
       updatedAt: _toDateTime(raw['updatedAt']),
     );
@@ -31,6 +34,7 @@ class Entry extends Equatable {
     return {
       'data': data,
       'schemaVersion': schemaVersion,
+      'schemaKey': schemaKey,
       if (isCreate) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -43,5 +47,5 @@ class Entry extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, data, schemaVersion, createdAt, updatedAt];
+  List<Object?> get props => [id, data, schemaVersion, schemaKey, createdAt, updatedAt];
 }
