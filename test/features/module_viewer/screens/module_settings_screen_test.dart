@@ -145,6 +145,14 @@ void main() {
         find.byKey(const Key('schema_label_field')),
         'Budget',
       );
+
+      // Scroll to the create button (below viewport in DraggableScrollableSheet)
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('create_schema_button')),
+        200.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('create_schema_button')));
       await tester.pumpAndSettle();
 
@@ -173,8 +181,22 @@ void main() {
         'Task',
       );
 
-      // Add a field via the inline builder
+      // Scroll to and tap add field button
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('add_field_to_schema_button')),
+        200.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('add_field_to_schema_button')));
+      await tester.pumpAndSettle();
+
+      // Scroll to field draft inputs
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('field_draft_key_0')),
+        200.0,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.pumpAndSettle();
 
       // Fill in field details
@@ -187,7 +209,13 @@ void main() {
         'Title',
       );
 
-      // Submit
+      // Scroll to and tap create button
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('create_schema_button')),
+        200.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('create_schema_button')));
       await tester.pumpAndSettle();
 

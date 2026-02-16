@@ -204,15 +204,37 @@ void main() {
         'Price',
       );
 
-      // Select currency type
-      await tester.tap(find.byKey(const Key('type_chip_currency')));
+      // Scroll to and select currency type chip
+      final currencyChip = find.byKey(const Key('type_chip_currency'));
+      await tester.scrollUntilVisible(
+        currencyChip,
+        100.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(currencyChip);
       await tester.pumpAndSettle();
 
-      // Toggle required
-      await tester.tap(find.byKey(const Key('field_required_toggle')));
+      // Scroll to and toggle required
+      final requiredToggle = find.byKey(const Key('field_required_toggle'));
+      await tester.scrollUntilVisible(
+        requiredToggle,
+        100.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(requiredToggle);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('submit_field_button')));
+      // Scroll to and tap submit
+      final submitButton = find.byKey(const Key('submit_field_button'));
+      await tester.scrollUntilVisible(
+        submitButton,
+        100.0,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(any(
