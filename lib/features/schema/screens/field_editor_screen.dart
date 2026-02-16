@@ -7,9 +7,9 @@ import '../models/field_type.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
-import '../../module_viewer/bloc/module_viewer_state.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
+import '../bloc/schema_state.dart';
 import '../widgets/constraints_editor.dart';
 import '../widgets/options_editor.dart';
 
@@ -18,9 +18,9 @@ class FieldEditorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
+    return BlocBuilder<SchemaBloc, SchemaState>(
       builder: (context, state) {
-        if (state is! ModuleViewerLoaded) {
+        if (state is! SchemaLoaded) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -34,7 +34,7 @@ class FieldEditorScreen extends StatelessWidget {
           );
         }
 
-        final schema = state.module.schemas[schemaKey];
+        final schema = state.schemas[schemaKey];
         final field = schema?.fields[fieldKey];
         if (field == null) {
           return const Scaffold(
@@ -53,8 +53,8 @@ class FieldEditorScreen extends StatelessWidget {
               icon: Icon(Icons.arrow_back, color: colors.onBackground),
               onPressed: () {
                 context
-                    .read<ModuleViewerBloc>()
-                    .add(const ModuleViewerNavigateBack());
+                    .read<SchemaBloc>()
+                    .add(const SchemaNavigateBack());
               },
             ),
             title: Text(
@@ -137,8 +137,8 @@ class _FieldEditorFormState extends State<_FieldEditorForm> {
       options: _options,
       constraints: _constraints,
     );
-    context.read<ModuleViewerBloc>().add(
-          ModuleViewerFieldUpdated(widget.schemaKey, widget.fieldKey, updated),
+    context.read<SchemaBloc>().add(
+          FieldUpdated(widget.schemaKey, widget.fieldKey, updated),
         );
   }
 

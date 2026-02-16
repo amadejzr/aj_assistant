@@ -5,9 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
-import '../../module_viewer/bloc/module_viewer_state.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
+import '../bloc/schema_state.dart';
 import '../widgets/add_schema_sheet.dart';
 import '../widgets/schema_card.dart';
 
@@ -16,16 +16,16 @@ class SchemaListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
+    return BlocBuilder<SchemaBloc, SchemaState>(
       builder: (context, state) {
-        if (state is! ModuleViewerLoaded) {
+        if (state is! SchemaLoaded) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         final colors = context.colors;
-        final schemas = state.module.schemas;
+        final schemas = state.schemas;
 
         return Scaffold(
           backgroundColor: colors.background,
@@ -36,8 +36,8 @@ class SchemaListScreen extends StatelessWidget {
               icon: Icon(Icons.arrow_back, color: colors.onBackground),
               onPressed: () {
                 context
-                    .read<ModuleViewerBloc>()
-                    .add(const ModuleViewerNavigateBack());
+                    .read<SchemaBloc>()
+                    .add(const SchemaNavigateBack());
               },
             ),
             title: Text(
@@ -109,7 +109,7 @@ class _AddSchemaButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         ),
         onPressed: () {
-          final bloc = context.read<ModuleViewerBloc>();
+          final bloc = context.read<SchemaBloc>();
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,

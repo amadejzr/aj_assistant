@@ -6,9 +6,9 @@ import '../models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
-import '../../module_viewer/bloc/module_viewer_state.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
+import '../bloc/schema_state.dart';
 import '../widgets/add_field_sheet.dart';
 import '../widgets/field_card.dart';
 
@@ -17,9 +17,9 @@ class SchemaEditorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
+    return BlocBuilder<SchemaBloc, SchemaState>(
       builder: (context, state) {
-        if (state is! ModuleViewerLoaded) {
+        if (state is! SchemaLoaded) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -32,7 +32,7 @@ class SchemaEditorScreen extends StatelessWidget {
           );
         }
 
-        final schema = state.module.schemas[schemaKey];
+        final schema = state.schemas[schemaKey];
         if (schema == null) {
           return const Scaffold(
             body: Center(child: Text('Schema not found')),
@@ -50,8 +50,8 @@ class SchemaEditorScreen extends StatelessWidget {
               icon: Icon(Icons.arrow_back, color: colors.onBackground),
               onPressed: () {
                 context
-                    .read<ModuleViewerBloc>()
-                    .add(const ModuleViewerNavigateBack());
+                    .read<SchemaBloc>()
+                    .add(const SchemaNavigateBack());
               },
             ),
             title: Text(
@@ -175,23 +175,25 @@ class _LabelFieldState extends State<_LabelField> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = widget.colors;
+
     return TextField(
       key: const Key('schema_label_input'),
       controller: _controller,
       decoration: InputDecoration(
         labelText: 'Schema Label',
-        labelStyle: TextStyle(color: widget.colors.onBackgroundMuted),
+        labelStyle: TextStyle(color: colors.onBackgroundMuted),
         enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: widget.colors.border),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: widget.colors.accent),
+          borderSide: BorderSide(color: colors.accent),
         ),
       ),
-      style: TextStyle(color: widget.colors.onBackground),
+      style: TextStyle(color: colors.onBackground),
       onSubmitted: (value) {
-        context.read<ModuleViewerBloc>().add(
-              ModuleViewerSchemaUpdated(
+        context.read<SchemaBloc>().add(
+              SchemaUpdated(
                 widget.schemaKey,
                 widget.schema.copyWith(label: value),
               ),
@@ -226,7 +228,7 @@ class _AddFieldButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         ),
         onPressed: () {
-          final bloc = context.read<ModuleViewerBloc>();
+          final bloc = context.read<SchemaBloc>();
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,

@@ -6,12 +6,12 @@ import '../models/field_type.dart';
 import '../models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
 import 'field_draft_row.dart';
 
 class AddSchemaSheet extends StatefulWidget {
-  final ModuleViewerBloc bloc;
+  final SchemaBloc bloc;
 
   const AddSchemaSheet({super.key, required this.bloc});
 
@@ -72,7 +72,7 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
       );
     }
 
-    widget.bloc.add(ModuleViewerSchemaAdded(
+    widget.bloc.add(SchemaAdded(
       schemaKey,
       ModuleSchema(label: label, fields: fields),
     ));

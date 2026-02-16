@@ -1,11 +1,10 @@
-import 'package:aj_assistant/core/models/module.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_bloc.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_event.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_state.dart';
 import 'package:aj_assistant/features/schema/models/field_definition.dart';
 import 'package:aj_assistant/features/schema/models/field_type.dart';
 import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
 import 'package:aj_assistant/features/schema/screens/schema_list_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -13,62 +12,57 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockModuleViewerBloc
-    extends MockBloc<ModuleViewerEvent, ModuleViewerState>
-    implements ModuleViewerBloc {}
+class MockSchemaBloc extends MockBloc<SchemaEvent, SchemaState>
+    implements SchemaBloc {}
 
 void main() {
-  late MockModuleViewerBloc bloc;
+  late MockSchemaBloc bloc;
 
-  const testModule = Module(
-    id: 'mod1',
-    name: 'Test Module',
-    schemas: {
-      'expense': ModuleSchema(
-        label: 'Expense',
-        icon: 'wallet',
-        fields: {
-          'amount': FieldDefinition(
-            key: 'amount',
-            type: FieldType.currency,
-            label: 'Amount',
-          ),
-          'note': FieldDefinition(
-            key: 'note',
-            type: FieldType.text,
-            label: 'Note',
-          ),
-          'date': FieldDefinition(
-            key: 'date',
-            type: FieldType.datetime,
-            label: 'Date',
-          ),
-        },
-      ),
-      'category': ModuleSchema(
-        label: 'Category',
-        fields: {
-          'name': FieldDefinition(
-            key: 'name',
-            type: FieldType.text,
-            label: 'Name',
-          ),
-        },
-      ),
-    },
-  );
+  const testSchemas = {
+    'expense': ModuleSchema(
+      label: 'Expense',
+      icon: 'wallet',
+      fields: {
+        'amount': FieldDefinition(
+          key: 'amount',
+          type: FieldType.currency,
+          label: 'Amount',
+        ),
+        'note': FieldDefinition(
+          key: 'note',
+          type: FieldType.text,
+          label: 'Note',
+        ),
+        'date': FieldDefinition(
+          key: 'date',
+          type: FieldType.datetime,
+          label: 'Date',
+        ),
+      },
+    ),
+    'category': ModuleSchema(
+      label: 'Category',
+      fields: {
+        'name': FieldDefinition(
+          key: 'name',
+          type: FieldType.text,
+          label: 'Name',
+        ),
+      },
+    ),
+  };
 
   setUp(() {
-    bloc = MockModuleViewerBloc();
+    bloc = MockSchemaBloc();
     when(() => bloc.state).thenReturn(
-      ModuleViewerLoaded(module: testModule),
+      const SchemaLoaded(moduleId: 'mod1', schemas: testSchemas),
     );
   });
 
   Widget buildSubject() {
     return MaterialApp(
       theme: AppTheme.dark(),
-      home: BlocProvider<ModuleViewerBloc>.value(
+      home: BlocProvider<SchemaBloc>.value(
         value: bloc,
         child: const SchemaListScreen(),
       ),
@@ -86,11 +80,12 @@ void main() {
 
     testWidgets('shows schema label, falls back to key', (tester) async {
       when(() => bloc.state).thenReturn(
-        ModuleViewerLoaded(
-          module: testModule.copyWith(schemas: {
-            'expense': const ModuleSchema(label: 'Expense'),
-            'unlabeled': const ModuleSchema(label: ''),
-          }),
+        const SchemaLoaded(
+          moduleId: 'mod1',
+          schemas: {
+            'expense': ModuleSchema(label: 'Expense'),
+            'unlabeled': ModuleSchema(label: ''),
+          },
         ),
       );
 
@@ -117,8 +112,8 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(
-            const ModuleViewerScreenChanged(
-              '_schema_editor',
+            const SchemaScreenChanged(
+              'editor',
               params: {'schemaKey': 'expense'},
             ),
           )).called(1);
@@ -166,7 +161,7 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(
-            const ModuleViewerSchemaAdded(
+            const SchemaAdded(
               'budget',
               ModuleSchema(label: 'Budget'),
             ),
@@ -185,8 +180,7 @@ void main() {
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
-      verify(() => bloc.add(const ModuleViewerSchemaDeleted('category')))
-          .called(1);
+      verify(() => bloc.add(const SchemaDeleted('category'))).called(1);
     });
   });
 }

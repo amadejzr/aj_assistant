@@ -1,11 +1,10 @@
-import 'package:aj_assistant/core/models/module.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_bloc.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_event.dart';
+import 'package:aj_assistant/features/schema/bloc/schema_state.dart';
 import 'package:aj_assistant/features/schema/models/field_definition.dart';
 import 'package:aj_assistant/features/schema/models/field_type.dart';
 import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
-import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
 import 'package:aj_assistant/features/schema/screens/field_editor_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -13,68 +12,65 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockModuleViewerBloc
-    extends MockBloc<ModuleViewerEvent, ModuleViewerState>
-    implements ModuleViewerBloc {}
+class MockSchemaBloc extends MockBloc<SchemaEvent, SchemaState>
+    implements SchemaBloc {}
 
 void main() {
-  late MockModuleViewerBloc bloc;
+  late MockSchemaBloc bloc;
 
-  const testModule = Module(
-    id: 'mod1',
-    name: 'Test Module',
-    schemas: {
-      'expense': ModuleSchema(
-        label: 'Expense',
-        fields: {
-          'amount': FieldDefinition(
-            key: 'amount',
-            type: FieldType.currency,
-            label: 'Amount',
-            required: true,
-            constraints: {'min': 0},
-          ),
-          'category': FieldDefinition(
-            key: 'category',
-            type: FieldType.enumType,
-            label: 'Category',
-            options: ['Food', 'Transport', 'Other'],
-          ),
-        },
-      ),
-    },
-  );
+  const testSchemas = {
+    'expense': ModuleSchema(
+      label: 'Expense',
+      fields: {
+        'amount': FieldDefinition(
+          key: 'amount',
+          type: FieldType.currency,
+          label: 'Amount',
+          required: true,
+          constraints: {'min': 0},
+        ),
+        'category': FieldDefinition(
+          key: 'category',
+          type: FieldType.enumType,
+          label: 'Category',
+          options: ['Food', 'Transport', 'Other'],
+        ),
+      },
+    ),
+  };
 
   setUp(() {
-    bloc = MockModuleViewerBloc();
-    final loadedState = ModuleViewerLoaded(
-      module: testModule,
-      currentScreenId: '_field_editor',
-      screenParams: const {'schemaKey': 'expense', 'fieldKey': 'amount'},
+    bloc = MockSchemaBloc();
+    final loadedState = const SchemaLoaded(
+      moduleId: 'mod1',
+      schemas: testSchemas,
+      currentScreen: 'field_editor',
+      screenParams: {'schemaKey': 'expense', 'fieldKey': 'amount'},
     );
     when(() => bloc.state).thenReturn(loadedState);
-    whenListen(bloc, const Stream<ModuleViewerState>.empty(),
+    whenListen(bloc, const Stream<SchemaState>.empty(),
         initialState: loadedState);
   });
 
   setUpAll(() {
-    registerFallbackValue(const ModuleViewerNavigateBack());
+    registerFallbackValue(const SchemaNavigateBack());
   });
 
   Widget buildSubject({Map<String, dynamic>? screenParams}) {
     if (screenParams != null) {
-      final loadedState = ModuleViewerLoaded(
-        module: testModule,
-        currentScreenId: '_field_editor',
+      final loadedState = SchemaLoaded(
+        moduleId: 'mod1',
+        schemas: testSchemas,
+        currentScreen: 'field_editor',
         screenParams: screenParams,
       );
       when(() => bloc.state).thenReturn(loadedState);
-      whenListen(bloc, const Stream<ModuleViewerState>.empty(),
+      whenListen(bloc, const Stream<SchemaState>.empty(),
           initialState: loadedState);
     }
     return MaterialApp(
       theme: AppTheme.dark(),
-      home: BlocProvider<ModuleViewerBloc>.value(
+      home: BlocProvider<SchemaBloc>.value(
         value: bloc,
         child: const FieldEditorScreen(),
       ),
@@ -168,7 +164,7 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => bloc.add(any(
-            that: isA<ModuleViewerFieldUpdated>()
+            that: isA<FieldUpdated>()
                 .having((e) => e.schemaKey, 'schemaKey', 'expense')
                 .having((e) => e.fieldKey, 'fieldKey', 'amount')
                 .having((e) => e.field.label, 'label', 'Total Amount'),

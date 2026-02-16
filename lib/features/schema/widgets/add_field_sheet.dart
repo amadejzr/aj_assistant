@@ -5,12 +5,12 @@ import '../models/field_definition.dart';
 import '../models/field_type.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
 
 class AddFieldSheet extends StatefulWidget {
   final String schemaKey;
-  final ModuleViewerBloc bloc;
+  final SchemaBloc bloc;
 
   const AddFieldSheet({
     super.key,
@@ -60,7 +60,7 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
     }
 
     widget.bloc.add(
-      ModuleViewerFieldAdded(
+      FieldAdded(
         widget.schemaKey,
         fieldKey,
         FieldDefinition(

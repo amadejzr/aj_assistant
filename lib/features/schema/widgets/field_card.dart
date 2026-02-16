@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_definition.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
 
 class FieldCard extends StatelessWidget {
   final String schemaKey;
@@ -28,9 +28,9 @@ class FieldCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: InkWell(
         onTap: () {
-          context.read<ModuleViewerBloc>().add(
-                ModuleViewerScreenChanged(
-                  '_field_editor',
+          context.read<SchemaBloc>().add(
+                SchemaScreenChanged(
+                  'field_editor',
                   params: {
                     'schemaKey': schemaKey,
                     'fieldKey': fieldKey,
@@ -115,8 +115,8 @@ class FieldCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              context.read<ModuleViewerBloc>().add(
-                    ModuleViewerFieldDeleted(schemaKey, fieldKey),
+              context.read<SchemaBloc>().add(
+                    FieldDeleted(schemaKey, fieldKey),
                   );
               Navigator.of(dialogContext).pop();
             },

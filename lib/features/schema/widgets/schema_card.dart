@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../module_viewer/bloc/module_viewer_bloc.dart';
-import '../../module_viewer/bloc/module_viewer_event.dart';
+import '../bloc/schema_bloc.dart';
+import '../bloc/schema_event.dart';
 
 class SchemaCard extends StatelessWidget {
   final String schemaKey;
@@ -30,9 +30,9 @@ class SchemaCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: InkWell(
         onTap: () {
-          context.read<ModuleViewerBloc>().add(
-                ModuleViewerScreenChanged(
-                  '_schema_editor',
+          context.read<SchemaBloc>().add(
+                SchemaScreenChanged(
+                  'editor',
                   params: {'schemaKey': schemaKey},
                 ),
               );
@@ -89,8 +89,8 @@ class SchemaCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              context.read<ModuleViewerBloc>().add(
-                    ModuleViewerSchemaDeleted(schemaKey),
+              context.read<SchemaBloc>().add(
+                    SchemaDeleted(schemaKey),
                   );
               Navigator.of(dialogContext).pop();
             },

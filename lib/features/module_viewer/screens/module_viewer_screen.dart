@@ -10,9 +10,10 @@ import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
 import '../renderer/blueprint_renderer.dart';
 import '../renderer/render_context.dart';
-import '../../schema/screens/field_editor_screen.dart';
-import '../../schema/screens/schema_editor_screen.dart';
-import '../../schema/screens/schema_list_screen.dart';
+import '../../schema/bloc/schema_bloc.dart';
+import '../../schema/bloc/schema_event.dart';
+import '../../schema/bloc/schema_state.dart';
+import '../../schema/screens/schema_navigator.dart';
 
 class ModuleViewerScreen extends StatelessWidget {
   final String moduleId;
@@ -67,17 +68,31 @@ class _LoadedView extends StatelessWidget {
     final bloc = context.read<ModuleViewerBloc>();
     final screenId = state.currentScreenId;
 
-    // Route special settings screen IDs
+    // Route settings to SchemaBloc-managed navigator
+    if (screenId == '_settings') {
+      final authState = context.read<AuthBloc>().state;
+      final userId = authState is AuthAuthenticated ? authState.user.uid : '';
+
+      return BlocProvider(
+        create: (context) => SchemaBloc(
+          moduleRepository: context.read<ModuleRepository>(),
+          userId: userId,
+          moduleId: state.module.id,
+        )..add(SchemaStarted(state.module.id)),
+        child: _SchemaNavigatorWithRefresh(
+          onPop: () => bloc.add(const ModuleViewerNavigateBack()),
+          onSchemasChanged: () =>
+              bloc.add(const ModuleViewerModuleRefreshed()),
+        ),
+      );
+    }
+
+    // Unknown underscore-prefixed screens
     if (screenId.startsWith('_')) {
-      return switch (screenId) {
-        '_settings' => const SchemaListScreen(),
-        '_schema_editor' => const SchemaEditorScreen(),
-        '_field_editor' => const FieldEditorScreen(),
-        _ => Scaffold(
-            appBar: AppBar(title: const Text('Unknown')),
-            body: const Center(child: Text('Unknown settings screen')),
-          ),
-      };
+      return Scaffold(
+        appBar: AppBar(title: const Text('Unknown')),
+        body: const Center(child: Text('Unknown settings screen')),
+      );
     }
 
     final blueprint = state.module.screens[screenId];
@@ -115,6 +130,47 @@ class _LoadedView extends StatelessWidget {
     return BlueprintRenderer(
       blueprintJson: blueprint,
       context_: renderContext,
+    );
+  }
+}
+
+/// Wraps SchemaNavigator to detect when the schema list's back button is
+/// pressed (stack empty → pop back to module viewer) and to refresh the
+/// module after schema edits.
+class _SchemaNavigatorWithRefresh extends StatelessWidget {
+  final VoidCallback onPop;
+  final VoidCallback onSchemasChanged;
+
+  const _SchemaNavigatorWithRefresh({
+    required this.onPop,
+    required this.onSchemasChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<SchemaBloc, SchemaState>(
+      listenWhen: (prev, curr) {
+        // Detect back navigation from root (list screen with empty stack)
+        if (prev is SchemaLoaded && curr is SchemaLoaded) {
+          return prev.screenStack.isNotEmpty && curr.screenStack.isEmpty &&
+              prev.currentScreen == 'list';
+        }
+        return false;
+      },
+      listener: (context, state) {
+        onSchemasChanged();
+        onPop();
+      },
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) {
+            onSchemasChanged();
+            onPop();
+          }
+        },
+        child: const SchemaNavigator(),
+      ),
     );
   }
 }
