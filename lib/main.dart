@@ -7,9 +7,12 @@ import 'app.dart';
 import 'core/logging/app_bloc_observer.dart';
 import 'core/logging/console_log_backend.dart';
 import 'core/logging/log.dart';
+import 'core/repositories/entry_repository.dart';
+import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
+import 'features/module_viewer/renderer/widget_registry.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -26,16 +29,27 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   Log.i('Firebase initialized', tag: 'App');
 
+  // Register all blueprint widget builders
+  WidgetRegistry.instance.registerDefaults();
+
   final authService = AuthService();
   final userService = UserService();
+  final moduleRepository = FirestoreModuleRepository();
+  final entryRepository = FirestoreEntryRepository();
 
   runApp(
-    BlocProvider(
-      create: (_) => AuthBloc(
-        authService: authService,
-        userService: userService,
-      )..startListening(),
-      child: const AJAssistantApp(),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
+        RepositoryProvider<EntryRepository>.value(value: entryRepository),
+      ],
+      child: BlocProvider(
+        create: (_) => AuthBloc(
+          authService: authService,
+          userService: userService,
+        )..startListening(),
+        child: const AJAssistantApp(),
+      ),
     ),
   );
 }

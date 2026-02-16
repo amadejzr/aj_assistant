@@ -9,6 +9,7 @@ import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/module_viewer/screens/module_viewer_screen.dart';
 import 'features/modules/modules_screen.dart';
 import 'features/shell/shell_screen.dart';
 import 'features/splash/splash_screen.dart';
@@ -97,6 +98,17 @@ GoRouter createRouter(AuthBloc authBloc) {
             ],
           ),
         ],
+      ),
+      // Module viewer — full-screen, outside the shell (no bottom nav / chat FAB)
+      GoRoute(
+        path: '/module/:moduleId',
+        pageBuilder: (context, state) {
+          final moduleId = state.pathParameters['moduleId']!;
+          return _pageFadeSlide(
+            key: state.pageKey,
+            child: ModuleViewerScreen(moduleId: moduleId),
+          );
+        },
       ),
     ],
   );
