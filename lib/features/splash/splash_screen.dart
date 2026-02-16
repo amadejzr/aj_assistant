@@ -116,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (state is AuthInitial) return;
 
     _navigated = true;
-    context.go(state is AuthAuthenticated ? '/home' : '/login');
+    context.go(state is AuthAuthenticated ? '/home/dashboard' : '/login');
   }
 
   @override

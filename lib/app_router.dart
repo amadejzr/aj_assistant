@@ -9,6 +9,8 @@ import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/modules/modules_screen.dart';
+import 'features/shell/shell_screen.dart';
 import 'features/splash/splash_screen.dart';
 
 const _tag = 'Router';
@@ -42,10 +44,10 @@ GoRouter createRouter(AuthBloc authBloc) {
         return '/login';
       }
 
-      // Authenticated but still on auth pages → home
+      // Authenticated but still on auth pages → dashboard
       if (isAuthenticated && isOnAuth) {
-        Log.d('authenticated → /home', tag: _tag);
-        return '/home';
+        Log.d('authenticated → /home/dashboard', tag: _tag);
+        return '/home/dashboard';
       }
 
       return null;
@@ -69,12 +71,32 @@ GoRouter createRouter(AuthBloc authBloc) {
           child: const SignupScreen(),
         ),
       ),
-      GoRoute(
-        path: '/home',
-        pageBuilder: (context, state) => _pageFadeSlide(
-          key: state.pageKey,
-          child: const HomeScreen(),
-        ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return ShellScreen(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home/dashboard',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: HomeScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home/modules',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: ModulesScreen(),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

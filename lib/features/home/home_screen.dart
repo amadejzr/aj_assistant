@@ -17,7 +17,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final Animation<double> _greetingFade;
   late final Animation<Offset> _cardSlide;
@@ -60,39 +61,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          PaperBackground(colors: colors),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
+    return Stack(
+      children: [
+        PaperBackground(colors: colors),
+        SafeArea(
+          bottom: false,
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                ),
+                sliver: SliverList.list(
+                  children: [
+                    const SizedBox(height: AppSpacing.md),
+                    _buildTopBar(colors),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _buildGreeting(context, colors),
+                    const SizedBox(height: AppSpacing.xl),
+                    _buildEmptyStateCard(colors),
+                    const SizedBox(height: 120), // FAB clearance
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.md),
-                  _buildTopBar(colors),
-                  const SizedBox(height: AppSpacing.xxl),
-                  _buildGreeting(context, colors),
-                  const SizedBox(height: AppSpacing.xl),
-                  _buildEmptyStateCard(colors),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: colors.accent,
-        child: Icon(
-          PhosphorIcons.chatCircle(PhosphorIconsStyle.bold),
-          color: colors.onBackground,
         ),
-      ),
+      ],
     );
   }
 
