@@ -1,12 +1,12 @@
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
-import 'package:aj_assistant/features/module_viewer/screens/field_editor_screen.dart';
+import 'package:aj_assistant/features/schema/screens/field_editor_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -102,16 +102,12 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      // Find the dropdown
       final dropdown = find.byType(DropdownButton<FieldType>);
       expect(dropdown, findsOneWidget);
 
-      // Current value should be shown
       final dropdownWidget =
           tester.widget<DropdownButton<FieldType>>(dropdown);
       expect(dropdownWidget.value, FieldType.currency);
-
-      // All field types should be in the items list
       expect(dropdownWidget.items!.length, FieldType.values.length);
     });
 
@@ -136,12 +132,12 @@ void main() {
       await tester.enterText(labelField, 'Total Amount');
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(TextFormField, 'Total Amount'), findsOneWidget);
+      expect(
+          find.widgetWithText(TextFormField, 'Total Amount'), findsOneWidget);
     });
 
     testWidgets('options editor not visible for non-enum types',
         (tester) async {
-      // Amount is currency — no options editor
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
@@ -149,7 +145,6 @@ void main() {
     });
 
     testWidgets('options editor visible for enum types', (tester) async {
-      // Category is enumType — has options editor
       await tester.pumpWidget(buildSubject(
         screenParams: {'schemaKey': 'expense', 'fieldKey': 'category'},
       ));
@@ -165,12 +160,10 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      // Change the label
       final labelField = find.byKey(const Key('field_label_input'));
       await tester.enterText(labelField, 'Total Amount');
       await tester.pumpAndSettle();
 
-      // Tap save
       await tester.tap(find.byKey(const Key('save_field_button')));
       await tester.pumpAndSettle();
 
@@ -187,7 +180,6 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      // The amount field has constraint min: 0
       expect(find.byKey(const Key('constraints_editor')), findsOneWidget);
       expect(find.text('min: 0'), findsOneWidget);
     });
@@ -201,7 +193,6 @@ void main() {
       await tester.tap(find.text('Add option'));
       await tester.pumpAndSettle();
 
-      // Bottom sheet should appear with styled title
       expect(find.text('Add Option'), findsWidgets);
       expect(find.text('OPTION VALUE'), findsOneWidget);
     });
@@ -213,7 +204,6 @@ void main() {
       await tester.tap(find.text('Add constraint'));
       await tester.pumpAndSettle();
 
-      // Bottom sheet should appear with styled title
       expect(find.text('Add Constraint'), findsWidgets);
       expect(find.text('KEY'), findsOneWidget);
       expect(find.text('VALUE'), findsOneWidget);

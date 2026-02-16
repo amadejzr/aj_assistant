@@ -1,7 +1,7 @@
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/features/module_viewer/renderer/render_context.dart';
 import 'package:flutter_test/flutter_test.dart';
 

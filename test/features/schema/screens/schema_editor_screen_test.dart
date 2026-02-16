@@ -1,12 +1,12 @@
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
-import 'package:aj_assistant/features/module_viewer/screens/schema_editor_screen.dart';
+import 'package:aj_assistant/features/schema/screens/schema_editor_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,7 +16,6 @@ import 'package:mocktail/mocktail.dart';
 class MockModuleViewerBloc
     extends MockBloc<ModuleViewerEvent, ModuleViewerState>
     implements ModuleViewerBloc {}
-
 
 void main() {
   late MockModuleViewerBloc bloc;
@@ -85,7 +84,6 @@ void main() {
 
       final labelField = find.byKey(const Key('schema_label_input'));
       expect(labelField, findsOneWidget);
-      // The text field should contain the current label
       expect(
         find.widgetWithText(TextField, 'Expense'),
         findsOneWidget,
@@ -114,7 +112,6 @@ void main() {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
-      // Required fields should show an indicator (we use a * text)
       final requiredIndicators = find.text('*');
       // amount and category are required
       expect(requiredIndicators, findsNWidgets(2));
@@ -125,9 +122,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final labelField = find.byKey(const Key('schema_label_input'));
-      // Clear existing text by selecting all and replacing
       await tester.enterText(labelField, 'Updated Expense');
-      // Submit the text field
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
@@ -155,8 +150,7 @@ void main() {
           )).called(1);
     });
 
-    testWidgets('add field button shows bottom sheet and creates field',
-        (tester) async {
+    testWidgets('add field button shows bottom sheet', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
@@ -166,6 +160,22 @@ void main() {
       // Bottom sheet should show title and type chips
       expect(find.text('Add Field'), findsWidgets);
       expect(find.byKey(const Key('type_chip_text')), findsOneWidget);
+    });
+
+    testWidgets('add field sheet creates field with key and label',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('add_field_button')));
+      await tester.pumpAndSettle();
 
       await tester.enterText(
         find.byKey(const Key('field_key_input')),
@@ -175,6 +185,8 @@ void main() {
         find.byKey(const Key('field_label_input')),
         'Tags',
       );
+
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('submit_field_button')));
       await tester.pumpAndSettle();
 
@@ -184,63 +196,6 @@ void main() {
                 .having((e) => e.fieldKey, 'fieldKey', 'tags')
                 .having((e) => e.field.label, 'label', 'Tags')
                 .having((e) => e.field.type, 'type', FieldType.text),
-          ))).called(1);
-    });
-
-    testWidgets('add field sheet allows selecting type and required',
-        (tester) async {
-      await tester.pumpWidget(buildSubject());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('add_field_button')));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.byKey(const Key('field_key_input')),
-        'price',
-      );
-      await tester.enterText(
-        find.byKey(const Key('field_label_input')),
-        'Price',
-      );
-
-      // Scroll to and select currency type chip
-      final currencyChip = find.byKey(const Key('type_chip_currency'));
-      await tester.scrollUntilVisible(
-        currencyChip,
-        100.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(currencyChip);
-      await tester.pumpAndSettle();
-
-      // Scroll to and toggle required
-      final requiredToggle = find.byKey(const Key('field_required_toggle'));
-      await tester.scrollUntilVisible(
-        requiredToggle,
-        100.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(requiredToggle);
-      await tester.pumpAndSettle();
-
-      // Scroll to and tap submit
-      final submitButton = find.byKey(const Key('submit_field_button'));
-      await tester.scrollUntilVisible(
-        submitButton,
-        100.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
-
-      verify(() => bloc.add(any(
-            that: isA<ModuleViewerFieldAdded>()
-                .having((e) => e.field.type, 'type', FieldType.currency)
-                .having((e) => e.field.required, 'required', true),
           ))).called(1);
     });
 

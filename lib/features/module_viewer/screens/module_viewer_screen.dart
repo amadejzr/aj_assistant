@@ -10,9 +10,9 @@ import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
 import '../renderer/blueprint_renderer.dart';
 import '../renderer/render_context.dart';
-import 'field_editor_screen.dart';
-import 'module_settings_screen.dart';
-import 'schema_editor_screen.dart';
+import '../../schema/screens/field_editor_screen.dart';
+import '../../schema/screens/schema_editor_screen.dart';
+import '../../schema/screens/schema_list_screen.dart';
 
 class ModuleViewerScreen extends StatelessWidget {
   final String moduleId;
@@ -70,7 +70,7 @@ class _LoadedView extends StatelessWidget {
     // Route special settings screen IDs
     if (screenId.startsWith('_')) {
       return switch (screenId) {
-        '_settings' => const ModuleSettingsScreen(),
+        '_settings' => const SchemaListScreen(),
         '_schema_editor' => const SchemaEditorScreen(),
         '_field_editor' => const FieldEditorScreen(),
         _ => Scaffold(

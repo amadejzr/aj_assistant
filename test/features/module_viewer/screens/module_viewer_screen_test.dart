@@ -1,14 +1,14 @@
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
-import 'package:aj_assistant/features/module_viewer/screens/module_settings_screen.dart';
-import 'package:aj_assistant/features/module_viewer/screens/schema_editor_screen.dart';
-import 'package:aj_assistant/features/module_viewer/screens/field_editor_screen.dart';
+import 'package:aj_assistant/features/schema/screens/schema_list_screen.dart';
+import 'package:aj_assistant/features/schema/screens/schema_editor_screen.dart';
+import 'package:aj_assistant/features/schema/screens/field_editor_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,7 +80,7 @@ void main() {
   }
 
   group('Module Viewer — settings navigation routing', () {
-    testWidgets('_settings route renders ModuleSettingsScreen', (tester) async {
+    testWidgets('_settings route renders SchemaListScreen', (tester) async {
       await tester.pumpWidget(buildBody(
         ModuleViewerLoaded(
           module: testModule,
@@ -89,7 +89,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ModuleSettingsScreen), findsOneWidget);
+      expect(find.byType(SchemaListScreen), findsOneWidget);
     });
 
     testWidgets('_schema_editor route renders SchemaEditorScreen',
@@ -133,14 +133,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Blueprint Screen'), findsOneWidget);
-      expect(find.byType(ModuleSettingsScreen), findsNothing);
+      expect(find.byType(SchemaListScreen), findsNothing);
     });
   });
 }
 
 Widget _buildSettingsScreen(ModuleViewerLoaded state) {
   return switch (state.currentScreenId) {
-    '_settings' => const ModuleSettingsScreen(),
+    '_settings' => const SchemaListScreen(),
     '_schema_editor' => const SchemaEditorScreen(),
     '_field_editor' => const FieldEditorScreen(),
     _ => const Scaffold(body: Text('Unknown settings screen')),

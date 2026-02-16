@@ -1,7 +1,7 @@
-import '../models/field_definition.dart';
-import '../models/field_type.dart';
+import '../../features/schema/models/field_definition.dart';
+import '../../features/schema/models/field_type.dart';
+import '../../features/schema/models/module_schema.dart';
 import '../models/module.dart';
-import '../models/module_schema.dart';
 
 Module createMockExpenseModule() {
   return const Module(

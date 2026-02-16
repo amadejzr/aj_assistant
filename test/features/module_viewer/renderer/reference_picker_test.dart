@@ -1,8 +1,8 @@
 import 'package:aj_assistant/core/models/entry.dart';
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/repositories/entry_repository.dart';
 import 'package:aj_assistant/core/repositories/module_repository.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';

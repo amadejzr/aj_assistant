@@ -1,5 +1,5 @@
 import '../../../core/models/entry.dart';
-import '../../../core/models/field_definition.dart';
+import '../../schema/models/field_definition.dart';
 import '../../../core/models/module.dart';
 
 class RenderContext {

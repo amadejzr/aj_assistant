@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/models/field_definition.dart';
-import '../../../../core/models/module_schema.dart';
+import '../../../schema/models/field_definition.dart';
+import '../../../schema/models/module_schema.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../bloc/module_viewer_bloc.dart';

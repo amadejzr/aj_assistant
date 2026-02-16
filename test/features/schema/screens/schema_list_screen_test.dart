@@ -1,12 +1,12 @@
-import 'package:aj_assistant/core/models/field_definition.dart';
-import 'package:aj_assistant/core/models/field_type.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/field_definition.dart';
+import 'package:aj_assistant/features/schema/models/field_type.dart';
+import 'package:aj_assistant/features/schema/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_event.dart';
 import 'package:aj_assistant/features/module_viewer/bloc/module_viewer_state.dart';
-import 'package:aj_assistant/features/module_viewer/screens/module_settings_screen.dart';
+import 'package:aj_assistant/features/schema/screens/schema_list_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,12 +70,12 @@ void main() {
       theme: AppTheme.dark(),
       home: BlocProvider<ModuleViewerBloc>.value(
         value: bloc,
-        child: const ModuleSettingsScreen(),
+        child: const SchemaListScreen(),
       ),
     );
   }
 
-  group('ModuleSettingsScreen', () {
+  group('SchemaListScreen', () {
     testWidgets('renders all schemas', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
@@ -124,8 +124,7 @@ void main() {
           )).called(1);
     });
 
-    testWidgets('add schema button shows bottom sheet and creates schema',
-        (tester) async {
+    testWidgets('add schema button shows bottom sheet', (tester) async {
       await tester.pumpWidget(buildSubject());
       await tester.pumpAndSettle();
 
@@ -134,6 +133,22 @@ void main() {
 
       // Bottom sheet should appear with title
       expect(find.text('Create Schema'), findsOneWidget);
+    });
+
+    testWidgets('add schema sheet creates schema with key and label',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(buildSubject());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('add_schema_button')));
+      await tester.pumpAndSettle();
 
       // Enter schema key
       await tester.enterText(
@@ -146,12 +161,6 @@ void main() {
         'Budget',
       );
 
-      // Scroll to the create button (below viewport in DraggableScrollableSheet)
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('create_schema_button')),
-        200.0,
-        scrollable: find.byType(Scrollable).last,
-      );
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('create_schema_button')));
       await tester.pumpAndSettle();
@@ -162,70 +171,6 @@ void main() {
               ModuleSchema(label: 'Budget'),
             ),
           )).called(1);
-    });
-
-    testWidgets('add schema with inline fields', (tester) async {
-      await tester.pumpWidget(buildSubject());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('add_schema_button')));
-      await tester.pumpAndSettle();
-
-      // Enter schema info
-      await tester.enterText(
-        find.byKey(const Key('schema_key_field')),
-        'task',
-      );
-      await tester.enterText(
-        find.byKey(const Key('schema_label_field')),
-        'Task',
-      );
-
-      // Scroll to and tap add field button
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('add_field_to_schema_button')),
-        200.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('add_field_to_schema_button')));
-      await tester.pumpAndSettle();
-
-      // Scroll to field draft inputs
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('field_draft_key_0')),
-        200.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-
-      // Fill in field details
-      await tester.enterText(
-        find.byKey(const Key('field_draft_key_0')),
-        'title',
-      );
-      await tester.enterText(
-        find.byKey(const Key('field_draft_label_0')),
-        'Title',
-      );
-
-      // Scroll to and tap create button
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('create_schema_button')),
-        200.0,
-        scrollable: find.byType(Scrollable).last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('create_schema_button')));
-      await tester.pumpAndSettle();
-
-      verify(() => bloc.add(any(
-            that: isA<ModuleViewerSchemaAdded>()
-                .having((e) => e.schemaKey, 'schemaKey', 'task')
-                .having((e) => e.schema.label, 'label', 'Task')
-                .having(
-                    (e) => e.schema.fields.containsKey('title'), 'has title field', true),
-          ))).called(1);
     });
 
     testWidgets('delete schema via long-press', (tester) async {

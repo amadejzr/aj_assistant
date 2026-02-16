@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
-import 'module_schema.dart';
+import '../../features/schema/models/module_schema.dart';
 
 class Module extends Equatable {
   final String id;

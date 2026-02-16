@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../core/models/entry.dart';
-import '../../../core/models/field_definition.dart';
-import '../../../core/models/module_schema.dart';
+import '../../schema/models/field_definition.dart';
+import '../../schema/models/module_schema.dart';
 
 sealed class ModuleViewerEvent extends Equatable {
   const ModuleViewerEvent();
