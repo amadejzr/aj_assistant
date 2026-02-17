@@ -13,6 +13,12 @@ Module createMockPushupModule() {
     icon: 'barbell',
     color: '#D94E33',
     sortOrder: 2,
+    version: 1,
+    guide: [
+      {'title': 'Logging Sets', 'body': 'Tap + to log a set of pushups. Each entry records the count and date. Add notes if you want to track form or variations.'},
+      {'title': 'Daily Goal', 'body': 'Your daily goal is set to 40 by default. Tap "Change Daily Goal" to adjust it. The progress bar shows how close you are today.'},
+      {'title': 'Streaks', 'body': 'The streak counter tracks consecutive days with at least one logged set. Keep it going!'},
+    ],
     settings: {
       'dailyGoal': 40,
     },

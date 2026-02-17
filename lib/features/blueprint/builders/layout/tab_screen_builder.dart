@@ -124,6 +124,13 @@ class _TabScreenShellState extends State<_TabScreenShell>
           iconTheme: IconThemeData(color: colors.onBackground),
           actions: [
             IconButton(
+              icon: Icon(Icons.info_outline, color: colors.onBackgroundMuted),
+              onPressed: () => ctx.onNavigateToScreen(
+                '_info',
+                params: const {},
+              ),
+            ),
+            IconButton(
               icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
               onPressed: () => ctx.onNavigateToScreen(
                 '_settings',

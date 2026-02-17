@@ -21,6 +21,12 @@ Module createMockHikingModule() {
     icon: 'mountains',
     color: '#4A7C59',
     sortOrder: 1,
+    version: 1,
+    guide: [
+      {'title': 'Planning Hikes', 'body': 'Add a hike with status "planned" and a date to schedule it, or leave the date blank to save it as an idea for later.'},
+      {'title': 'After the Trail', 'body': 'Switch a hike\'s status to "completed" to unlock rating, difficulty, and highlight fields. Record how it went while it\'s fresh.'},
+      {'title': 'Calendar View', 'body': 'Tap "View Calendar" on the Upcoming tab to see all your hikes on a calendar. Tap any date to jump to that entry.'},
+    ],
     schemas: {
       'default': ModuleSchema(
         label: 'Hike',

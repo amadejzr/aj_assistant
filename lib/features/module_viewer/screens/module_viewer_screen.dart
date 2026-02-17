@@ -97,6 +97,10 @@ class _LoadedView extends StatelessWidget {
         },
         onNavigateToScreen: (screenId,
             {Map<String, dynamic> params = const {}}) {
+          if (screenId == '_info') {
+            context.push('/module/${state.module.id}/info');
+            return;
+          }
           if (screenId == '_settings') {
             context
                 .push('/module/${state.module.id}/settings')

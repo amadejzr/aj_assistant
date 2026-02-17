@@ -13,6 +13,8 @@ class Module extends Equatable {
   final Map<String, ModuleSchema> schemas;
   final Map<String, Map<String, dynamic>> screens;
   final Map<String, dynamic> settings;
+  final List<Map<String, String>> guide;
+  final int version;
 
   const Module({
     required this.id,
@@ -24,6 +26,8 @@ class Module extends Equatable {
     this.schemas = const {'default': ModuleSchema()},
     this.screens = const {},
     this.settings = const {},
+    this.guide = const [],
+    this.version = 1,
   });
 
   ModuleSchema get schema => schemas['default'] ?? const ModuleSchema();
@@ -38,6 +42,8 @@ class Module extends Equatable {
     Map<String, ModuleSchema>? schemas,
     Map<String, Map<String, dynamic>>? screens,
     Map<String, dynamic>? settings,
+    List<Map<String, String>>? guide,
+    int? version,
   }) {
     return Module(
       id: id ?? this.id,
@@ -49,6 +55,8 @@ class Module extends Equatable {
       schemas: schemas ?? this.schemas,
       screens: screens ?? this.screens,
       settings: settings ?? this.settings,
+      guide: guide ?? this.guide,
+      version: version ?? this.version,
     );
   }
 
@@ -64,6 +72,12 @@ class Module extends Equatable {
       schemas: _parseSchemas(data['schemas']),
       screens: _parseScreens(data['screens']),
       settings: Map<String, dynamic>.from(data['settings'] as Map? ?? {}),
+      guide: (data['guide'] as List?)
+              ?.cast<Map>()
+              .map((m) => Map<String, String>.from(m))
+              .toList() ??
+          [],
+      version: data['version'] as int? ?? 1,
     );
   }
 
@@ -79,6 +93,8 @@ class Module extends Equatable {
       ),
       'screens': screens,
       'settings': settings,
+      'guide': guide,
+      'version': version,
     };
   }
 
@@ -115,5 +131,7 @@ class Module extends Equatable {
         schemas,
         screens,
         settings,
+        guide,
+        version,
       ];
 }

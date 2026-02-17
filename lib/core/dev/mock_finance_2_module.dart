@@ -17,11 +17,18 @@ Module createMockFinance2Module() {
     icon: 'wallet',
     color: '#2E7D32',
     sortOrder: 4,
+    version: 2,
     settings: {
       'needsTarget': 50,
       'wantsTarget': 30,
       'savingsTarget': 20,
     },
+    guide: [
+      {'title': 'Getting Started', 'body': 'Add your bank accounts under the Accounts tab, then start logging expenses and income. Your net worth updates automatically.'},
+      {'title': 'Budget Targets', 'body': 'The 50/30/20 rule splits income into Needs, Wants, and Savings. Tap "Adjust Budget Targets" on the Home tab to customize the percentages.'},
+      {'title': 'Debt Tracking', 'body': 'Add credit cards and loans under Accounts → Debts. Track balances and interest rates to see your total liability alongside your assets.'},
+      {'title': 'Savings Goals', 'body': 'Create goals in the Goals tab with a target amount. Update the "Saved So Far" field as you make progress — the progress bar fills automatically.'},
+    ],
     schemas: {
       // ─── Accounts (checking, savings, investment, etc.) ───
       'account': ModuleSchema(

@@ -15,7 +15,13 @@ Module createMockFinanceModule() {
     icon: 'wallet',
     color: '#C4803C',
     sortOrder: 3,
+    version: 1,
     settings: {},
+    guide: [
+      {'title': 'Getting Started', 'body': 'Create your accounts first (checking, savings, etc). Then log expenses and income against those accounts.'},
+      {'title': 'Budget System', 'body': 'Expenses are categorized as Needs, Wants, or Savings — following the 50/30/20 rule. The Overview tab shows how you\'re tracking against each bucket.'},
+      {'title': 'Accounts & Balances', 'body': 'When you add an expense, the amount is automatically subtracted from the linked account. Deleting an expense restores the balance.'},
+    ],
     schemas: {
       'account': ModuleSchema(
         label: 'Account',

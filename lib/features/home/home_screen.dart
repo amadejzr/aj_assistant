@@ -13,6 +13,7 @@ import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/module_display_utils.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/bloc/auth_event.dart';
 import '../auth/bloc/auth_state.dart';
@@ -399,29 +400,10 @@ class _ModuleCard extends StatelessWidget {
 
   const _ModuleCard({required this.module, required this.onTap});
 
-  IconData _resolveIcon(String iconName) {
-    return switch (iconName) {
-      'barbell' => PhosphorIcons.barbell(PhosphorIconsStyle.duotone),
-      'wallet' => PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
-      'heart' => PhosphorIcons.heartbeat(PhosphorIconsStyle.duotone),
-      'book' => PhosphorIcons.book(PhosphorIconsStyle.duotone),
-      'chart' => PhosphorIcons.chartBar(PhosphorIconsStyle.duotone),
-      'calendar' => PhosphorIcons.calendar(PhosphorIconsStyle.duotone),
-      'list' => PhosphorIcons.listChecks(PhosphorIconsStyle.duotone),
-      'mountains' => PhosphorIcons.mountains(PhosphorIconsStyle.duotone),
-      _ => PhosphorIcons.cube(PhosphorIconsStyle.duotone),
-    };
-  }
-
-  Color _parseColor(String hex) {
-    final hexCode = hex.replaceAll('#', '');
-    return Color(int.parse('FF$hexCode', radix: 16));
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final moduleColor = _parseColor(module.color);
+    final moduleColor = parseModuleColor(module.color);
 
     return GestureDetector(
       onTap: onTap,
@@ -443,7 +425,7 @@ class _ModuleCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                _resolveIcon(module.icon),
+                resolveModuleIcon(module.icon),
                 color: moduleColor,
                 size: 24,
               ),
