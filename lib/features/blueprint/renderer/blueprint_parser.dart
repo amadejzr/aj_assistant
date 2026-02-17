@@ -324,6 +324,7 @@ class BlueprintParser {
       chartType: json['chartType'] as String? ?? 'donut',
       groupBy: json['groupBy'] as String?,
       aggregate: json['aggregate'] as String?,
+      expression: json['expression'] as String?,
       filter: json['filter'],
       properties: json,
     );

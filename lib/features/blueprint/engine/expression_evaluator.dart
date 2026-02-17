@@ -34,6 +34,34 @@ class ExpressionEvaluator {
     }
   }
 
+  /// Evaluate a `group()` expression, returning grouped results.
+  ///
+  /// Syntax:
+  ///   `group(fieldName, aggregateExpr)`
+  ///   `group(fieldName, aggregateExpr, filterExpr)`
+  ///
+  /// Examples:
+  ///   `group(category, sum(amount))` → {"Food": 450, "Transport": 120}
+  ///   `group(category, sum(amount), period(month))` → this month's breakdown
+  ///   `group(category, count())` → count per category
+  ///
+  /// Returns null if the expression is not a `group()` call.
+  Map<String, num>? evaluateGroup(String expression) {
+    final trimmed = expression.trim();
+    if (trimmed.isEmpty) return null;
+    if (!trimmed.startsWith('group(')) return null;
+
+    try {
+      final argsStr = trimmed.substring(6, trimmed.length - 1).trim();
+      final args = _splitArgs(argsStr);
+      if (args.isEmpty) return null;
+
+      return _group(args);
+    } catch (_) {
+      return null;
+    }
+  }
+
   num? _eval(String expr) {
     // Find the function name and arguments
     final parenIndex = expr.indexOf('(');
@@ -262,6 +290,44 @@ class ExpressionEvaluator {
     final b = _resolveArg(bExpr);
     if (a == null || b == null || b == 0) return null;
     return a / b * 100;
+  }
+
+  Map<String, num> _group(List<String> args) {
+    if (args.isEmpty) return {};
+
+    final groupField = args[0].trim();
+    final aggregateExpr = args.length > 1 ? args[1].trim() : 'count()';
+
+    // Collect remaining args as filters
+    final filterArgs = args.length > 2 ? args.sublist(2) : <String>[];
+
+    // Apply filters to entries first
+    var filtered = entries;
+    for (final filterArg in filterArgs) {
+      if (filterArg.startsWith('where(') || filterArg.startsWith('period(')) {
+        final result = _applyFilters([filterArg]);
+        filtered = result.filtered;
+      }
+    }
+
+    // Group entries by field value
+    final groups = <String, List<Entry>>{};
+    for (final entry in filtered) {
+      final key = entry.data[groupField]?.toString() ?? 'Unknown';
+      groups.putIfAbsent(key, () => []).add(entry);
+    }
+
+    // Evaluate aggregate per group
+    final result = <String, num>{};
+    for (final group in groups.entries) {
+      final groupEvaluator = ExpressionEvaluator(
+        entries: group.value,
+        params: params,
+      );
+      result[group.key] = groupEvaluator.evaluate(aggregateExpr) ?? 0;
+    }
+
+    return result;
   }
 
   List<num> _numericValuesFrom(List<Entry> source, String field) {

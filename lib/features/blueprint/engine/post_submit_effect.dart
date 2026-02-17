@@ -158,6 +158,34 @@ class PostSubmitEffectExecutor {
     updates[entryId]![targetField] = newValue;
   }
 
+  /// Computes entry updates for `onDelete` effects declared in a schema.
+  ///
+  /// The deleted entry's data is used as the "form data" — its fields
+  /// are read to reverse the original effect. For `adjust_reference`,
+  /// the operation is inverted: "add" becomes "subtract" and vice versa.
+  Map<String, Map<String, dynamic>> computeDeleteUpdates({
+    required List<Map<String, dynamic>> effects,
+    required Map<String, dynamic> deletedEntryData,
+    required List<Entry> entries,
+  }) {
+    // Invert adjust_reference operations; pass through set_reference as-is
+    final invertedEffects = effects.map((effect) {
+      final type = effect['type'] as String?;
+      if (type == 'adjust_reference') {
+        final op = effect['operation'] as String?;
+        final invertedOp = op == 'add' ? 'subtract' : 'add';
+        return {...effect, 'operation': invertedOp};
+      }
+      return effect;
+    }).toList();
+
+    return computeUpdates(
+      effects: invertedEffects,
+      formData: deletedEntryData,
+      entries: entries,
+    );
+  }
+
   static num? _toNum(dynamic value) {
     if (value is num) return value;
     if (value is String) return num.tryParse(value);

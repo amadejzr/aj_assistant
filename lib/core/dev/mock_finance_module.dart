@@ -56,6 +56,15 @@ Module createMockFinanceModule() {
       'expense': ModuleSchema(
         label: 'Expense',
         icon: 'receipt',
+        onDelete: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add', // Restore balance when expense is deleted
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -93,6 +102,15 @@ Module createMockFinanceModule() {
       'income': ModuleSchema(
         label: 'Income',
         icon: 'cash',
+        onDelete: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract', // Remove balance when income is deleted
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -242,8 +260,9 @@ Module createMockFinanceModule() {
                   'label': 'Add Account',
                   'style': 'outlined',
                   'action': {
-                    'type': 'navigate',
+                    'type': 'show_form_sheet',
                     'screen': 'add_account',
+                    'title': 'New Account',
                     'params': {'_schemaKey': 'account'},
                   },
                 },
@@ -316,8 +335,9 @@ Module createMockFinanceModule() {
                   'label': 'Add Income',
                   'style': 'outlined',
                   'action': {
-                    'type': 'navigate',
+                    'type': 'show_form_sheet',
                     'screen': 'add_income',
+                    'title': 'Add Income',
                     'params': {'_schemaKey': 'income'},
                   },
                 },
@@ -366,8 +386,9 @@ Module createMockFinanceModule() {
           'type': 'fab',
           'icon': 'add',
           'action': {
-            'type': 'navigate',
+            'type': 'show_form_sheet',
             'screen': 'add_expense',
+            'title': 'New Expense',
             'params': {'_schemaKey': 'expense'},
           },
         },

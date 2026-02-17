@@ -353,12 +353,14 @@ class ChartNode extends BlueprintNode {
   final String chartType;
   final String? groupBy;
   final String? aggregate;
+  final String? expression;
   final dynamic filter;
 
   const ChartNode({
     this.chartType = 'donut',
     this.groupBy,
     this.aggregate,
+    this.expression,
     this.filter,
     super.properties,
   }) : super(type: 'chart');

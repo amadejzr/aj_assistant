@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/widgets/paper_background.dart';
+import '../../engine/default_value_resolver.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
@@ -23,7 +24,14 @@ import '../../renderer/widget_registry.dart';
 /// - `nav` (`BlueprintNode?`, optional): An optional navigation widget rendered below the form fields.
 Widget buildFormScreen(BlueprintNode node, RenderContext ctx) {
   final form = node as FormScreenNode;
+  final effectiveCtx = _buildEffectiveContext(form, ctx);
+  return _FormScreenShell(form: form, ctx: effectiveCtx);
+}
 
+/// Builds a [RenderContext] with merged defaults seeded into form values.
+///
+/// Shared by both the full-screen form and the bottom sheet form.
+RenderContext _buildEffectiveContext(FormScreenNode form, RenderContext ctx) {
   // Filter out meta keys (_entryId, etc.) from screenParams before merging
   // into form defaults — meta keys are for the bloc, not form data.
   final filteredParams = Map<String, dynamic>.fromEntries(
@@ -38,51 +46,55 @@ Widget buildFormScreen(BlueprintNode node, RenderContext ctx) {
   // Merge screenParams into defaults so navigated params auto-fill fields.
   final mergedDefaults = {...form.defaults, ...settingsDefaults, ...filteredParams};
 
-  // If the form has defaults, inject them into the context so they get
-  // included when the form is submitted.
-  RenderContext effectiveCtx = ctx;
-  if (mergedDefaults.isNotEmpty) {
-    // Seed defaults into formValues for any keys not already set
-    final seeded = Map<String, dynamic>.from(ctx.formValues);
-    for (final entry in mergedDefaults.entries) {
-      seeded.putIfAbsent(entry.key, () => entry.value);
-    }
+  if (mergedDefaults.isEmpty) return ctx;
 
-    effectiveCtx = RenderContext(
-      module: ctx.module,
-      entries: ctx.entries,
-      allEntries: ctx.allEntries,
-      formValues: seeded,
-      screenParams: ctx.screenParams,
-      canGoBack: ctx.canGoBack,
-      onFormValueChanged: (key, value) {
-        ctx.onFormValueChanged(key, value);
-      },
-      onFormSubmit: ctx.onFormSubmit,
-      onNavigateToScreen: ctx.onNavigateToScreen,
-      onNavigateBack: ctx.onNavigateBack,
-      onDeleteEntry: ctx.onDeleteEntry,
-      resolvedExpressions: ctx.resolvedExpressions,
-      onCreateEntry: ctx.onCreateEntry,
-      onUpdateEntry: ctx.onUpdateEntry,
-      onScreenParamChanged: ctx.onScreenParamChanged,
-    );
+  // Seed defaults into formValues for any keys not already set
+  final seeded = Map<String, dynamic>.from(ctx.formValues);
+  for (final entry in mergedDefaults.entries) {
+    seeded.putIfAbsent(entry.key, () => entry.value);
   }
 
-  return _FormScreenShell(form: form, ctx: effectiveCtx);
+  return RenderContext(
+    module: ctx.module,
+    entries: ctx.entries,
+    allEntries: ctx.allEntries,
+    formValues: seeded,
+    screenParams: ctx.screenParams,
+    canGoBack: ctx.canGoBack,
+    onFormValueChanged: (key, value) {
+      ctx.onFormValueChanged(key, value);
+    },
+    onFormSubmit: ctx.onFormSubmit,
+    onNavigateToScreen: ctx.onNavigateToScreen,
+    onNavigateBack: ctx.onNavigateBack,
+    onDeleteEntry: ctx.onDeleteEntry,
+    resolvedExpressions: ctx.resolvedExpressions,
+    onCreateEntry: ctx.onCreateEntry,
+    onUpdateEntry: ctx.onUpdateEntry,
+    onScreenParamChanged: ctx.onScreenParamChanged,
+  );
 }
 
-class _FormScreenShell extends StatefulWidget {
+/// The reusable form body: scrollable column of input children + submit button.
+///
+/// Used by both [_FormScreenShell] (full-screen) and [FormSheetBody] (bottom sheet).
+class FormBody extends StatefulWidget {
   final FormScreenNode form;
   final RenderContext ctx;
+  final bool isSheet;
 
-  const _FormScreenShell({required this.form, required this.ctx});
+  const FormBody({
+    super.key,
+    required this.form,
+    required this.ctx,
+    this.isSheet = false,
+  });
 
   @override
-  State<_FormScreenShell> createState() => _FormScreenShellState();
+  State<FormBody> createState() => FormBodyState();
 }
 
-class _FormScreenShellState extends State<_FormScreenShell> {
+class FormBodyState extends State<FormBody> {
   final _formKey = GlobalKey<FormState>();
 
   String get _effectiveSubmitLabel {
@@ -96,7 +108,6 @@ class _FormScreenShellState extends State<_FormScreenShell> {
   @override
   void initState() {
     super.initState();
-    // Apply defaults + screenParams to BLoC on first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Filter meta keys — they're for bloc navigation, not form data
       final filteredParams = Map<String, dynamic>.fromEntries(
@@ -109,10 +120,36 @@ class _FormScreenShellState extends State<_FormScreenShell> {
       for (final entry in mergedDefaults.entries) {
         widget.ctx.onFormValueChanged(entry.key, entry.value);
       }
+
+      // Resolve defaultValue tokens from child blueprint nodes
+      _resolveChildDefaults(widget.form.children, widget.ctx);
     });
   }
 
-  void _handleSubmit() {
+  /// Walk children and resolve any `defaultValue` properties.
+  void _resolveChildDefaults(List<BlueprintNode> children, RenderContext ctx) {
+    for (final child in children) {
+      final defaultValue = child.properties['defaultValue'];
+      if (defaultValue == null) continue;
+
+      // Extract the fieldKey from the node
+      final fieldKey = child.properties['fieldKey'] as String?;
+      if (fieldKey == null) continue;
+
+      // Only apply if the field is not already set
+      if (ctx.formValues.containsKey(fieldKey) &&
+          ctx.formValues[fieldKey] != null) {
+        continue;
+      }
+
+      final resolved = DefaultValueResolver.resolve(defaultValue, ctx);
+      if (resolved != null) {
+        ctx.onFormValueChanged(fieldKey, resolved);
+      }
+    }
+  }
+
+  void submit() {
     if (_formKey.currentState?.validate() ?? false) {
       widget.ctx.onFormSubmit?.call();
     }
@@ -123,98 +160,132 @@ class _FormScreenShellState extends State<_FormScreenShell> {
     final colors = context.colors;
     final registry = WidgetRegistry.instance;
 
-    final canGoBack = widget.ctx.canGoBack;
-
-    return PopScope(
-      canPop: !canGoBack,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && canGoBack) {
-          widget.ctx.onNavigateBack?.call();
-        }
-      },
-      child: Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        backgroundColor: colors.background,
-        elevation: 0,
-        leading: canGoBack
-            ? IconButton(
-                icon: Icon(Icons.arrow_back, color: colors.onBackground),
-                onPressed: () => widget.ctx.onNavigateBack?.call(),
-              )
-            : null,
-        title: widget.form.title != null
-            ? Text(
-                widget.form.title!,
-                style: TextStyle(
-                  fontFamily: 'CormorantGaramond',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
-                  color: colors.onBackground,
-                ),
-              )
-            : null,
-        iconTheme: IconThemeData(color: colors.onBackground),
-      ),
-      body: Stack(
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: widget.isSheet ? MainAxisSize.min : MainAxisSize.max,
         children: [
-          PaperBackground(colors: colors),
-          SafeArea(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.screenPadding,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (final child in widget.form.children)
-                            registry.build(child, widget.ctx),
-                          // Nav widget (e.g. "Log Instead" / "Plan Instead")
-                          if (widget.form.nav != null) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            registry.build(widget.form.nav!, widget.ctx),
-                          ],
-                          const SizedBox(height: AppSpacing.lg),
-                        ],
-                      ),
+          widget.isSheet
+              ? Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenPadding,
                     ),
+                    child: _buildFormFields(registry),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.screenPadding),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _handleSubmit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.accent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: TextStyle(
-                            fontFamily: 'Karla',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        child: Text(_effectiveSubmitLabel),
-                      ),
+                )
+              : Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.screenPadding,
                     ),
+                    child: _buildFormFields(registry),
                   ),
-                ],
+                ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              AppSpacing.sm,
+              AppSpacing.screenPadding,
+              widget.isSheet
+                  ? MediaQuery.of(context).viewInsets.bottom + AppSpacing.md
+                  : AppSpacing.screenPadding,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                child: Text(_effectiveSubmitLabel),
               ),
             ),
           ),
         ],
       ),
-    ),
+    );
+  }
+
+  Widget _buildFormFields(WidgetRegistry registry) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final child in widget.form.children)
+          registry.build(child, widget.ctx),
+        // Nav widget (e.g. "Log Instead" / "Plan Instead")
+        if (widget.form.nav != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          registry.build(widget.form.nav!, widget.ctx),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+      ],
+    );
+  }
+}
+
+class _FormScreenShell extends StatelessWidget {
+  final FormScreenNode form;
+  final RenderContext ctx;
+
+  const _FormScreenShell({required this.form, required this.ctx});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final canGoBack = ctx.canGoBack;
+
+    return PopScope(
+      canPop: !canGoBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && canGoBack) {
+          ctx.onNavigateBack?.call();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: colors.background,
+        appBar: AppBar(
+          backgroundColor: colors.background,
+          elevation: 0,
+          leading: canGoBack
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back, color: colors.onBackground),
+                  onPressed: () => ctx.onNavigateBack?.call(),
+                )
+              : null,
+          title: form.title != null
+              ? Text(
+                  form.title!,
+                  style: TextStyle(
+                    fontFamily: 'CormorantGaramond',
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                    color: colors.onBackground,
+                  ),
+                )
+              : null,
+          iconTheme: IconThemeData(color: colors.onBackground),
+        ),
+        body: Stack(
+          children: [
+            PaperBackground(colors: colors),
+            SafeArea(
+              child: FormBody(form: form, ctx: ctx),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

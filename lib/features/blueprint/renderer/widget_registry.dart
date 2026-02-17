@@ -58,11 +58,20 @@ class WidgetRegistry {
   }
 
   Widget build(BlueprintNode node, RenderContext ctx) {
+    final context = {...ctx.screenParams, ...ctx.formValues};
+
     // Check `visible` condition before building any widget
     final visible = node.properties['visible'];
     if (visible != null) {
-      final context = {...ctx.screenParams, ...ctx.formValues};
       if (!ConditionEvaluator.evaluate(visible, context)) {
+        return const SizedBox.shrink();
+      }
+    }
+
+    // Check `visibleWhen` condition (form field conditional visibility)
+    final visibleWhen = node.properties['visibleWhen'];
+    if (visibleWhen != null) {
+      if (!ConditionEvaluator.evaluate(visibleWhen, context)) {
         return const SizedBox.shrink();
       }
     }

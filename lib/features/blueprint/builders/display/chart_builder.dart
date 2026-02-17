@@ -50,6 +50,17 @@ class _ChartWidget extends StatelessWidget {
         ? EntryFilter.filter(ctx.entries, chart.filter, ctx.screenParams).entries
         : ctx.entries;
 
+    // If expression is provided (e.g. "group(category, sum(amount))"),
+    // use evaluateGroup() for unified syntax
+    if (chart.expression != null && chart.expression!.isNotEmpty) {
+      final evaluator = ExpressionEvaluator(
+        entries: filtered,
+        params: {...ctx.module.settings, ...ctx.screenParams},
+      );
+      return evaluator.evaluateGroup(chart.expression!) ?? {};
+    }
+
+    // Fall back to groupBy + aggregate properties
     final groupBy = chart.groupBy;
     if (groupBy == null) return {};
 

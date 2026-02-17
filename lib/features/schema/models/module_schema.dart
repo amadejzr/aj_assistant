@@ -7,12 +7,14 @@ class ModuleSchema extends Equatable {
   final Map<String, FieldDefinition> fields;
   final String label;
   final String? icon;
+  final List<Map<String, dynamic>> onDelete;
 
   const ModuleSchema({
     this.version = 1,
     this.fields = const {},
     this.label = '',
     this.icon,
+    this.onDelete = const [],
   });
 
   ModuleSchema copyWith({
@@ -20,12 +22,14 @@ class ModuleSchema extends Equatable {
     Map<String, FieldDefinition>? fields,
     String? label,
     String? icon,
+    List<Map<String, dynamic>>? onDelete,
   }) {
     return ModuleSchema(
       version: version ?? this.version,
       fields: fields ?? this.fields,
       label: label ?? this.label,
       icon: icon ?? this.icon,
+      onDelete: onDelete ?? this.onDelete,
     );
   }
 
@@ -38,11 +42,19 @@ class ModuleSchema extends Equatable {
       ),
     );
 
+    final onDeleteRaw = json['onDelete'] as List?;
+    final onDelete = onDeleteRaw
+            ?.whereType<Map<String, dynamic>>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        const [];
+
     return ModuleSchema(
       version: json['version'] as int? ?? 1,
       fields: fields,
       label: json['label'] as String? ?? '',
       icon: json['icon'] as String?,
+      onDelete: onDelete,
     );
   }
 
@@ -52,9 +64,10 @@ class ModuleSchema extends Equatable {
       'fields': fields.map((key, field) => MapEntry(key, field.toJson())),
       'label': label,
       if (icon != null) 'icon': icon,
+      if (onDelete.isNotEmpty) 'onDelete': onDelete,
     };
   }
 
   @override
-  List<Object?> get props => [version, fields, label, icon];
+  List<Object?> get props => [version, fields, label, icon, onDelete];
 }

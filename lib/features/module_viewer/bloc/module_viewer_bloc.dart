@@ -242,6 +242,18 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     try {
+      // Look up the entry being deleted to run onDelete effects
+      final deletedEntry = current.entries
+          .where((e) => e.id == event.entryId)
+          .firstOrNull;
+
+      if (deletedEntry != null) {
+        final schema = current.module.schemas[deletedEntry.schemaKey];
+        if (schema != null && schema.onDelete.isNotEmpty) {
+          await _applyDeleteEffects(current, schema.onDelete, deletedEntry);
+        }
+      }
+
       await entryRepository.deleteEntry(userId, current.module.id, event.entryId);
 
       // If we're on a detail screen for this entry, navigate back
@@ -258,6 +270,44 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       }
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
+    }
+  }
+
+  /// Applies onDelete effects using [PostSubmitEffectExecutor].
+  Future<void> _applyDeleteEffects(
+    ModuleViewerLoaded current,
+    List<Map<String, dynamic>> effects,
+    Entry deletedEntry,
+  ) async {
+    const executor = PostSubmitEffectExecutor();
+    final updates = executor.computeDeleteUpdates(
+      effects: effects,
+      deletedEntryData: deletedEntry.data,
+      entries: current.entries,
+    );
+
+    for (final update in updates.entries) {
+      final existing = current.entries
+          .where((e) => e.id == update.key)
+          .firstOrNull;
+      if (existing == null) continue;
+
+      final updatedEntry = Entry(
+        id: existing.id,
+        data: {...existing.data, ...update.value},
+        schemaVersion: existing.schemaVersion,
+        schemaKey: existing.schemaKey,
+      );
+
+      try {
+        await entryRepository.updateEntry(
+          userId,
+          current.module.id,
+          updatedEntry,
+        );
+      } catch (e) {
+        Log.e('onDelete effect failed', tag: 'ModuleViewer', error: e);
+      }
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../engine/form_validator.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
@@ -13,6 +14,9 @@ import '../../renderer/render_context.dart';
 /// ```
 ///
 /// - `fieldKey` (`String`, required): Schema field key this input is bound to. Label, required flag, and min/max constraints are derived from the field definition.
+/// - `readOnly` (`bool`, optional): Whether the field is read-only. Defaults to `false`.
+/// - `defaultValue` (`dynamic`, optional): Default value or token resolved by FormBody on init.
+/// - `validation` (`Map`, optional): Validation rules — `required`, `min`, `max`, `message`.
 Widget buildNumberInput(BlueprintNode node, RenderContext ctx) {
   final input = node as NumberInputNode;
   return _NumberInputWidget(input: input, ctx: ctx);
@@ -32,6 +36,8 @@ class _NumberInputWidget extends StatelessWidget {
     final isRequired = field?.required ?? false;
     final min = field?.constraints['min'] as num?;
     final max = field?.constraints['max'] as num?;
+    final readOnly = input.properties['readOnly'] as bool? ?? false;
+    final validation = input.properties['validation'] as Map<String, dynamic>?;
     final currentValue = ctx.getFormValue(input.fieldKey);
     final initialText = currentValue != null ? '$currentValue' : '';
 
@@ -39,6 +45,7 @@ class _NumberInputWidget extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: TextFormField(
         initialValue: initialText,
+        readOnly: readOnly,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
@@ -46,7 +53,7 @@ class _NumberInputWidget extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'Karla',
           fontSize: 15,
-          color: colors.onBackground,
+          color: readOnly ? colors.onBackgroundMuted : colors.onBackground,
         ),
         decoration: InputDecoration(
           labelText: label,
@@ -65,6 +72,15 @@ class _NumberInputWidget extends StatelessWidget {
           ),
         ),
         validator: (v) {
+          // Blueprint validation rules take precedence
+          if (validation != null) {
+            return FormValidator.validate(
+              value: v,
+              validation: validation,
+              label: label,
+            );
+          }
+          // Fall back to schema-level validation
           if (isRequired && (v == null || v.isEmpty)) {
             return '$label is required';
           }
@@ -76,10 +92,12 @@ class _NumberInputWidget extends StatelessWidget {
           }
           return null;
         },
-        onChanged: (value) {
-          final parsed = num.tryParse(value);
-          ctx.onFormValueChanged(input.fieldKey, parsed);
-        },
+        onChanged: readOnly
+            ? null
+            : (value) {
+                final parsed = num.tryParse(value);
+                ctx.onFormValueChanged(input.fieldKey, parsed);
+              },
       ),
     );
   }
