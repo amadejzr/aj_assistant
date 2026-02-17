@@ -9,6 +9,7 @@ Module createMockFinance2Module() {
   const incomeFields = ['amount', 'source', 'account', 'date'];
   const debtFields = ['name', 'balance', 'interestRate', 'minimumPayment'];
   const goalFields = ['name', 'target', 'saved', 'note'];
+  const transferFields = ['amount', 'fromAccount', 'toAccount', 'note', 'date'];
 
   return const Module(
     id: 'finance_2',
@@ -28,6 +29,7 @@ Module createMockFinance2Module() {
       {'title': 'Budget Targets', 'body': 'The 50/30/20 rule splits income into Needs, Wants, and Savings. Tap "Adjust Budget Targets" on the Home tab to customize the percentages.'},
       {'title': 'Debt Tracking', 'body': 'Add credit cards and loans under Accounts → Debts. Track balances and interest rates to see your total liability alongside your assets.'},
       {'title': 'Savings Goals', 'body': 'Create goals in the Goals tab with a target amount. Update the "Saved So Far" field as you make progress — the progress bar fills automatically.'},
+      {'title': 'Transfers', 'body': 'Move money between accounts from the Accounts tab. Pick a source and destination account, enter the amount, and both balances update automatically. Deleting a transfer reverses the balances.'},
     ],
     schemas: {
       // ─── Accounts (checking, savings, investment, etc.) ───
@@ -72,6 +74,16 @@ Module createMockFinance2Module() {
       'expense': ModuleSchema(
         label: 'Expense',
         icon: 'receipt',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract',
+            'min': 0,
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -110,6 +122,15 @@ Module createMockFinance2Module() {
       'income': ModuleSchema(
         label: 'Income',
         icon: 'cash',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add',
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -194,6 +215,62 @@ Module createMockFinance2Module() {
             key: 'note',
             type: FieldType.text,
             label: 'Note',
+          ),
+        },
+      ),
+
+      // ─── Transfers (move funds between accounts) ───
+      'transfer': ModuleSchema(
+        label: 'Transfer',
+        icon: 'swap',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'fromAccount',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract',
+            'min': 0,
+          },
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'toAccount',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add',
+          },
+        ],
+        fields: {
+          'amount': FieldDefinition(
+            key: 'amount',
+            type: FieldType.number,
+            label: 'Amount',
+            required: true,
+          ),
+          'fromAccount': FieldDefinition(
+            key: 'fromAccount',
+            type: FieldType.reference,
+            label: 'From Account',
+            required: true,
+            constraints: {'schemaKey': 'account'},
+          ),
+          'toAccount': FieldDefinition(
+            key: 'toAccount',
+            type: FieldType.reference,
+            label: 'To Account',
+            required: true,
+            constraints: {'schemaKey': 'account'},
+          ),
+          'note': FieldDefinition(
+            key: 'note',
+            type: FieldType.text,
+            label: 'Note',
+          ),
+          'date': FieldDefinition(
+            key: 'date',
+            type: FieldType.datetime,
+            label: 'Date',
+            required: true,
           ),
         },
       ),
@@ -661,6 +738,60 @@ Module createMockFinance2Module() {
                     },
                   ],
                 },
+
+                // Transfers section
+                {
+                  'type': 'section',
+                  'title': 'Transfers',
+                  'children': [
+                    {
+                      'type': 'button',
+                      'label': 'Transfer Funds',
+                      'style': 'outlined',
+                      'action': {
+                        'type': 'navigate',
+                        'screen': 'add_transfer',
+                        'params': {'_schemaKey': 'transfer'},
+                      },
+                    },
+                    {
+                      'type': 'entry_list',
+                      'filter': [
+                        {
+                          'field': 'schemaKey',
+                          'op': '==',
+                          'value': 'transfer',
+                        },
+                      ],
+                      'query': {
+                        'orderBy': 'date',
+                        'direction': 'desc',
+                        'limit': 10,
+                      },
+                      'itemLayout': {
+                        'type': 'entry_card',
+                        'title': '{{fromAccount}} → {{toAccount}}',
+                        'subtitle': '{{note}}',
+                        'trailing': '{{amount}}',
+                        'trailingFormat': 'currency',
+                        'onTap': {
+                          'type': 'navigate',
+                          'screen': 'edit_transfer',
+                          'forwardFields': transferFields,
+                          'params': {'_schemaKey': 'transfer'},
+                        },
+                        'swipeActions': {
+                          'right': {
+                            'type': 'delete_entry',
+                            'confirm': true,
+                            'confirmMessage':
+                                'Delete this transfer? Balances will be reversed.',
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
               ],
             },
           },
@@ -811,15 +942,6 @@ Module createMockFinance2Module() {
         'title': 'Add Expense',
         'submitLabel': 'Save',
         'defaults': {},
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {
@@ -861,15 +983,6 @@ Module createMockFinance2Module() {
         'title': 'Add Income',
         'submitLabel': 'Save',
         'defaults': {},
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'source'},
@@ -986,6 +1099,57 @@ Module createMockFinance2Module() {
           {'type': 'number_input', 'fieldKey': 'target'},
           {'type': 'number_input', 'fieldKey': 'saved'},
           {'type': 'text_input', 'fieldKey': 'note'},
+        ],
+      },
+
+      // ─── Add transfer ───
+      'add_transfer': {
+        'id': 'add_transfer',
+        'type': 'form_screen',
+        'title': 'Transfer Funds',
+        'submitLabel': 'Transfer',
+        'defaults': {},
+        'children': [
+          {'type': 'number_input', 'fieldKey': 'amount'},
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'fromAccount',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'toAccount',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
+          {'type': 'text_input', 'fieldKey': 'note'},
+          {'type': 'date_picker', 'fieldKey': 'date'},
+        ],
+      },
+
+      // ─── Edit transfer ───
+      'edit_transfer': {
+        'id': 'edit_transfer',
+        'type': 'form_screen',
+        'title': 'Edit Transfer',
+        'editLabel': 'Update',
+        'children': [
+          {'type': 'number_input', 'fieldKey': 'amount'},
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'fromAccount',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'toAccount',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
+          {'type': 'text_input', 'fieldKey': 'note'},
+          {'type': 'date_picker', 'fieldKey': 'date'},
         ],
       },
     },

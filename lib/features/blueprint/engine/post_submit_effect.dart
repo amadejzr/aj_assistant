@@ -30,6 +30,9 @@ import '../../../core/models/entry.dart';
 ///   "operation": "add"
 /// }
 /// ```
+/// Optional guard: `"min": 0` rejects the operation if the result would
+/// drop below the threshold. [validateEffects] checks guards before any
+/// writes happen — if any guard fails the entire batch is rejected.
 ///
 /// ### `set_reference`
 /// Set a field on a referenced entry to a literal value or a value copied
@@ -80,6 +83,63 @@ class PostSubmitEffectExecutor {
     }
 
     return updates;
+  }
+
+  /// Checks `min` / `max` guards on `adjust_reference` effects.
+  ///
+  /// Returns an error message if any guard would be violated, or `null`
+  /// if all effects are safe to apply. Call this **before** creating the
+  /// entry so nothing is written when validation fails.
+  String? validateEffects({
+    required List<dynamic> effects,
+    required Map<String, dynamic> formData,
+    required List<Entry> entries,
+  }) {
+    final entryById = {for (final e in entries) e.id: e};
+
+    for (final effect in effects) {
+      if (effect is! Map<String, dynamic>) continue;
+      if (effect['type'] != 'adjust_reference') continue;
+
+      final min = _toNum(effect['min']);
+      if (min == null) continue; // no guard to check
+
+      final referenceField = effect['referenceField'] as String?;
+      final targetField = effect['targetField'] as String?;
+      final operation = effect['operation'] as String?;
+      if (referenceField == null ||
+          targetField == null ||
+          operation == null) {
+        continue;
+      }
+
+      final entryId = formData[referenceField]?.toString();
+      if (entryId == null || entryId.isEmpty) continue;
+
+      final entry = entryById[entryId];
+      if (entry == null) continue;
+
+      final num? amount;
+      if (effect.containsKey('amount')) {
+        amount = _toNum(effect['amount']);
+      } else {
+        final amountField = effect['amountField'] as String?;
+        if (amountField == null) continue;
+        amount = _toNum(formData[amountField]);
+      }
+      if (amount == null) continue;
+
+      final current = _toNum(entry.data[targetField]) ?? 0;
+      final newValue =
+          operation == 'add' ? current + amount : current - amount;
+
+      if (newValue < min) {
+        final name = entry.data['name']?.toString() ?? referenceField;
+        return 'Insufficient funds in $name';
+      }
+    }
+
+    return null;
   }
 
   void _applyAdjust(
@@ -158,11 +218,11 @@ class PostSubmitEffectExecutor {
     updates[entryId]![targetField] = newValue;
   }
 
-  /// Computes entry updates for `onDelete` effects declared in a schema.
+  /// Computes entry updates for delete operations.
   ///
   /// The deleted entry's data is used as the "form data" — its fields
   /// are read to reverse the original effect. For `adjust_reference`,
-  /// the operation is inverted: "add" becomes "subtract" and vice versa.
+  /// the operation is auto-inverted: "add" becomes "subtract" and vice versa.
   Map<String, Map<String, dynamic>> computeDeleteUpdates({
     required List<Map<String, dynamic>> effects,
     required Map<String, dynamic> deletedEntryData,

@@ -29,7 +29,7 @@ void main() {
   late MockModuleRepository moduleRepository;
   late MockEntryRepository entryRepository;
 
-  // ── Module with onSubmit effects on add_expense ──
+  // ── Module with effects on schemas ──
   const financeModule = Module(
     id: 'finance',
     name: 'Finance',
@@ -51,6 +51,15 @@ void main() {
       ),
       'expense': ModuleSchema(
         label: 'Expense',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract',
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -72,6 +81,15 @@ void main() {
       ),
       'income': ModuleSchema(
         label: 'Income',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add',
+          },
+        ],
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -86,6 +104,51 @@ void main() {
           ),
         },
       ),
+      'transfer': ModuleSchema(
+        label: 'Transfer',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'fromAccount',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract',
+          },
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'toAccount',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add',
+          },
+        ],
+        fields: {},
+      ),
+      'goal_log': ModuleSchema(
+        label: 'Goal Log',
+        effects: [
+          {
+            'type': 'set_reference',
+            'referenceField': 'goal',
+            'targetField': 'status',
+            'value': 'completed',
+          },
+        ],
+        fields: {},
+      ),
+      'session_log': ModuleSchema(
+        label: 'Session Log',
+        effects: [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'program',
+            'targetField': 'sessions',
+            'amount': 1,
+            'operation': 'add',
+          },
+        ],
+        fields: {},
+      ),
     },
     screens: {
       'main': {
@@ -98,15 +161,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Add Expense',
         'submitLabel': 'Save',
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'note'},
@@ -116,7 +170,6 @@ void main() {
         'id': 'edit_expense',
         'type': 'form_screen',
         'title': 'Edit Expense',
-        // No onSubmit — editing doesn't re-adjust balance
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'note'},
@@ -127,15 +180,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Add Income',
         'submitLabel': 'Save',
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
         ],
@@ -154,22 +198,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Transfer',
         'submitLabel': 'Transfer',
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'fromAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'toAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
-        ],
         'children': [],
       },
       'set_effect_form': {
@@ -177,14 +205,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Complete Goal',
         'submitLabel': 'Done',
-        'onSubmit': [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'completed',
-          },
-        ],
         'children': [],
       },
       'literal_amount_form': {
@@ -192,15 +212,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Log Session',
         'submitLabel': 'Log',
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'program',
-            'targetField': 'sessions',
-            'amount': 1,
-            'operation': 'add',
-          },
-        ],
         'children': [],
       },
       'edit_budget': {
@@ -208,15 +219,6 @@ void main() {
         'type': 'form_screen',
         'title': 'Budget',
         'submitLabel': 'Save',
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'needsTarget'},
         ],
@@ -261,9 +263,9 @@ void main() {
       );
 
   // ═══════════════════════════════════════════════════════
-  //  onSubmit: adjust_reference — expense subtracts balance
+  //  Schema effects — adjust_reference — expense subtracts balance
   // ═══════════════════════════════════════════════════════
-  group('onSubmit effects — adjust_reference', () {
+  group('schema effects — adjust_reference', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'creates expense entry AND adjusts account balance',
       build: createBloc,
@@ -361,9 +363,9 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════
-  //  No effects — form without onSubmit
+  //  No effects — schema without effects
   // ═══════════════════════════════════════════════════════
-  group('form without onSubmit', () {
+  group('schema without effects', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'creates entry without calling updateEntry',
       build: createBloc,
@@ -390,9 +392,9 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════
-  //  Edit form — no effects on edit screen
+  //  Edit form — effects only fire on create, not edit
   // ═══════════════════════════════════════════════════════
-  group('edit form without onSubmit', () {
+  group('edit form — no effects on update', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'updates entry without triggering effects',
       build: createBloc,
@@ -436,11 +438,11 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════
-  //  Settings mode — skips onSubmit effects entirely
+  //  Settings mode — skips effects entirely
   // ═══════════════════════════════════════════════════════
   group('settings mode', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
-      'updates module settings without running onSubmit effects',
+      'updates module settings without running effects',
       build: createBloc,
       seed: () => ModuleViewerLoaded(
         module: financeModule,
@@ -471,14 +473,14 @@ void main() {
   // ═══════════════════════════════════════════════════════
   //  Multiple effects — transfer between accounts
   // ═══════════════════════════════════════════════════════
-  group('multiple onSubmit effects', () {
+  group('multiple schema effects', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'applies both effects (transfer: subtract + add)',
       build: createBloc,
       seed: () => ModuleViewerLoaded(
         module: financeModule,
         currentScreenId: 'multi_effect_form',
-        screenParams: const {'_schemaKey': 'expense'},
+        screenParams: const {'_schemaKey': 'transfer'},
         screenStack: const [ScreenEntry('main')],
         entries: const [walletEntry, savingsEntry],
         formValues: const {
@@ -515,14 +517,14 @@ void main() {
   // ═══════════════════════════════════════════════════════
   //  set_reference effect
   // ═══════════════════════════════════════════════════════
-  group('onSubmit effects — set_reference', () {
+  group('schema effects — set_reference', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'sets field on referenced entry to literal value',
       build: createBloc,
       seed: () => ModuleViewerLoaded(
         module: financeModule,
         currentScreenId: 'set_effect_form',
-        screenParams: const {'_schemaKey': 'expense'},
+        screenParams: const {'_schemaKey': 'goal_log'},
         screenStack: const [ScreenEntry('main')],
         entries: const [goalEntry],
         formValues: const {'goal': 'goal-1'},
@@ -543,14 +545,14 @@ void main() {
   // ═══════════════════════════════════════════════════════
   //  Literal amount
   // ═══════════════════════════════════════════════════════
-  group('onSubmit effects — literal amount', () {
+  group('schema effects — literal amount', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'increments field by literal 1',
       build: createBloc,
       seed: () => ModuleViewerLoaded(
         module: financeModule,
         currentScreenId: 'literal_amount_form',
-        screenParams: const {'_schemaKey': 'expense'},
+        screenParams: const {'_schemaKey': 'session_log'},
         screenStack: const [ScreenEntry('main')],
         entries: const [goalEntry],
         formValues: const {'program': 'goal-1'},

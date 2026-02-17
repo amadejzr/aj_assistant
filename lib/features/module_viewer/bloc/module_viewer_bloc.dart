@@ -123,6 +123,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     emit(current.copyWith(
       formValues: updated,
       clearPendingAutoSelect: shouldClear,
+      clearSubmitError: current.submitError != null,
     ));
   }
 
@@ -133,12 +134,35 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
 
-    emit(current.copyWith(isSubmitting: true));
+    emit(current.copyWith(isSubmitting: true, clearSubmitError: true));
 
     try {
       // Clean form data — remove meta keys (prefixed with _)
       final data = Map<String, dynamic>.from(current.formValues)
         ..removeWhere((key, _) => key.startsWith('_'));
+
+      // Look up effects from the schema (not the screen)
+      final schemaKey =
+          current.screenParams['_schemaKey'] as String? ?? 'default';
+      final schemaEffects =
+          current.module.schemas[schemaKey]?.effects ?? const [];
+
+      // Validate effect guards (e.g. min: 0) before creating entry
+      if (schemaEffects.isNotEmpty) {
+        const executor = PostSubmitEffectExecutor();
+        final error = executor.validateEffects(
+          effects: schemaEffects,
+          formData: data,
+          entries: current.entries,
+        );
+        if (error != null) {
+          emit(current.copyWith(
+            isSubmitting: false,
+            submitError: error,
+          ));
+          return;
+        }
+      }
 
       // Settings mode — update module settings instead of entries
       if (current.screenParams['_settingsMode'] == true) {
@@ -166,10 +190,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       }
 
       final entryId = current.screenParams['_entryId'] as String?;
-      final schemaKey =
-          current.screenParams['_schemaKey'] as String? ?? 'default';
 
-      if (entryId != null && entryId.isNotEmpty) {
+      final isCreate = entryId == null || entryId.isEmpty;
+
+      if (!isCreate) {
         // Update existing entry — merge new form values into existing data
         final existing = current.entries
             .where((e) => e.id == entryId)
@@ -196,13 +220,9 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         await entryRepository.createEntry(userId, current.module.id, entry);
       }
 
-      // Execute post-submit effects declared in the screen blueprint
-      final screenDef = current.module.screens[current.currentScreenId];
-      if (screenDef is Map<String, dynamic>) {
-        final effects = screenDef['onSubmit'] as List?;
-        if (effects != null && effects.isNotEmpty) {
-          await _applyPostSubmitEffects(current, effects, data);
-        }
+      // Execute effects from schema (only on create, not edit)
+      if (isCreate && schemaEffects.isNotEmpty) {
+        await _applyPostSubmitEffects(current, schemaEffects, data);
       }
 
       // Navigate back to previous screen (or main)
@@ -242,15 +262,15 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     try {
-      // Look up the entry being deleted to run onDelete effects
+      // Look up the entry being deleted to run delete effects (inverted)
       final deletedEntry = current.entries
           .where((e) => e.id == event.entryId)
           .firstOrNull;
 
       if (deletedEntry != null) {
         final schema = current.module.schemas[deletedEntry.schemaKey];
-        if (schema != null && schema.onDelete.isNotEmpty) {
-          await _applyDeleteEffects(current, schema.onDelete, deletedEntry);
+        if (schema != null && schema.effects.isNotEmpty) {
+          await _applyDeleteEffects(current, schema.effects, deletedEntry);
         }
       }
 
@@ -273,7 +293,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     }
   }
 
-  /// Applies onDelete effects using [PostSubmitEffectExecutor].
+  /// Applies delete effects (auto-inverted) using [PostSubmitEffectExecutor].
   Future<void> _applyDeleteEffects(
     ModuleViewerLoaded current,
     List<Map<String, dynamic>> effects,
@@ -306,7 +326,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           updatedEntry,
         );
       } catch (e) {
-        Log.e('onDelete effect failed', tag: 'ModuleViewer', error: e);
+        Log.e('Delete effect failed', tag: 'ModuleViewer', error: e);
       }
     }
   }

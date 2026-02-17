@@ -62,13 +62,13 @@ Module createMockFinanceModule() {
       'expense': ModuleSchema(
         label: 'Expense',
         icon: 'receipt',
-        onDelete: [
+        effects: [
           {
             'type': 'adjust_reference',
             'referenceField': 'account',
             'targetField': 'balance',
             'amountField': 'amount',
-            'operation': 'add', // Restore balance when expense is deleted
+            'operation': 'subtract',
           },
         ],
         fields: {
@@ -108,13 +108,13 @@ Module createMockFinanceModule() {
       'income': ModuleSchema(
         label: 'Income',
         icon: 'cash',
-        onDelete: [
+        effects: [
           {
             'type': 'adjust_reference',
             'referenceField': 'account',
             'targetField': 'balance',
             'amountField': 'amount',
-            'operation': 'subtract', // Remove balance when income is deleted
+            'operation': 'add',
           },
         ],
         fields: {
@@ -407,15 +407,6 @@ Module createMockFinanceModule() {
         'title': 'Add Expense',
         'submitLabel': 'Save',
         'defaults': {},
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'reference_picker', 'fieldKey': 'account', 'schemaKey': 'account', 'displayField': 'name'},
@@ -476,15 +467,6 @@ Module createMockFinanceModule() {
         'title': 'Add Income',
         'submitLabel': 'Save',
         'defaults': {},
-        'onSubmit': [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
-        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'source'},

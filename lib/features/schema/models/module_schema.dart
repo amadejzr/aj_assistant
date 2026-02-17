@@ -7,14 +7,14 @@ class ModuleSchema extends Equatable {
   final Map<String, FieldDefinition> fields;
   final String label;
   final String? icon;
-  final List<Map<String, dynamic>> onDelete;
+  final List<Map<String, dynamic>> effects;
 
   const ModuleSchema({
     this.version = 1,
     this.fields = const {},
     this.label = '',
     this.icon,
-    this.onDelete = const [],
+    this.effects = const [],
   });
 
   ModuleSchema copyWith({
@@ -22,14 +22,14 @@ class ModuleSchema extends Equatable {
     Map<String, FieldDefinition>? fields,
     String? label,
     String? icon,
-    List<Map<String, dynamic>>? onDelete,
+    List<Map<String, dynamic>>? effects,
   }) {
     return ModuleSchema(
       version: version ?? this.version,
       fields: fields ?? this.fields,
       label: label ?? this.label,
       icon: icon ?? this.icon,
-      onDelete: onDelete ?? this.onDelete,
+      effects: effects ?? this.effects,
     );
   }
 
@@ -42,19 +42,40 @@ class ModuleSchema extends Equatable {
       ),
     );
 
-    final onDeleteRaw = json['onDelete'] as List?;
-    final onDelete = onDeleteRaw
+    final effectsRaw = json['effects'] as List?;
+    var effects = effectsRaw
             ?.whereType<Map<String, dynamic>>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList() ??
-        const [];
+        <Map<String, dynamic>>[];
+
+    // Backward compat: migrate legacy onDelete → effects with inverted ops
+    if (effects.isEmpty) {
+      final onDeleteRaw = json['onDelete'] as List?;
+      if (onDeleteRaw != null && onDeleteRaw.isNotEmpty) {
+        effects = onDeleteRaw
+            .whereType<Map<String, dynamic>>()
+            .map((e) {
+              final migrated = Map<String, dynamic>.from(e);
+              // Invert the operation since onDelete stored the delete-time op
+              final op = migrated['operation'] as String?;
+              if (op == 'add') {
+                migrated['operation'] = 'subtract';
+              } else if (op == 'subtract') {
+                migrated['operation'] = 'add';
+              }
+              return migrated;
+            })
+            .toList();
+      }
+    }
 
     return ModuleSchema(
       version: json['version'] as int? ?? 1,
       fields: fields,
       label: json['label'] as String? ?? '',
       icon: json['icon'] as String?,
-      onDelete: onDelete,
+      effects: effects,
     );
   }
 
@@ -64,10 +85,10 @@ class ModuleSchema extends Equatable {
       'fields': fields.map((key, field) => MapEntry(key, field.toJson())),
       'label': label,
       if (icon != null) 'icon': icon,
-      if (onDelete.isNotEmpty) 'onDelete': onDelete,
+      if (effects.isNotEmpty) 'effects': effects,
     };
   }
 
   @override
-  List<Object?> get props => [version, fields, label, icon, onDelete];
+  List<Object?> get props => [version, fields, label, icon, effects];
 }

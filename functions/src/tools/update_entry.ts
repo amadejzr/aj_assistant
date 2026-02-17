@@ -68,29 +68,24 @@ export async function updateEntry(
     });
   }
 
-  // Execute onSubmit effects (non-fatal)
+  // Execute effects from schema (non-fatal)
   try {
-    const mergedData = {...(existingData.data ?? {}), ...data};
-    const screens = moduleData.screens ?? {};
-    for (const screen of Object.values(screens)) {
-      const screenDef = screen as Record<string, unknown>;
-      const onSubmit = screenDef.onSubmit as
-        Record<string, unknown>[] | undefined;
-      if (onSubmit && Array.isArray(onSubmit)) {
-        const entriesSnap = await moduleRef.collection("entries").get();
-        const entries = entriesSnap.docs.map((doc) => ({
-          id: doc.id,
-          data: (doc.data().data ?? {}) as Record<string, unknown>,
-        }));
-        await executeEffects(
-          userId, moduleId, onSubmit as never[],
-          mergedData as Record<string, unknown>, entries,
-        );
-        break;
-      }
+    const schema = schemas[schemaKey];
+    const effects = schema?.effects as Record<string, unknown>[] | undefined;
+    if (effects && Array.isArray(effects) && effects.length > 0) {
+      const mergedData = {...(existingData.data ?? {}), ...data};
+      const entriesSnap = await moduleRef.collection("entries").get();
+      const entries = entriesSnap.docs.map((doc) => ({
+        id: doc.id,
+        data: (doc.data().data ?? {}) as Record<string, unknown>,
+      }));
+      await executeEffects(
+        userId, moduleId, effects as never[],
+        mergedData as Record<string, unknown>, entries,
+      );
     }
   } catch (err) {
-    logger.warn("onSubmit effects failed (entry was still updated)", {
+    logger.warn("Schema effects failed (entry was still updated)", {
       error: (err as Error).message,
     });
   }

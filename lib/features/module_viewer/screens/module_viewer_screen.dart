@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/entry.dart';
 import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../features/auth/bloc/auth_bloc.dart';
 import '../../../features/auth/bloc/auth_state.dart';
 import '../bloc/module_viewer_bloc.dart';
@@ -39,19 +40,37 @@ class _ModuleViewerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
-      builder: (context, state) {
-        return switch (state) {
-          ModuleViewerInitial() || ModuleViewerLoading() => const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          ModuleViewerError(:final message) => Scaffold(
-              appBar: AppBar(title: const Text('Error')),
-              body: Center(child: Text(message)),
-            ),
-          ModuleViewerLoaded() => _LoadedView(state: state),
-        };
+    return BlocListener<ModuleViewerBloc, ModuleViewerState>(
+      listenWhen: (prev, curr) {
+        final prevError =
+            prev is ModuleViewerLoaded ? prev.submitError : null;
+        final currError =
+            curr is ModuleViewerLoaded ? curr.submitError : null;
+        return currError != null && currError != prevError;
       },
+      listener: (context, state) {
+        if (state is ModuleViewerLoaded && state.submitError != null) {
+          AppToast.show(
+            context,
+            message: state.submitError!,
+            type: AppToastType.error,
+          );
+        }
+      },
+      child: BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
+        builder: (context, state) {
+          return switch (state) {
+            ModuleViewerInitial() || ModuleViewerLoading() => const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              ),
+            ModuleViewerError(:final message) => Scaffold(
+                appBar: AppBar(title: const Text('Error')),
+                body: Center(child: Text(message)),
+              ),
+            ModuleViewerLoaded() => _LoadedView(state: state),
+          };
+        },
+      ),
     );
   }
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/models/entry.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../builders/layout/form_screen_builder.dart';
 import '../renderer/blueprint_node.dart';
 import '../renderer/blueprint_parser.dart';
 import '../renderer/render_context.dart';
+import 'post_submit_effect.dart';
 
 /// Centralized action handler for blueprint actions.
 ///
@@ -283,24 +283,53 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
     final schemaKey = widget.sheetParams['_schemaKey'] as String? ?? 'default';
     final entryId = widget.sheetParams['_entryId'] as String?;
 
+    // Read effects from schema (not screen)
+    final schemaEffects =
+        widget.ctx.module.schemas[schemaKey]?.effects ?? const [];
+
+    // Validate effect guards (e.g. min: 0) before creating entry
+    if (schemaEffects.isNotEmpty) {
+      const executor = PostSubmitEffectExecutor();
+      final error = executor.validateEffects(
+        effects: schemaEffects,
+        formData: data,
+        entries: widget.ctx.allEntries,
+      );
+      if (error != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        }
+        return;
+      }
+    }
+
     if (entryId != null && entryId.isNotEmpty) {
       await widget.ctx.onUpdateEntry?.call(entryId, schemaKey, data);
     } else {
       await widget.ctx.onCreateEntry?.call(schemaKey, data);
     }
 
-    // Apply post-submit effects from the screen definition
-    final screenDef = widget.ctx.module.screens[widget.screenId];
-    if (screenDef is Map<String, dynamic>) {
-      final effects = screenDef['onSubmit'] as List?;
-      if (effects != null && effects.isNotEmpty) {
-        // Import and use PostSubmitEffectExecutor
-        final executor = const _SheetEffectExecutor();
-        await executor.applyEffects(
-          effects: effects,
-          formData: data,
-          entries: widget.ctx.allEntries,
-          onUpdateEntry: widget.ctx.onUpdateEntry,
+    // Apply post-submit effects from schema
+    if (schemaEffects.isNotEmpty && widget.ctx.onUpdateEntry != null) {
+      const executor = PostSubmitEffectExecutor();
+      final updates = executor.computeUpdates(
+        effects: schemaEffects,
+        formData: data,
+        entries: widget.ctx.allEntries,
+      );
+
+      for (final update in updates.entries) {
+        final existing = widget.ctx.allEntries
+            .where((e) => e.id == update.key)
+            .firstOrNull;
+        if (existing == null) continue;
+
+        await widget.ctx.onUpdateEntry!(
+          existing.id,
+          existing.schemaKey,
+          {...existing.data, ...update.value},
         );
       }
     }
@@ -390,137 +419,3 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
   }
 }
 
-/// Lightweight effect executor for bottom sheet forms.
-///
-/// Re-uses the same logic as [PostSubmitEffectExecutor] but works
-/// with the [RenderContext.onUpdateEntry] callback instead of
-/// going through the BLoC.
-class _SheetEffectExecutor {
-  const _SheetEffectExecutor();
-
-  Future<void> applyEffects({
-    required List<dynamic> effects,
-    required Map<String, dynamic> formData,
-    required List<Entry> entries,
-    required Future<void> Function(String, String, Map<String, dynamic>)? onUpdateEntry,
-  }) async {
-    if (onUpdateEntry == null) return;
-
-    final executor = const _InlineEffectComputer();
-    final updates = executor.computeUpdates(effects, formData, entries);
-
-    for (final update in updates.entries) {
-      final existing = entries
-          .where((e) => e.id == update.key)
-          .firstOrNull;
-      if (existing == null) continue;
-
-      await onUpdateEntry(
-        existing.id,
-        existing.schemaKey,
-        {...existing.data, ...update.value},
-      );
-    }
-  }
-}
-
-/// Inline effect computer matching PostSubmitEffectExecutor logic.
-class _InlineEffectComputer {
-  const _InlineEffectComputer();
-
-  Map<String, Map<String, dynamic>> computeUpdates(
-    List<dynamic> effects,
-    Map<String, dynamic> formData,
-    List<Entry> entries,
-  ) {
-    final entryById = {for (final e in entries) e.id: e};
-    final updates = <String, Map<String, dynamic>>{};
-
-    for (final effect in effects) {
-      if (effect is! Map<String, dynamic>) continue;
-
-      final type = effect['type'] as String?;
-      switch (type) {
-        case 'adjust_reference':
-          _applyAdjust(effect, formData, entryById, updates);
-        case 'set_reference':
-          _applySet(effect, formData, entryById, updates);
-      }
-    }
-    return updates;
-  }
-
-  void _applyAdjust(
-    Map<String, dynamic> effect,
-    Map<String, dynamic> formData,
-    Map<String, Entry> entryById,
-    Map<String, Map<String, dynamic>> updates,
-  ) {
-    final referenceField = effect['referenceField'] as String?;
-    final targetField = effect['targetField'] as String?;
-    final operation = effect['operation'] as String?;
-    if (referenceField == null || targetField == null || operation == null) return;
-    if (operation != 'add' && operation != 'subtract') return;
-
-    final entryId = formData[referenceField]?.toString();
-    if (entryId == null || entryId.isEmpty) return;
-
-    final entry = entryById[entryId];
-    if (entry == null) return;
-
-    final num? amount;
-    if (effect.containsKey('amount')) {
-      amount = _toNum(effect['amount']);
-    } else {
-      final amountField = effect['amountField'] as String?;
-      if (amountField == null) return;
-      amount = _toNum(formData[amountField]);
-    }
-    if (amount == null) return;
-
-    final accumulated = updates[entryId] ?? {};
-    final currentRaw = accumulated.containsKey(targetField)
-        ? accumulated[targetField]
-        : entry.data[targetField];
-    final current = _toNum(currentRaw) ?? 0;
-
-    final newValue = operation == 'add' ? current + amount : current - amount;
-    updates.putIfAbsent(entryId, () => {});
-    updates[entryId]![targetField] = newValue;
-  }
-
-  void _applySet(
-    Map<String, dynamic> effect,
-    Map<String, dynamic> formData,
-    Map<String, Entry> entryById,
-    Map<String, Map<String, dynamic>> updates,
-  ) {
-    final referenceField = effect['referenceField'] as String?;
-    final targetField = effect['targetField'] as String?;
-    if (referenceField == null || targetField == null) return;
-
-    final entryId = formData[referenceField]?.toString();
-    if (entryId == null || entryId.isEmpty) return;
-
-    final entry = entryById[entryId];
-    if (entry == null) return;
-
-    final dynamic newValue;
-    final sourceField = effect['sourceField'] as String?;
-    if (sourceField != null) {
-      newValue = formData[sourceField];
-    } else {
-      newValue = effect['value'];
-    }
-    if (newValue == null) return;
-
-    updates.putIfAbsent(entryId, () => {});
-    updates[entryId]![targetField] = newValue;
-  }
-
-  static num? _toNum(dynamic value) {
-    if (value is num) return value;
-    if (value is String) return num.tryParse(value);
-    return null;
-  }
-}

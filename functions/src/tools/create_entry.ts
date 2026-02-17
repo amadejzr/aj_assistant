@@ -69,28 +69,22 @@ export async function createEntry(
     });
   }
 
-  // Execute onSubmit effects (non-fatal — log but don't fail the create)
+  // Execute effects from schema (non-fatal — log but don't fail the create)
   try {
-    const screens = moduleData.screens ?? {};
-    for (const screen of Object.values(screens)) {
-      const screenDef = screen as Record<string, unknown>;
-      const onSubmit = screenDef.onSubmit as
-        Record<string, unknown>[] | undefined;
-      if (onSubmit && Array.isArray(onSubmit)) {
-        const entriesSnap = await entriesRef.get();
-        const entries = entriesSnap.docs.map((doc) => ({
-          id: doc.id,
-          data: (doc.data().data ?? {}) as Record<string, unknown>,
-        }));
-        await executeEffects(
-          userId, moduleId, onSubmit as never[], data, entries,
-        );
-        break;
-      }
+    const effects = schema.effects as Record<string, unknown>[] | undefined;
+    if (effects && Array.isArray(effects) && effects.length > 0) {
+      const entriesSnap = await entriesRef.get();
+      const entries = entriesSnap.docs.map((doc) => ({
+        id: doc.id,
+        data: (doc.data().data ?? {}) as Record<string, unknown>,
+      }));
+      await executeEffects(
+        userId, moduleId, effects as never[], data, entries,
+      );
     }
   } catch (err) {
     // Effects failing shouldn't prevent the entry from being created
-    logger.warn("onSubmit effects failed (entry was still created)", {
+    logger.warn("Schema effects failed (entry was still created)", {
       error: (err as Error).message,
     });
   }
