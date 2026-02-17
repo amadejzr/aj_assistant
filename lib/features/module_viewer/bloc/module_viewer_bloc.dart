@@ -30,6 +30,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerEntryDeleted>(_onEntryDeleted);
     on<ModuleViewerEntriesUpdated>(_onEntriesUpdated);
     on<ModuleViewerModuleRefreshed>(_onModuleRefreshed);
+    on<ModuleViewerScreenParamChanged>(_onScreenParamChanged);
     on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
     on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
   }
@@ -249,6 +250,19 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     } catch (e) {
       Log.e('Failed to refresh module', tag: 'ModuleViewer', error: e);
     }
+  }
+
+  void _onScreenParamChanged(
+    ModuleViewerScreenParamChanged event,
+    Emitter<ModuleViewerState> emit,
+  ) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    final updated = Map<String, dynamic>.from(current.screenParams);
+    updated[event.key] = event.value;
+
+    emit(current.copyWith(screenParams: updated));
   }
 
   Future<void> _onQuickEntryCreated(

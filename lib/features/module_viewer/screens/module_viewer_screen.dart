@@ -69,12 +69,15 @@ class _LoadedView extends StatelessWidget {
     final bloc = context.read<ModuleViewerBloc>();
     final screenId = state.currentScreenId;
 
+    final Widget child;
+
     // Route settings to SchemaBloc-managed navigator
     if (screenId == '_settings') {
       final authState = context.read<AuthBloc>().state;
       final userId = authState is AuthAuthenticated ? authState.user.uid : '';
 
-      return BlocProvider(
+      child = BlocProvider(
+        key: const ValueKey('_settings'),
         create: (context) => SchemaBloc(
           moduleRepository: context.read<ModuleRepository>(),
           userId: userId,
@@ -86,83 +89,109 @@ class _LoadedView extends StatelessWidget {
               bloc.add(const ModuleViewerModuleRefreshed()),
         ),
       );
-    }
-
-    // Unknown underscore-prefixed screens
-    if (screenId.startsWith('_')) {
-      return Scaffold(
+    } else if (screenId.startsWith('_')) {
+      // Unknown underscore-prefixed screens
+      child = Scaffold(
+        key: ValueKey(screenId),
         appBar: AppBar(title: const Text('Unknown')),
         body: const Center(child: Text('Unknown settings screen')),
       );
+    } else {
+      final blueprint = state.module.screens[screenId];
+
+      if (blueprint == null) {
+        child = Scaffold(
+          key: ValueKey('notfound_$screenId'),
+          appBar: AppBar(title: Text(state.module.name)),
+          body: const Center(child: Text('Screen not found')),
+        );
+      } else {
+        final entryRepo = context.read<EntryRepository>();
+        final authState = context.read<AuthBloc>().state;
+        final userId =
+            authState is AuthAuthenticated ? authState.user.uid : '';
+
+        final renderContext = RenderContext(
+          module: state.module,
+          entries: state.entries,
+          allEntries: state.entries,
+          formValues: state.formValues,
+          screenParams: state.screenParams,
+          canGoBack: state.canGoBack,
+          onFormValueChanged: (fieldKey, value) {
+            bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
+          },
+          onFormSubmit: () {
+            bloc.add(const ModuleViewerFormSubmitted());
+          },
+          onNavigateToScreen: (screenId,
+              {Map<String, dynamic> params = const {}}) {
+            bloc.add(ModuleViewerScreenChanged(screenId, params: params));
+          },
+          onNavigateBack: () {
+            bloc.add(const ModuleViewerNavigateBack());
+          },
+          onDeleteEntry: (entryId) {
+            bloc.add(ModuleViewerEntryDeleted(entryId));
+          },
+          onScreenParamChanged: (key, value) {
+            bloc.add(ModuleViewerScreenParamChanged(key, value));
+          },
+          onCreateEntry: (schemaKey, data) async {
+            final entry = Entry(
+              id: '',
+              data: data,
+              schemaVersion:
+                  state.module.schemas[schemaKey]?.version ?? 1,
+              schemaKey: schemaKey,
+            );
+            return entryRepo.createEntry(userId, state.module.id, entry);
+          },
+          onUpdateEntry: (entryId, schemaKey, data) async {
+            final existing = state.entries
+                .where((e) => e.id == entryId)
+                .firstOrNull;
+            final mergedData = {
+              if (existing != null) ...existing.data,
+              ...data,
+            };
+            final updated = Entry(
+              id: entryId,
+              data: mergedData,
+              schemaVersion:
+                  state.module.schemas[schemaKey]?.version ?? 1,
+              schemaKey: schemaKey,
+            );
+            await entryRepo.updateEntry(userId, state.module.id, updated);
+          },
+        );
+
+        child = BlueprintRenderer(
+          key: ValueKey(screenId),
+          blueprintJson: blueprint,
+          context_: renderContext,
+        );
+      }
     }
 
-    final blueprint = state.module.screens[screenId];
-
-    if (blueprint == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(state.module.name)),
-        body: const Center(child: Text('Screen not found')),
-      );
-    }
-
-    final entryRepo = context.read<EntryRepository>();
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is AuthAuthenticated ? authState.user.uid : '';
-
-    final renderContext = RenderContext(
-      module: state.module,
-      entries: state.entries,
-      allEntries: state.entries,
-      formValues: state.formValues,
-      screenParams: state.screenParams,
-      canGoBack: state.canGoBack,
-      onFormValueChanged: (fieldKey, value) {
-        bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
-      },
-      onFormSubmit: () {
-        bloc.add(const ModuleViewerFormSubmitted());
-      },
-      onNavigateToScreen: (screenId, {Map<String, dynamic> params = const {}}) {
-        bloc.add(ModuleViewerScreenChanged(screenId, params: params));
-      },
-      onNavigateBack: () {
-        bloc.add(const ModuleViewerNavigateBack());
-      },
-      onDeleteEntry: (entryId) {
-        bloc.add(ModuleViewerEntryDeleted(entryId));
-      },
-      onCreateEntry: (schemaKey, data) async {
-        final entry = Entry(
-          id: '',
-          data: data,
-          schemaVersion:
-              state.module.schemas[schemaKey]?.version ?? 1,
-          schemaKey: schemaKey,
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.04, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
         );
-        return entryRepo.createEntry(userId, state.module.id, entry);
       },
-      onUpdateEntry: (entryId, schemaKey, data) async {
-        final existing = state.entries
-            .where((e) => e.id == entryId)
-            .firstOrNull;
-        final mergedData = {
-          if (existing != null) ...existing.data,
-          ...data,
-        };
-        final updated = Entry(
-          id: entryId,
-          data: mergedData,
-          schemaVersion:
-              state.module.schemas[schemaKey]?.version ?? 1,
-          schemaKey: schemaKey,
-        );
-        await entryRepo.updateEntry(userId, state.module.id, updated);
-      },
-    );
-
-    return BlueprintRenderer(
-      blueprintJson: blueprint,
-      context_: renderContext,
+      child: child,
     );
   }
 }
@@ -183,8 +212,10 @@ class _SchemaNavigatorWithRefresh extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<SchemaBloc, SchemaState>(
       listenWhen: (prev, curr) {
-        // Detect back navigation from root (list screen with empty stack)
         if (prev is SchemaLoaded && curr is SchemaLoaded) {
+          // Detect '_exit' signal from back button on root list screen
+          if (curr.currentScreen == '_exit') return true;
+          // Detect back navigation from deeper screens to root
           return prev.screenStack.isNotEmpty && curr.screenStack.isEmpty &&
               prev.currentScreen == 'list';
         }

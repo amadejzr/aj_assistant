@@ -22,11 +22,44 @@ Widget buildTabScreen(BlueprintNode node, RenderContext ctx) {
   return _TabScreenShell(tabScreen: tab, ctx: ctx);
 }
 
-class _TabScreenShell extends StatelessWidget {
+class _TabScreenShell extends StatefulWidget {
   final TabScreenNode tabScreen;
   final RenderContext ctx;
 
   const _TabScreenShell({required this.tabScreen, required this.ctx});
+
+  @override
+  State<_TabScreenShell> createState() => _TabScreenShellState();
+}
+
+class _TabScreenShellState extends State<_TabScreenShell>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialIndex = widget.ctx.screenParams['_tabIndex'] as int? ?? 0;
+    _tabController = TabController(
+      length: widget.tabScreen.tabs.length,
+      vsync: this,
+      initialIndex: initialIndex.clamp(0, widget.tabScreen.tabs.length - 1),
+    );
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      widget.ctx.onScreenParamChanged?.call('_tabIndex', _tabController.index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
 
   IconData? _resolveIcon(String? iconName) {
     return switch (iconName) {
@@ -44,6 +77,8 @@ class _TabScreenShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final registry = WidgetRegistry.instance;
+    final ctx = widget.ctx;
+    final tabScreen = widget.tabScreen;
 
     Widget? fab;
     if (tabScreen.fab != null) {
@@ -59,79 +94,78 @@ class _TabScreenShell extends StatelessWidget {
           ctx.onNavigateBack?.call();
         }
       },
-      child: DefaultTabController(
-        length: tabScreen.tabs.length,
-        child: Scaffold(
+      child: Scaffold(
+        backgroundColor: colors.background,
+        appBar: AppBar(
           backgroundColor: colors.background,
-          appBar: AppBar(
-            backgroundColor: colors.background,
-            elevation: 0,
-            leading: canGoBack
-                ? IconButton(
-                    icon: Icon(Icons.arrow_back, color: colors.onBackground),
-                    onPressed: () => ctx.onNavigateBack?.call(),
-                  )
-                : null,
-            title: tabScreen.title != null
-                ? Text(
-                    tabScreen.title!,
-                    style: TextStyle(
-                      fontFamily: 'CormorantGaramond',
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: colors.onBackground,
-                    ),
-                  )
-                : null,
-            iconTheme: IconThemeData(color: colors.onBackground),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
-                onPressed: () => ctx.onNavigateToScreen(
-                  '_settings',
-                  params: const {},
-                ),
+          elevation: 0,
+          leading: canGoBack
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back, color: colors.onBackground),
+                  onPressed: () => ctx.onNavigateBack?.call(),
+                )
+              : null,
+          title: tabScreen.title != null
+              ? Text(
+                  tabScreen.title!,
+                  style: TextStyle(
+                    fontFamily: 'CormorantGaramond',
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                    color: colors.onBackground,
+                  ),
+                )
+              : null,
+          iconTheme: IconThemeData(color: colors.onBackground),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
+              onPressed: () => ctx.onNavigateToScreen(
+                '_settings',
+                params: const {},
               ),
-            ],
-            bottom: TabBar(
-              indicatorColor: colors.accent,
-              indicatorWeight: 2.5,
-              labelColor: colors.accent,
-              unselectedLabelColor: colors.onBackgroundMuted,
-              labelStyle: TextStyle(
-                fontFamily: 'Karla',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: TextStyle(
-                fontFamily: 'Karla',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-              tabs: tabScreen.tabs.map((tab) {
-                final icon = _resolveIcon(tab.icon);
-                if (icon != null) {
-                  return Tab(
-                    icon: Icon(icon, size: 20),
-                    text: tab.label,
-                  );
-                }
-                return Tab(text: tab.label);
+            ),
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: colors.accent,
+            indicatorWeight: 2.5,
+            labelColor: colors.accent,
+            unselectedLabelColor: colors.onBackgroundMuted,
+            labelStyle: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+            tabs: tabScreen.tabs.map((tab) {
+              final icon = _resolveIcon(tab.icon);
+              if (icon != null) {
+                return Tab(
+                  icon: Icon(icon, size: 20),
+                  text: tab.label,
+                );
+              }
+              return Tab(text: tab.label);
+            }).toList(),
+          ),
+        ),
+        body: Stack(
+          children: [
+            PaperBackground(colors: colors),
+            TabBarView(
+              controller: _tabController,
+              children: tabScreen.tabs.map((tab) {
+                return registry.build(tab.content, ctx);
               }).toList(),
             ),
-          ),
-          body: Stack(
-            children: [
-              PaperBackground(colors: colors),
-              TabBarView(
-                children: tabScreen.tabs.map((tab) {
-                  return registry.build(tab.content, ctx);
-                }).toList(),
-              ),
-            ],
-          ),
-          floatingActionButton: fab,
+          ],
         ),
+        floatingActionButton: fab,
       ),
     );
   }
