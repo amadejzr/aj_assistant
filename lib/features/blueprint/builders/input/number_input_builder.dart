@@ -43,61 +43,59 @@ class _NumberInputWidget extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: TextFormField(
-        initialValue: initialText,
-        readOnly: readOnly,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: colors.onBackgroundMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            initialValue: initialText,
+            readOnly: readOnly,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+            ],
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 15,
+              color: readOnly ? colors.onBackgroundMuted : colors.onBackground,
+            ),
+            validator: (v) {
+              if (validation != null) {
+                return FormValidator.validate(
+                  value: v,
+                  validation: validation,
+                  label: label,
+                );
+              }
+              if (isRequired && (v == null || v.isEmpty)) {
+                return '$label is required';
+              }
+              if (v != null && v.isNotEmpty) {
+                final n = num.tryParse(v);
+                if (n == null) return 'Enter a valid number';
+                if (min != null && n < min) return 'Minimum is $min';
+                if (max != null && n > max) return 'Maximum is $max';
+              }
+              return null;
+            },
+            onChanged: readOnly
+                ? null
+                : (value) {
+                    final parsed = num.tryParse(value);
+                    ctx.onFormValueChanged(input.fieldKey, parsed);
+                  },
+          ),
         ],
-        style: TextStyle(
-          fontFamily: 'Karla',
-          fontSize: 15,
-          color: readOnly ? colors.onBackgroundMuted : colors.onBackground,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            fontFamily: 'Karla',
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: colors.onBackgroundMuted,
-            letterSpacing: 0.8,
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.border),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.accent, width: 2),
-          ),
-        ),
-        validator: (v) {
-          // Blueprint validation rules take precedence
-          if (validation != null) {
-            return FormValidator.validate(
-              value: v,
-              validation: validation,
-              label: label,
-            );
-          }
-          // Fall back to schema-level validation
-          if (isRequired && (v == null || v.isEmpty)) {
-            return '$label is required';
-          }
-          if (v != null && v.isNotEmpty) {
-            final n = num.tryParse(v);
-            if (n == null) return 'Enter a valid number';
-            if (min != null && n < min) return 'Minimum is $min';
-            if (max != null && n > max) return 'Maximum is $max';
-          }
-          return null;
-        },
-        onChanged: readOnly
-            ? null
-            : (value) {
-                final parsed = num.tryParse(value);
-                ctx.onFormValueChanged(input.fieldKey, parsed);
-              },
       ),
     );
   }

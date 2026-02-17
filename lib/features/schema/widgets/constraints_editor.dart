@@ -123,19 +123,13 @@ class ConstraintsEditor extends StatelessWidget {
               TextField(
                 controller: keyController,
                 autofocus: true,
-                style: TextStyle(color: sheetColors.onBackground),
-                decoration: InputDecoration(
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 15,
+                  color: sheetColors.onBackground,
+                ),
+                decoration: const InputDecoration(
                   hintText: 'e.g. min',
-                  hintStyle: TextStyle(
-                    color: sheetColors.onBackgroundMuted
-                        .withValues(alpha: 0.5),
-                  ),
-                  filled: true,
-                  fillColor: sheetColors.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -152,19 +146,13 @@ class ConstraintsEditor extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               TextField(
                 controller: valueController,
-                style: TextStyle(color: sheetColors.onBackground),
-                decoration: InputDecoration(
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 15,
+                  color: sheetColors.onBackground,
+                ),
+                decoration: const InputDecoration(
                   hintText: 'e.g. 0',
-                  hintStyle: TextStyle(
-                    color: sheetColors.onBackgroundMuted
-                        .withValues(alpha: 0.5),
-                  ),
-                  filled: true,
-                  fillColor: sheetColors.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),

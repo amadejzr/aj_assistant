@@ -58,8 +58,9 @@ class _TimePickerWidget extends StatelessWidget {
               letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.sm),
           InkWell(
+            borderRadius: BorderRadius.circular(10),
             onTap: () async {
               final picked = await showTimePicker(
                 context: context,
@@ -83,14 +84,11 @@ class _TimePickerWidget extends StatelessWidget {
             },
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 12,
-                bottom: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: colors.border),
-                ),
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: colors.border),
               ),
               child: Row(
                 children: [
@@ -99,10 +97,10 @@ class _TimePickerWidget extends StatelessWidget {
                       displayText,
                       style: TextStyle(
                         fontFamily: 'Karla',
-                        fontSize: 16,
+                        fontSize: 15,
                         color: parsed != null
                             ? colors.onBackground
-                            : colors.onBackgroundMuted,
+                            : colors.onBackgroundMuted.withValues(alpha: 0.5),
                       ),
                     ),
                   ),

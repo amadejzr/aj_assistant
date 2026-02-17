@@ -160,9 +160,16 @@ class _FieldEditorFormState extends State<_FieldEditorForm> {
             controller: _labelController,
             decoration: InputDecoration(
               labelText: 'Label',
-              labelStyle: TextStyle(color: colors.onBackgroundMuted),
+              labelStyle: TextStyle(
+                fontFamily: 'Karla',
+                color: colors.onBackgroundMuted,
+              ),
             ),
-            style: TextStyle(color: colors.onBackground),
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 15,
+              color: colors.onBackground,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
 
@@ -173,9 +180,16 @@ class _FieldEditorFormState extends State<_FieldEditorForm> {
             readOnly: true,
             decoration: InputDecoration(
               labelText: 'Key',
-              labelStyle: TextStyle(color: colors.onBackgroundMuted),
+              labelStyle: TextStyle(
+                fontFamily: 'Karla',
+                color: colors.onBackgroundMuted,
+              ),
             ),
-            style: TextStyle(color: colors.onBackgroundMuted),
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 15,
+              color: colors.onBackgroundMuted,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
 

@@ -41,50 +41,48 @@ class _TextInputWidget extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: TextFormField(
-        initialValue: currentValue,
-        readOnly: readOnly,
-        maxLines: input.multiline ? 4 : 1,
-        maxLength: maxLength,
-        style: TextStyle(
-          fontFamily: 'Karla',
-          fontSize: 15,
-          color: readOnly ? colors.onBackgroundMuted : colors.onBackground,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            fontFamily: 'Karla',
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: colors.onBackgroundMuted,
-            letterSpacing: 0.8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: colors.onBackgroundMuted,
+              letterSpacing: 0.8,
+            ),
           ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.border),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            initialValue: currentValue,
+            readOnly: readOnly,
+            maxLines: input.multiline ? 4 : 1,
+            maxLength: maxLength,
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 15,
+              color: readOnly ? colors.onBackgroundMuted : colors.onBackground,
+            ),
+            validator: (v) {
+              if (validation != null) {
+                return FormValidator.validate(
+                  value: v,
+                  validation: validation,
+                  label: label,
+                );
+              }
+              if (isRequired && (v == null || v.isEmpty)) {
+                return '$label is required';
+              }
+              return null;
+            },
+            onChanged: readOnly
+                ? null
+                : (value) => ctx.onFormValueChanged(input.fieldKey, value),
           ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.accent, width: 2),
-          ),
-        ),
-        validator: (v) {
-          // Blueprint validation rules take precedence
-          if (validation != null) {
-            return FormValidator.validate(
-              value: v,
-              validation: validation,
-              label: label,
-            );
-          }
-          // Fall back to schema required check
-          if (isRequired && (v == null || v.isEmpty)) {
-            return '$label is required';
-          }
-          return null;
-        },
-        onChanged: readOnly
-            ? null
-            : (value) => ctx.onFormValueChanged(input.fieldKey, value),
+        ],
       ),
     );
   }

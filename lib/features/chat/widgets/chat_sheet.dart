@@ -23,6 +23,7 @@ void showChatSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    enableDrag: false,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: (_) => BlocProvider(
@@ -282,10 +283,10 @@ class _ChatInputState extends State<_ChatInput> {
               ),
               decoration: InputDecoration(
                 hintText: 'Message AJ...',
-                hintStyle: TextStyle(
-                  fontFamily: 'Karla',
-                  fontSize: 14,
-                  color: colors.onBackgroundMuted,
+                fillColor: colors.background,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -299,12 +300,6 @@ class _ChatInputState extends State<_ChatInput> {
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(color: colors.accent, width: 1.5),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                filled: true,
-                fillColor: colors.background,
               ),
             ),
           ),

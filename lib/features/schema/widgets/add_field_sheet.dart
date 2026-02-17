@@ -132,18 +132,13 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             TextField(
               key: const Key('field_key_input'),
               controller: _keyController,
-              style: TextStyle(color: colors.onBackground),
-              decoration: InputDecoration(
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 15,
+                color: colors.onBackground,
+              ),
+              decoration: const InputDecoration(
                 hintText: 'e.g. amount',
-                hintStyle: TextStyle(
-                  color: colors.onBackgroundMuted.withValues(alpha: 0.5),
-                ),
-                filled: true,
-                fillColor: colors.surfaceVariant,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -162,18 +157,13 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             TextField(
               key: const Key('field_label_input'),
               controller: _labelController,
-              style: TextStyle(color: colors.onBackground),
-              decoration: InputDecoration(
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 15,
+                color: colors.onBackground,
+              ),
+              decoration: const InputDecoration(
                 hintText: 'e.g. Amount',
-                hintStyle: TextStyle(
-                  color: colors.onBackgroundMuted.withValues(alpha: 0.5),
-                ),
-                filled: true,
-                fillColor: colors.surfaceVariant,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -340,18 +330,13 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
               TextField(
                 key: const Key('ref_schema_key_input'),
                 controller: _refSchemaKeyController,
-                style: TextStyle(color: colors.onBackground),
-                decoration: InputDecoration(
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 15,
+                  color: colors.onBackground,
+                ),
+                decoration: const InputDecoration(
                   hintText: 'e.g. category',
-                  hintStyle: TextStyle(
-                    color: colors.onBackgroundMuted.withValues(alpha: 0.5),
-                  ),
-                  filled: true,
-                  fillColor: colors.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
                 ),
               ),
             ],

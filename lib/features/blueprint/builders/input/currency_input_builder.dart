@@ -79,56 +79,58 @@ class _CurrencyInputWidgetState extends State<_CurrencyInputWidget> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: TextFormField(
-        controller: _controller,
-        focusNode: _focusNode,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: colors.onBackgroundMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextFormField(
+            controller: _controller,
+            focusNode: _focusNode,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: colors.onBackground,
+            ),
+            decoration: InputDecoration(
+              prefixText: '${widget.input.currencySymbol} ',
+              prefixStyle: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colors.onBackground,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            validator: (value) {
+              if (field?.required == true && (value == null || value.isEmpty)) {
+                return '$label is required';
+              }
+              return null;
+            },
+            onChanged: (value) {
+              final raw = value.replaceAll(RegExp(r'[^0-9.]'), '');
+              final num = double.tryParse(raw);
+              if (num != null) {
+                widget.ctx.onFormValueChanged(widget.input.fieldKey, num);
+              }
+            },
+          ),
         ],
-        style: TextStyle(
-          fontFamily: 'Karla',
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: colors.onBackground,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            fontFamily: 'Karla',
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: colors.onBackgroundMuted,
-            letterSpacing: 0.8,
-          ),
-          prefixText: '${widget.input.currencySymbol} ',
-          prefixStyle: TextStyle(
-            fontFamily: 'Karla',
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: colors.onBackground,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.border),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: colors.accent, width: 2),
-          ),
-        ),
-        validator: (value) {
-          if (field?.required == true && (value == null || value.isEmpty)) {
-            return '$label is required';
-          }
-          return null;
-        },
-        onChanged: (value) {
-          final raw = value.replaceAll(RegExp(r'[^0-9.]'), '');
-          final num = double.tryParse(raw);
-          if (num != null) {
-            widget.ctx.onFormValueChanged(widget.input.fieldKey, num);
-          }
-        },
       ),
     );
   }

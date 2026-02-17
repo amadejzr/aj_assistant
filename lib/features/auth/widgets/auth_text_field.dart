@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -60,67 +59,17 @@ class AuthTextField extends StatelessWidget {
           obscureText: obscureText,
           validator: validator,
           cursorColor: colors.accent,
-          style: isLogin
-              ? TextStyle(
-                  fontFamily: 'Karla',
-                  fontSize: 15,
-                  color: colors.onBackground,
-                )
-              : TextStyle(
-                  fontFamily: 'Karla',
-                  fontSize: 15,
-                  color: colors.onBackground,
-                ),
-          decoration: _buildDecoration(colors),
+          style: TextStyle(
+            fontFamily: 'Karla',
+            fontSize: 15,
+            color: colors.onBackground,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            suffixIcon: suffixIcon,
+          ),
         ),
       ],
-    );
-  }
-
-  InputDecoration _buildDecoration(AppColors colors) {
-    final isLogin = style == AuthTextFieldStyle.login;
-    const radius = 10.0;
-
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: isLogin
-          ? TextStyle(
-              fontFamily: 'Karla',
-              fontSize: 15,
-              color: colors.onBackgroundMuted.withValues(alpha: 0.45),
-            )
-          : TextStyle(
-              fontFamily: 'Karla',
-              fontSize: 15,
-              color: colors.onBackgroundMuted.withValues(alpha: 0.5),
-            ),
-      filled: true,
-      fillColor: colors.surface,
-      suffixIcon: suffixIcon,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 14,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: BorderSide(color: colors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: BorderSide(color: colors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: BorderSide(color: colors.accent, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: BorderSide(color: colors.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: BorderSide(color: colors.error, width: 1.5),
-      ),
     );
   }
 }
