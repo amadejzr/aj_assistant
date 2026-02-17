@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../models/chat_context.dart';
 import '../models/message.dart';
 
 sealed class ChatState extends Equatable {
@@ -22,14 +21,12 @@ class ChatReady extends ChatState {
   final List<Message> messages;
   final bool isAiTyping;
   final String? conversationId;
-  final ChatContext? context;
   final String? error;
 
   const ChatReady({
     this.messages = const [],
     this.isAiTyping = false,
     this.conversationId,
-    this.context,
     this.error,
   });
 
@@ -37,7 +34,6 @@ class ChatReady extends ChatState {
     List<Message>? messages,
     bool? isAiTyping,
     String? conversationId,
-    ChatContext? context,
     String? error,
     bool clearError = false,
   }) {
@@ -45,11 +41,10 @@ class ChatReady extends ChatState {
       messages: messages ?? this.messages,
       isAiTyping: isAiTyping ?? this.isAiTyping,
       conversationId: conversationId ?? this.conversationId,
-      context: context ?? this.context,
       error: clearError ? null : (error ?? this.error),
     );
   }
 
   @override
-  List<Object?> get props => [messages, isAiTyping, conversationId, context, error];
+  List<Object?> get props => [messages, isAiTyping, conversationId, error];
 }

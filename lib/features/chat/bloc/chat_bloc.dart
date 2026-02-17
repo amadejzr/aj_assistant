@@ -31,7 +31,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatMessageSent>(_onMessageSent);
     on<ChatActionApproved>(_onActionApproved);
     on<ChatActionRejected>(_onActionRejected);
-    on<ChatContextChanged>(_onContextChanged);
     on<ChatMessagesUpdated>(_onMessagesUpdated);
   }
 
@@ -40,10 +39,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(const ChatLoading());
 
     try {
-      final conversationId = await _chatRepository.createConversation(
-        _userId,
-        context: event.context,
-      );
+      final conversationId = await _chatRepository.createConversation(_userId);
       Log.i('Conversation created: $conversationId', tag: _tag);
 
       await _messagesSub?.cancel();
@@ -59,10 +55,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         },
       );
 
-      emit(ChatReady(
-        conversationId: conversationId,
-        context: event.context,
-      ));
+      emit(ChatReady(conversationId: conversationId));
     } catch (e, stack) {
       Log.e('Failed to start conversation: $e', tag: _tag);
       Log.e('$stack', tag: _tag);
@@ -107,7 +100,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         userId: _userId,
         conversationId: current.conversationId!,
         content: event.text,
-        context: current.context,
       );
 
       final latest = state;
@@ -236,13 +228,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       content: 'Okay, cancelled.',
       role: 'assistant',
     );
-  }
-
-  void _onContextChanged(ChatContextChanged event, Emitter<ChatState> emit) {
-    final current = state;
-    if (current is ChatReady) {
-      emit(current.copyWith(context: event.context));
-    }
   }
 
   @override

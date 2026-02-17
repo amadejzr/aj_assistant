@@ -7,11 +7,9 @@ import '../../../core/theme/app_theme.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
-import '../models/chat_context.dart';
 import '../models/message.dart';
 import '../repositories/chat_repository.dart';
 import 'approval_card.dart';
-import 'context_badge.dart';
 import 'message_bubble.dart';
 import 'typing_indicator.dart';
 
@@ -21,7 +19,6 @@ void showChatSheet(
   required String userId,
   required ChatRepository chatRepository,
   required EntryRepository entryRepository,
-  ChatContext? chatContext,
 }) {
   showModalBottomSheet(
     context: context,
@@ -33,7 +30,7 @@ void showChatSheet(
         chatRepository: chatRepository,
         entryRepository: entryRepository,
         userId: userId,
-      )..add(ChatStarted(context: chatContext)),
+      )..add(const ChatStarted()),
       child: const _ChatSheetBody(),
     ),
   );
@@ -51,9 +48,7 @@ class _ChatSheetBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(
-          top: BorderSide(color: colors.border, width: 1),
-        ),
+        border: Border(top: BorderSide(color: colors.border, width: 1)),
       ),
       child: Column(
         children: [
@@ -94,20 +89,6 @@ class _ChatSheetBody extends StatelessWidget {
               color: colors.onBackground,
             ),
           ),
-          const SizedBox(width: 8),
-          BlocBuilder<ChatBloc, ChatState>(
-            buildWhen: (prev, curr) {
-              final prevCtx = prev is ChatReady ? prev.context : null;
-              final currCtx = curr is ChatReady ? curr.context : null;
-              return prevCtx != currCtx;
-            },
-            builder: (context, state) {
-              if (state is ChatReady && state.context != null) {
-                return ContextBadge(context_: state.context!);
-              }
-              return const SizedBox.shrink();
-            },
-          ),
           const Spacer(),
           IconButton(
             icon: Icon(Icons.close, color: colors.onBackgroundMuted, size: 20),
@@ -129,9 +110,7 @@ class _MessageList extends StatelessWidget {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
         if (state is ChatLoading) {
-          return Center(
-            child: CircularProgressIndicator(color: colors.accent),
-          );
+          return Center(child: CircularProgressIndicator(color: colors.accent));
         }
 
         if (state is! ChatReady) {
@@ -177,7 +156,10 @@ class _MessageList extends StatelessWidget {
             if (state.error != null)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 color: colors.error.withValues(alpha: 0.1),
                 child: Text(
                   state.error!,
@@ -188,45 +170,48 @@ class _MessageList extends StatelessWidget {
                   ),
                 ),
               ),
-            Expanded(child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          reverse: true,
-          itemCount: state.messages.length + (state.isAiTyping ? 1 : 0),
-          itemBuilder: (context, index) {
-            // Typing indicator at position 0 (bottom) when reversed
-            if (state.isAiTyping && index == 0) {
-              return const Align(
-                alignment: Alignment.centerLeft,
-                child: TypingIndicator(),
-              );
-            }
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                reverse: true,
+                itemCount: state.messages.length + (state.isAiTyping ? 1 : 0),
+                itemBuilder: (context, index) {
+                  // Typing indicator at position 0 (bottom) when reversed
+                  if (state.isAiTyping && index == 0) {
+                    return const Align(
+                      alignment: Alignment.centerLeft,
+                      child: TypingIndicator(),
+                    );
+                  }
 
-            final msgIndex = state.isAiTyping
-                ? state.messages.length - index
-                : state.messages.length - 1 - index;
+                  final msgIndex = state.isAiTyping
+                      ? state.messages.length - index
+                      : state.messages.length - 1 - index;
 
-            if (msgIndex < 0 || msgIndex >= state.messages.length) {
-              return const SizedBox.shrink();
-            }
+                  if (msgIndex < 0 || msgIndex >= state.messages.length) {
+                    return const SizedBox.shrink();
+                  }
 
-            final msg = state.messages[msgIndex];
+                  final msg = state.messages[msgIndex];
 
-            // Render approval card for pending actions
-            if (msg.hasPendingActions) {
-              return ApprovalCard(
-                actions: msg.pendingActions,
-                status: msg.approvalStatus ?? ApprovalStatus.pending,
-              );
-            }
+                  // Render approval card for pending actions
+                  if (msg.hasPendingActions) {
+                    return ApprovalCard(
+                      actions: msg.pendingActions,
+                      status: msg.approvalStatus ?? ApprovalStatus.pending,
+                    );
+                  }
 
-            // Skip empty assistant messages (they carry only pendingActions)
-            if (msg.role == MessageRole.assistant && msg.content.isEmpty) {
-              return const SizedBox.shrink();
-            }
+                  // Skip empty assistant messages (they carry only pendingActions)
+                  if (msg.role == MessageRole.assistant &&
+                      msg.content.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
 
-            return MessageBubble(message: msg);
-          },
-        )),
+                  return MessageBubble(message: msg);
+                },
+              ),
+            ),
           ],
         );
       },
@@ -270,13 +255,14 @@ class _ChatInputState extends State<_ChatInput> {
         left: 16,
         right: 8,
         top: 8,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+        bottom:
+            MediaQuery.viewInsetsOf(context).bottom +
+            MediaQuery.paddingOf(context).bottom +
+            12,
       ),
       decoration: BoxDecoration(
         color: colors.surface,
-        border: Border(
-          top: BorderSide(color: colors.border, width: 1),
-        ),
+        border: Border(top: BorderSide(color: colors.border, width: 1)),
       ),
       child: Row(
         children: [
@@ -335,9 +321,7 @@ class _ChatInputState extends State<_ChatInput> {
                 onPressed: isTyping ? null : _send,
                 icon: Icon(
                   Icons.arrow_upward_rounded,
-                  color: isTyping
-                      ? colors.onBackgroundMuted
-                      : colors.accent,
+                  color: isTyping ? colors.onBackgroundMuted : colors.accent,
                 ),
                 style: IconButton.styleFrom(
                   backgroundColor: isTyping

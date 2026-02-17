@@ -44,24 +44,6 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("ONLY operate on modules the user already has");
   });
 
-  it("includes context for module view", () => {
-    const prompt = buildSystemPrompt(
-      {mod1: {name: "Test"}},
-      {type: "module", moduleId: "mod1"},
-    );
-    expect(prompt).toContain("viewing module \"mod1\"");
-  });
-
-  it("includes context for dashboard", () => {
-    const prompt = buildSystemPrompt({}, {type: "dashboard"});
-    expect(prompt).toContain("user is on the dashboard");
-  });
-
-  it("includes context for modules list", () => {
-    const prompt = buildSystemPrompt({}, {type: "modules_list"});
-    expect(prompt).toContain("viewing their modules list");
-  });
-
   it("includes module settings when present", () => {
     const prompt = buildSystemPrompt({
       mod1: {

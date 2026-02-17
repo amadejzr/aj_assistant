@@ -11,12 +11,6 @@ const MAX_HISTORY_MESSAGES = 20;
 
 const TOOLS_REQUIRING_APPROVAL = new Set(["createEntry", "updateEntry"]);
 
-interface ChatContext {
-  type: "dashboard" | "modules_list" | "module";
-  moduleId?: string;
-  screenId?: string;
-}
-
 interface PendingAction {
   toolUseId: string;
   name: string;
@@ -27,7 +21,6 @@ interface PendingAction {
 interface ChatRequest {
   conversationId: string;
   message: string;
-  context?: ChatContext;
 }
 
 function describeAction(
@@ -65,7 +58,7 @@ export const chat = onCall(
       throw new HttpsError("unauthenticated", "Must be signed in.");
     }
     const userId = request.auth.uid;
-    const {conversationId, message, context} = request.data as ChatRequest;
+    const {conversationId, message} = request.data as ChatRequest;
 
     if (!conversationId || !message) {
       throw new HttpsError(
@@ -84,7 +77,6 @@ export const chat = onCall(
     const convDoc = await convRef.get();
     if (!convDoc.exists) {
       await convRef.set({
-        context: context ?? null,
         startedAt: FieldValue.serverTimestamp(),
         lastMessageAt: FieldValue.serverTimestamp(),
         messageCount: 0,
@@ -136,7 +128,7 @@ export const chat = onCall(
       };
     }
 
-    const systemPrompt = buildSystemPrompt(modules as never, context);
+    const systemPrompt = buildSystemPrompt(modules as never);
 
     // Call Claude API
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -252,7 +244,6 @@ export const chat = onCall(
           await convRef.update({
             lastMessageAt: FieldValue.serverTimestamp(),
             messageCount: FieldValue.increment(2),
-            ...(context ? {context} : {}),
           });
 
           return {

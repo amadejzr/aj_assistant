@@ -9,7 +9,6 @@ import 'package:aj_assistant/core/repositories/entry_repository.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_bloc.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_event.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_state.dart';
-import 'package:aj_assistant/features/chat/models/chat_context.dart';
 import 'package:aj_assistant/features/chat/models/message.dart';
 import 'package:aj_assistant/features/chat/repositories/chat_repository.dart';
 
@@ -18,9 +17,6 @@ class MockChatRepository extends Mock implements ChatRepository {}
 class MockEntryRepository extends Mock implements EntryRepository {}
 
 class FakeEntry extends Fake implements Entry {}
-
-// ChatContext is sealed — use a concrete subclass for fallback
-const _fallbackContext = DashboardChatContext();
 
 void main() {
   late MockChatRepository chatRepo;
@@ -32,7 +28,6 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(FakeEntry());
-    registerFallbackValue(_fallbackContext);
   });
 
   setUp(() {
@@ -41,10 +36,8 @@ void main() {
     messagesController = StreamController<List<Message>>.broadcast();
 
     // Default stubs
-    when(() => chatRepo.createConversation(
-          any(),
-          context: any(named: 'context'),
-        )).thenAnswer((_) async => convId);
+    when(() => chatRepo.createConversation(any()))
+        .thenAnswer((_) async => convId);
 
     when(() => chatRepo.watchMessages(any(), any()))
         .thenAnswer((_) => messagesController.stream);
@@ -53,7 +46,6 @@ void main() {
           userId: any(named: 'userId'),
           conversationId: any(named: 'conversationId'),
           content: any(named: 'content'),
-          context: any(named: 'context'),
         )).thenAnswer((_) async => 'AI response');
 
     when(() => chatRepo.addLocalMessage(
@@ -98,35 +90,16 @@ void main() {
             .having((s) => s.conversationId, 'conversationId', convId),
       ],
       verify: (_) {
-        verify(() => chatRepo.createConversation(userId, context: null))
-            .called(1);
+        verify(() => chatRepo.createConversation(userId)).called(1);
         verify(() => chatRepo.watchMessages(userId, convId)).called(1);
       },
     );
 
     blocTest<ChatBloc, ChatState>(
-      'passes context to createConversation',
-      build: buildBloc,
-      act: (bloc) => bloc.add(
-        const ChatStarted(context: DashboardChatContext()),
-      ),
-      expect: () => [
-        isA<ChatLoading>(),
-        isA<ChatReady>().having(
-          (s) => s.context,
-          'context',
-          isA<DashboardChatContext>(),
-        ),
-      ],
-    );
-
-    blocTest<ChatBloc, ChatState>(
       'emits error state when createConversation fails',
       build: () {
-        when(() => chatRepo.createConversation(
-              any(),
-              context: any(named: 'context'),
-            )).thenThrow(Exception('Network error'));
+        when(() => chatRepo.createConversation(any()))
+            .thenThrow(Exception('Network error'));
         return buildBloc();
       },
       act: (bloc) => bloc.add(const ChatStarted()),
@@ -162,7 +135,6 @@ void main() {
               userId: userId,
               conversationId: convId,
               content: 'Hello',
-              context: null,
             )).called(1);
       },
     );
@@ -174,7 +146,6 @@ void main() {
               userId: any(named: 'userId'),
               conversationId: any(named: 'conversationId'),
               content: any(named: 'content'),
-              context: any(named: 'context'),
             )).thenThrow(const ChatException('AJ is temporarily unavailable.'));
         return buildBloc();
       },
@@ -199,7 +170,6 @@ void main() {
               userId: any(named: 'userId'),
               conversationId: any(named: 'conversationId'),
               content: any(named: 'content'),
-              context: any(named: 'context'),
             )).thenThrow(Exception('random crash'));
         return buildBloc();
       },
@@ -253,24 +223,6 @@ void main() {
       ])),
       expect: () => [
         isA<ChatReady>().having((s) => s.messages.length, 'len', 2),
-      ],
-    );
-  });
-
-  group('ChatContextChanged', () {
-    blocTest<ChatBloc, ChatState>(
-      'updates context in ChatReady',
-      build: buildBloc,
-      seed: () => const ChatReady(conversationId: convId),
-      act: (bloc) => bloc.add(
-        const ChatContextChanged(ModuleChatContext(moduleId: 'mod1')),
-      ),
-      expect: () => [
-        isA<ChatReady>().having(
-          (s) => s.context,
-          'context',
-          isA<ModuleChatContext>(),
-        ),
       ],
     );
   });

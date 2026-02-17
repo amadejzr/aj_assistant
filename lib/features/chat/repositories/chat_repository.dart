@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../../../core/logging/log.dart';
-import '../models/chat_context.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
 
@@ -31,14 +30,10 @@ class ChatRepository {
   ) =>
       _conversationsRef(userId).doc(conversationId).collection('messages');
 
-  Future<String> createConversation(
-    String userId, {
-    ChatContext? context,
-  }) async {
+  Future<String> createConversation(String userId) async {
     Log.d('Creating conversation for user=$userId', tag: _tag);
     final doc = _conversationsRef(userId).doc();
     await doc.set({
-      if (context != null) 'context': context.toMap(),
       'startedAt': FieldValue.serverTimestamp(),
       'lastMessageAt': FieldValue.serverTimestamp(),
       'messageCount': 0,
@@ -63,7 +58,6 @@ class ChatRepository {
     required String userId,
     required String conversationId,
     required String content,
-    ChatContext? context,
   }) async {
     Log.i('Calling chat function — conv=$conversationId', tag: _tag);
     final callable = _functions.httpsCallable(
@@ -75,7 +69,6 @@ class ChatRepository {
       final result = await callable.call<Map<String, dynamic>>({
         'conversationId': conversationId,
         'message': content,
-        if (context != null) 'context': context.toMap(),
       });
 
       final data = result.data;

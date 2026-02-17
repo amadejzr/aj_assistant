@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../models/chat_context.dart';
 import '../models/message.dart';
 
 sealed class ChatEvent extends Equatable {
@@ -12,11 +11,7 @@ sealed class ChatEvent extends Equatable {
 
 /// Open / resume a chat session.
 class ChatStarted extends ChatEvent {
-  final ChatContext? context;
-  const ChatStarted({this.context});
-
-  @override
-  List<Object?> get props => [context];
+  const ChatStarted();
 }
 
 /// User sends a text message.
@@ -26,15 +21,6 @@ class ChatMessageSent extends ChatEvent {
 
   @override
   List<Object?> get props => [text];
-}
-
-/// The module/screen context changed (user navigated).
-class ChatContextChanged extends ChatEvent {
-  final ChatContext context;
-  const ChatContextChanged(this.context);
-
-  @override
-  List<Object?> get props => [context];
 }
 
 /// User approved pending actions.

@@ -18,12 +18,6 @@ interface ModuleData {
   settings?: Record<string, unknown>;
 }
 
-interface ChatContext {
-  type: "dashboard" | "modules_list" | "module";
-  moduleId?: string;
-  screenId?: string;
-}
-
 function formatField(key: string, field: FieldDef): string {
   let line = `    - ${key} (${field.type}): "${field.label}"`;
   if (field.required) line += " [required]";
@@ -76,7 +70,6 @@ function formatModule(id: string, mod: ModuleData): string {
 
 export function buildSystemPrompt(
   modules: Record<string, ModuleData>,
-  context?: ChatContext,
 ): string {
   const sections: string[] = [];
 
@@ -122,31 +115,6 @@ export function buildSystemPrompt(
       .map((id) => formatModule(id, modules[id]))
       .join("\n\n");
     sections.push(`USER'S MODULES:\n${moduleLines}`);
-  }
-
-  // Context awareness
-  if (context) {
-    switch (context.type) {
-    case "module":
-      sections.push(
-        `CURRENT CONTEXT: The user is viewing module "${context.moduleId}"` +
-          (context.screenId ? ` on screen "${context.screenId}"` : "") +
-          ". Prioritize operations on this module unless they specify " +
-          "otherwise.",
-      );
-      break;
-    case "dashboard":
-      sections.push(
-        "CURRENT CONTEXT: The user is on the dashboard. They may ask " +
-          "about any of their modules.",
-      );
-      break;
-    case "modules_list":
-      sections.push(
-        "CURRENT CONTEXT: The user is viewing their modules list.",
-      );
-      break;
-    }
   }
 
   return sections.join("\n\n");

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/widgets/seal_logo.dart';
 
 class BreathingFab extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -49,16 +49,15 @@ class _BreathingFabState extends State<BreathingFab>
       animation: _glowOpacity,
       builder: (context, child) {
         return Container(
-          width: 56,
-          height: 56,
+          width: 58,
+          height: 58,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: colors.accent,
             boxShadow: [
               BoxShadow(
                 color: colors.accent.withValues(alpha: _glowOpacity.value),
-                blurRadius: 16,
-                spreadRadius: 4,
+                blurRadius: 18,
+                spreadRadius: 3,
               ),
             ],
           ),
@@ -72,10 +71,10 @@ class _BreathingFabState extends State<BreathingFab>
         child: InkWell(
           onTap: widget.onPressed,
           child: Center(
-            child: Icon(
-              PhosphorIcons.chatCircle(PhosphorIconsStyle.bold),
-              color: colors.onBackground,
-              size: 26,
+            child: SealLogo(
+              color: colors.accent,
+              textColor: colors.onBackground,
+              size: 58,
             ),
           ),
         ),
