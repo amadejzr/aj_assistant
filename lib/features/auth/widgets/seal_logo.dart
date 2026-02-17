@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SealLogo extends StatelessWidget {
   final Color color;
@@ -26,7 +25,8 @@ class SealLogo extends StatelessWidget {
         child: Center(
           child: Text(
             'AJ',
-            style: GoogleFonts.cormorantGaramond(
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
               fontSize: size * 0.38,
               fontWeight: FontWeight.w700,
               color: textColor,

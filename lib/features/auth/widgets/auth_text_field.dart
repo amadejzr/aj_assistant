@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -40,13 +39,15 @@ class AuthTextField extends StatelessWidget {
         Text(
           isLogin ? label.toUpperCase() : label,
           style: isLogin
-              ? GoogleFonts.karla(
+              ? TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: colors.onBackgroundMuted,
                   letterSpacing: 1.2,
                 )
-              : GoogleFonts.dmSans(
+              : TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: colors.onBackgroundMuted,
@@ -60,11 +61,13 @@ class AuthTextField extends StatelessWidget {
           validator: validator,
           cursorColor: colors.accent,
           style: isLogin
-              ? GoogleFonts.karla(
+              ? TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 15,
                   color: colors.onBackground,
                 )
-              : GoogleFonts.dmSans(
+              : TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 15,
                   color: colors.onBackground,
                 ),
@@ -81,11 +84,13 @@ class AuthTextField extends StatelessWidget {
     return InputDecoration(
       hintText: hint,
       hintStyle: isLogin
-          ? GoogleFonts.karla(
+          ? TextStyle(
+              fontFamily: 'Karla',
               fontSize: 15,
               color: colors.onBackgroundMuted.withValues(alpha: 0.45),
             )
-          : GoogleFonts.dmSans(
+          : TextStyle(
+              fontFamily: 'Karla',
               fontSize: 15,
               color: colors.onBackgroundMuted.withValues(alpha: 0.5),
             ),

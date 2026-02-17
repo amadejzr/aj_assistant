@@ -87,6 +87,16 @@ class ModuleViewerQuickEntryCreated extends ModuleViewerEvent {
   List<Object?> get props => [schemaKey, data, autoSelectFieldKey];
 }
 
+class ModuleViewerScreenParamChanged extends ModuleViewerEvent {
+  final String key;
+  final dynamic value;
+
+  const ModuleViewerScreenParamChanged(this.key, this.value);
+
+  @override
+  List<Object?> get props => [key, value];
+}
+
 class ModuleViewerQuickEntryUpdated extends ModuleViewerEvent {
   final String entryId;
   final String schemaKey;

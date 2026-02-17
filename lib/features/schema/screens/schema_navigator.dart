@@ -8,7 +8,9 @@ import 'schema_editor_screen.dart';
 import 'schema_list_screen.dart';
 
 class SchemaNavigator extends StatelessWidget {
-  const SchemaNavigator({super.key});
+  final VoidCallback? onExit;
+
+  const SchemaNavigator({super.key, this.onExit});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class SchemaNavigator extends StatelessWidget {
         }
 
         return switch (state.currentScreen) {
-          'list' => const SchemaListScreen(),
+          'list' => SchemaListScreen(onExit: onExit),
           'editor' => const SchemaEditorScreen(),
           'field_editor' => const FieldEditorScreen(),
           _ => const Scaffold(

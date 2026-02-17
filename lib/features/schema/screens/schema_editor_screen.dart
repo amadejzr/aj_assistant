@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -56,7 +55,8 @@ class SchemaEditorScreen extends StatelessWidget {
             ),
             title: Text(
               schema.label.isNotEmpty ? schema.label : schemaKey,
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 26,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,

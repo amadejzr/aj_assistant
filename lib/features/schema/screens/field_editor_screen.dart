@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_definition.dart';
 import '../models/field_type.dart';
@@ -59,7 +58,8 @@ class FieldEditorScreen extends StatelessWidget {
             ),
             title: Text(
               field.label,
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 26,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,

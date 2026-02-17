@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -137,7 +136,8 @@ class _NavItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               color: color,

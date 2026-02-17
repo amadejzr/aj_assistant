@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_definition.dart';
 import '../models/field_type.dart';
@@ -112,7 +111,8 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
             // Title
             Text(
               'Create Schema',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -123,7 +123,8 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
             // Schema key
             Text(
               'SCHEMA KEY',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -152,7 +153,8 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
             // Schema label
             Text(
               'LABEL',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -181,7 +183,8 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
             // Fields section
             Text(
               'Fields',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -227,7 +230,8 @@ class _AddSchemaSheetState extends State<AddSchemaSheet> {
               onPressed: _submit,
               child: Text(
                 'Create',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),

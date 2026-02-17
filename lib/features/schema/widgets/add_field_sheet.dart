@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_definition.dart';
 import '../models/field_type.dart';
@@ -109,7 +108,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             // Title
             Text(
               'Add Field',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -120,7 +120,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             // Field key
             Text(
               'KEY',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -149,7 +150,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             // Field label
             Text(
               'LABEL',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -178,7 +180,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
             // Type selector (chip grid)
             Text(
               'TYPE',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -238,7 +241,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
               const SizedBox(height: AppSpacing.md),
               Text(
                 'OPTIONS',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
@@ -324,7 +328,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
               const SizedBox(height: AppSpacing.md),
               Text(
                 'REFERENCE SCHEMA KEY',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
@@ -365,7 +370,8 @@ class _AddFieldSheetState extends State<AddFieldSheet> {
               onPressed: _submit,
               child: Text(
                 'Add',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),

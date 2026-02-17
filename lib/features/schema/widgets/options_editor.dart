@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
@@ -23,7 +22,8 @@ class OptionsEditor extends StatelessWidget {
       children: [
         Text(
           'Options',
-          style: GoogleFonts.cormorantGaramond(
+          style: TextStyle(
+            fontFamily: 'CormorantGaramond',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: colors.onBackground,
@@ -98,7 +98,8 @@ class OptionsEditor extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Text(
                 'Add Option',
-                style: GoogleFonts.cormorantGaramond(
+                style: TextStyle(
+                  fontFamily: 'CormorantGaramond',
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   color: sheetColors.onBackground,
@@ -108,7 +109,8 @@ class OptionsEditor extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'OPTION VALUE',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
@@ -153,7 +155,8 @@ class OptionsEditor extends StatelessWidget {
                 },
                 child: Text(
                   'Add',
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),

@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../core/dev/mock_expense_module.dart';
+import '../../core/dev/mock_finance_2_module.dart';
+import '../../core/dev/mock_finance_module.dart';
+import '../../core/dev/mock_hiking_module.dart';
+import '../../core/dev/mock_pushup_module.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
@@ -174,7 +176,7 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
                 final repo = context.read<ModuleRepository>();
                 await repo.createModule(
                   authState.user.uid,
-                  createMockExpenseModule(),
+                  createMockHikingModule(),
                 );
               },
               icon: Icon(
@@ -183,8 +185,84 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
                 color: colors.accent,
               ),
               label: Text(
-                'Seed Expense Module',
-                style: GoogleFonts.karla(
+                'Seed Hiking Module',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockPushupModule(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.barbell(PhosphorIconsStyle.bold),
+                size: 16,
+                color: colors.accent,
+              ),
+              label: Text(
+                'Seed Pushup Module',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockFinanceModule(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.wallet(PhosphorIconsStyle.bold),
+                size: 16,
+                color: colors.accent,
+              ),
+              label: Text(
+                'Seed Finance Module',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockFinance2Module(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.trendUp(PhosphorIconsStyle.bold),
+                size: 16,
+                color: colors.accent,
+              ),
+              label: Text(
+                'Seed Finance 2.0',
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: colors.accent,
@@ -281,7 +359,8 @@ class _ModuleCard extends StatelessWidget {
             const Spacer(),
             Text(
               module.name,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -293,7 +372,8 @@ class _ModuleCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 module.description,
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 12,
                   color: colors.onBackgroundMuted,
                 ),

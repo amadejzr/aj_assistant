@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -48,7 +47,8 @@ class SchemaCard extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: GoogleFonts.cormorantGaramond(
+                      style: TextStyle(
+                        fontFamily: 'CormorantGaramond',
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         color: colors.onBackground,

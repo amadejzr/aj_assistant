@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -10,50 +9,58 @@ abstract final class AppTypography {
 
     return TextTheme(
       // Headlines — Cormorant Garamond: calligraphic serif, ink-like quality
-      displayLarge: GoogleFonts.cormorantGaramond(
+      displayLarge: TextStyle(
+        fontFamily: 'CormorantGaramond',
         fontSize: 34,
         fontWeight: FontWeight.w600,
         color: onBg,
         height: 1.15,
         letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.cormorantGaramond(
+      headlineMedium: TextStyle(
+        fontFamily: 'CormorantGaramond',
         fontSize: 26,
         fontWeight: FontWeight.w600,
         color: onBg,
         height: 1.25,
       ),
       // Body — Karla: warm geometric sans, clean and readable
-      titleMedium: GoogleFonts.karla(
+      titleMedium: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 18,
         fontWeight: FontWeight.w500,
         color: onBg,
         height: 1.4,
       ),
-      bodyLarge: GoogleFonts.karla(
+      bodyLarge: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: onBg,
         height: 1.55,
       ),
-      bodyMedium: GoogleFonts.karla(
+      bodyMedium: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: muted,
         height: 1.55,
       ),
-      labelSmall: GoogleFonts.karla(
+      labelSmall: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: muted,
         height: 1.4,
       ),
-      // Mono — IBM Plex Mono: slightly warmer than most monospace
-      labelLarge: GoogleFonts.ibmPlexMono(
+      // Tabular — Karla with tabular figures (replaces IBM Plex Mono)
+      labelLarge: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 13,
         fontWeight: FontWeight.w400,
         color: onBg,
         height: 1.5,
+        fontFeatures: [FontFeature.tabularFigures()],
       ),
     );
   }
