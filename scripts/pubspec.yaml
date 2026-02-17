@@ -1,0 +1,8 @@
+name: aj_scripts
+publish_to: none
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  dart_firebase_admin: ^0.4.1
