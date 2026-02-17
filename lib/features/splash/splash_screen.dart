@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../auth/bloc/auth_bloc.dart';
@@ -218,7 +217,8 @@ class _SplashScreenState extends State<SplashScreen>
                         opacity: _titleOpacity.value,
                         child: Text(
                           'AJ Assistant',
-                          style: GoogleFonts.cormorantGaramond(
+                          style: TextStyle(
+                            fontFamily: 'CormorantGaramond',
                             fontSize: 26,
                             fontWeight: FontWeight.w600,
                             color: colors.onBackground,
@@ -234,7 +234,8 @@ class _SplashScreenState extends State<SplashScreen>
                       opacity: _subtitleOpacity.value,
                       child: Text(
                         'your personal notebook',
-                        style: GoogleFonts.karla(
+                        style: TextStyle(
+                          fontFamily: 'Karla',
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: colors.onBackgroundMuted,

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/models/entry.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -84,7 +83,8 @@ class _ChartWidget extends StatelessWidget {
         child: Center(
           child: Text(
             'No data to display',
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               color: colors.onBackgroundMuted,
               fontSize: 13,
             ),
@@ -115,7 +115,8 @@ class _ChartWidget extends StatelessWidget {
         color: color,
         radius: isDonut ? 24 : 48,
         title: percent >= 5 ? '${percent.round()}%' : '',
-        titleStyle: GoogleFonts.karla(
+        titleStyle: TextStyle(
+          fontFamily: 'Karla',
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: Colors.white,
@@ -194,7 +195,8 @@ class _ChartWidget extends StatelessWidget {
                           label.length > 8
                               ? '${label.substring(0, 7)}…'
                               : label,
-                          style: GoogleFonts.karla(
+                          style: TextStyle(
+                            fontFamily: 'Karla',
                             fontSize: 11,
                             color: colors.onBackgroundMuted,
                           ),
@@ -237,7 +239,8 @@ class _ChartWidget extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               e.value.key,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 12,
                 color: colors.onBackgroundMuted,
               ),

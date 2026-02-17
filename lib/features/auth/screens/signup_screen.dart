@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -175,7 +174,8 @@ class _SignupScreenState extends State<SignupScreen>
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    textStyle: GoogleFonts.dmSans(
+                                    textStyle: TextStyle(
+                                      fontFamily: 'Karla',
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -208,7 +208,8 @@ class _SignupScreenState extends State<SignupScreen>
                                 onTap: () => context.go('/login'),
                                 child: Text(
                                   'Sign in',
-                                  style: GoogleFonts.dmSans(
+                                  style: TextStyle(
+                                    fontFamily: 'Karla',
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: colors.accent,

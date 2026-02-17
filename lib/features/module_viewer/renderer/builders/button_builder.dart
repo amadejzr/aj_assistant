@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -46,7 +45,8 @@ class _ButtonWidget extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: GoogleFonts.karla(
+            textStyle: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -67,7 +67,8 @@ class _ButtonWidget extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: GoogleFonts.karla(
+            textStyle: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -87,7 +88,8 @@ class _ButtonWidget extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.karla(
+          textStyle: TextStyle(
+            fontFamily: 'Karla',
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),

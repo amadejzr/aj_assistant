@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../schema/models/field_definition.dart';
 import '../../../schema/models/module_schema.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -137,7 +135,8 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
           children: [
             Text(
               label,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: colors.onBackgroundMuted,
@@ -182,7 +181,8 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
                       ),
                       child: Text(
                         displayText,
-                        style: GoogleFonts.karla(
+                        style: TextStyle(
+                          fontFamily: 'Karla',
                           fontSize: 14,
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -215,7 +215,8 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
                           const SizedBox(width: 4),
                           Text(
                             'New',
-                            style: GoogleFonts.karla(
+                            style: TextStyle(
+                              fontFamily: 'Karla',
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: colors.accent,

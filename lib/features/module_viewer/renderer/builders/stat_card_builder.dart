@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blueprint_node.dart';
@@ -159,7 +157,8 @@ class _StatCardWidget extends StatelessWidget {
         children: [
           Text(
             card.label,
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: colors.onBackgroundMuted,
@@ -169,7 +168,8 @@ class _StatCardWidget extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             '$value$suffix',
-            style: GoogleFonts.cormorantGaramond(
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
               fontSize: 32,
               fontWeight: FontWeight.w700,
               color: colors.onBackground,

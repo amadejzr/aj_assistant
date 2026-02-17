@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blueprint_node.dart';
@@ -38,7 +36,8 @@ class _SliderWidget extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: colors.onBackgroundMuted,
@@ -49,7 +48,8 @@ class _SliderWidget extends StatelessWidget {
                 currentValue.toStringAsFixed(
                   currentValue == currentValue.roundToDouble() ? 0 : 1,
                 ),
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: colors.onBackground,

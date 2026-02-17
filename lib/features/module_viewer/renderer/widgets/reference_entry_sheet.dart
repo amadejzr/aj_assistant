@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../schema/models/field_definition.dart';
 import '../../../schema/models/field_type.dart';
 import '../../../schema/models/module_schema.dart';
@@ -119,7 +117,8 @@ class _SheetContainerState extends State<_SheetContainer> {
               _isEdit
                   ? 'Edit ${widget.schemaLabel}'
                   : 'Create ${widget.schemaLabel}',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -155,7 +154,8 @@ class _SheetContainerState extends State<_SheetContainer> {
                 ),
                 child: Text(
                   _isEdit ? 'Save' : 'Create',
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -174,7 +174,8 @@ class _SheetContainerState extends State<_SheetContainer> {
     FieldDefinition field,
   ) {
     final colors = context.colors;
-    final labelStyle = GoogleFonts.karla(
+    final labelStyle = TextStyle(
+      fontFamily: 'Karla',
       fontSize: 13,
       fontWeight: FontWeight.w500,
       color: colors.onBackgroundMuted,
@@ -225,7 +226,8 @@ class _SheetContainerState extends State<_SheetContainer> {
     return TextFormField(
       initialValue: _formData[fieldKey]?.toString() ?? '',
       keyboardType: keyboardType,
-      style: GoogleFonts.karla(
+      style: TextStyle(
+        fontFamily: 'Karla',
         fontSize: 15,
         color: colors.onBackground,
       ),
@@ -287,7 +289,8 @@ class _SheetContainerState extends State<_SheetContainer> {
             ),
             child: Text(
               option,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? Colors.white : colors.onBackground,
@@ -329,7 +332,8 @@ class _SheetContainerState extends State<_SheetContainer> {
             const SizedBox(width: 8),
             Text(
               currentDate ?? 'Select date',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 15,
                 color: currentDate != null
                     ? colors.onBackground

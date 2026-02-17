@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/dev/mock_expense_module.dart';
@@ -184,7 +183,8 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
               ),
               label: Text(
                 'Seed Expense Module',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: colors.accent,
@@ -281,7 +281,8 @@ class _ModuleCard extends StatelessWidget {
             const Spacer(),
             Text(
               module.name,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,
@@ -293,7 +294,8 @@ class _ModuleCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 module.description,
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 12,
                   color: colors.onBackgroundMuted,
                 ),

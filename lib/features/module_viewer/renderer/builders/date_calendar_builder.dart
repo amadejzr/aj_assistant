@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -166,7 +166,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
             ),
             Text(
               '${monthNames[_displayedMonth.month - 1]} ${_displayedMonth.year}',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: colors.onBackground,
@@ -191,7 +192,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
               child: Center(
                 child: Text(
                   label,
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: colors.onBackgroundMuted,
@@ -221,7 +223,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Text(
                 'No entries on this day',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   color: colors.onBackgroundMuted,
                 ),
@@ -267,7 +270,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
                         children: [
                           Text(
                             name,
-                            style: GoogleFonts.karla(
+                            style: TextStyle(
+                              fontFamily: 'Karla',
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
                               color: colors.onBackground,
@@ -276,7 +280,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
                           if (sub.isNotEmpty)
                             Text(
                               sub,
-                              style: GoogleFonts.karla(
+                              style: TextStyle(
+                                fontFamily: 'Karla',
                                 fontSize: 13,
                                 color: colors.onBackgroundMuted,
                               ),
@@ -352,7 +357,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
                       alignment: Alignment.center,
                       child: Text(
                         '$day',
-                        style: GoogleFonts.karla(
+                        style: TextStyle(
+                          fontFamily: 'Karla',
                           fontSize: 14,
                           fontWeight:
                               (isToday || isSelected) ? FontWeight.w700 : FontWeight.w400,

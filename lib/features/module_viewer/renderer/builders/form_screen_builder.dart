@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -124,7 +123,8 @@ class _FormScreenShellState extends State<_FormScreenShell> {
         title: widget.form.title != null
             ? Text(
                 widget.form.title!,
-                style: GoogleFonts.cormorantGaramond(
+                style: TextStyle(
+                  fontFamily: 'CormorantGaramond',
                   fontSize: 26,
                   fontWeight: FontWeight.w600,
                   color: colors.onBackground,
@@ -174,7 +174,8 @@ class _FormScreenShellState extends State<_FormScreenShell> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          textStyle: GoogleFonts.karla(
+                          textStyle: TextStyle(
+                            fontFamily: 'Karla',
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -265,7 +264,8 @@ class _LoginScreenState extends State<LoginScreen>
                                             BorderRadius.circular(10),
                                       ),
                                       elevation: 0,
-                                      textStyle: GoogleFonts.karla(
+                                      textStyle: TextStyle(
+                                        fontFamily: 'Karla',
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -304,7 +304,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   onTap: () => context.go('/signup'),
                                   child: Text(
                                     'Sign up',
-                                    style: GoogleFonts.karla(
+                                    style: TextStyle(
+                                      fontFamily: 'Karla',
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: colors.accent,

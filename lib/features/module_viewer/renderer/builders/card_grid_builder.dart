@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -100,7 +99,8 @@ class _ActivityCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: colors.onBackground,
@@ -111,7 +111,8 @@ class _ActivityCard extends StatelessWidget {
               children: [
                 Text(
                   '$count',
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colors.accent,
@@ -120,7 +121,8 @@ class _ActivityCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   count == 1 ? 'entry' : 'entries',
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 12,
                     color: colors.onBackgroundMuted,
                   ),

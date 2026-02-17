@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blueprint_node.dart';
@@ -35,7 +33,8 @@ class _SectionWidget extends StatelessWidget {
         if (section.title != null) ...[
           Text(
             section.title!,
-            style: GoogleFonts.cormorantGaramond(
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
               fontSize: 22,
               fontWeight: FontWeight.w600,
               color: colors.onBackground,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/theme/app_spacing.dart';
@@ -47,7 +47,8 @@ class _EmptyStateWidget extends StatelessWidget {
             if (empty.title != null)
               Text(
                 empty.title!,
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: colors.onBackgroundMuted,
@@ -58,7 +59,8 @@ class _EmptyStateWidget extends StatelessWidget {
               Text(
                 empty.subtitle!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 14,
                   color: colors.onBackgroundMuted,
                 ),

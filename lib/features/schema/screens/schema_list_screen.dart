@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
@@ -42,7 +41,8 @@ class SchemaListScreen extends StatelessWidget {
             ),
             title: Text(
               'Settings',
-              style: GoogleFonts.cormorantGaramond(
+              style: TextStyle(
+                fontFamily: 'CormorantGaramond',
                 fontSize: 26,
                 fontWeight: FontWeight.w600,
                 color: colors.onBackground,

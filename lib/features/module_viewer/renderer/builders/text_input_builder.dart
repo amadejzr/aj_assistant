@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blueprint_node.dart';
@@ -32,13 +30,15 @@ class _TextInputWidget extends StatelessWidget {
         initialValue: currentValue,
         maxLines: input.multiline ? 4 : 1,
         maxLength: maxLength,
-        style: GoogleFonts.karla(
+        style: TextStyle(
+          fontFamily: 'Karla',
           fontSize: 15,
           color: colors.onBackground,
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.karla(
+          labelStyle: TextStyle(
+            fontFamily: 'Karla',
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: colors.onBackgroundMuted,

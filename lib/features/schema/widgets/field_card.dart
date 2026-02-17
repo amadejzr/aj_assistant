@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_definition.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -51,7 +50,8 @@ class FieldCard extends StatelessWidget {
                       children: [
                         Text(
                           field.label,
-                          style: GoogleFonts.cormorantGaramond(
+                          style: TextStyle(
+                            fontFamily: 'CormorantGaramond',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: colors.onBackground,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -60,24 +59,28 @@ class _TextDisplayWidget extends StatelessWidget {
     TextStyle style;
     switch (display.style) {
       case 'headline':
-        style = GoogleFonts.cormorantGaramond(
+        style = TextStyle(
+          fontFamily: 'CormorantGaramond',
           fontSize: 26,
           fontWeight: FontWeight.w600,
           color: colors.onBackground,
         );
       case 'title':
-        style = GoogleFonts.karla(
+        style = TextStyle(
+          fontFamily: 'Karla',
           fontSize: 18,
           fontWeight: FontWeight.w500,
           color: colors.onBackground,
         );
       case 'caption':
-        style = GoogleFonts.karla(
+        style = TextStyle(
+          fontFamily: 'Karla',
           fontSize: 12,
           color: colors.onBackgroundMuted,
         );
       default:
-        style = GoogleFonts.karla(
+        style = TextStyle(
+          fontFamily: 'Karla',
           fontSize: 15,
           color: colors.onBackground,
         );

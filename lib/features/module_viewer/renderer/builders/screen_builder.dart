@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/widgets/paper_background.dart';
@@ -52,7 +50,8 @@ class _ScreenShell extends StatelessWidget {
           title: screen.title != null
               ? Text(
                   screen.title!,
-                  style: GoogleFonts.cormorantGaramond(
+                  style: TextStyle(
+                    fontFamily: 'CormorantGaramond',
                     fontSize: 26,
                     fontWeight: FontWeight.w600,
                     color: colors.onBackground,

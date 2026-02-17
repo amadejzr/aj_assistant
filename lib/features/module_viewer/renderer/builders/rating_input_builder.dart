@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/theme/app_spacing.dart';
@@ -33,7 +32,8 @@ class _RatingInputWidget extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: colors.onBackgroundMuted,

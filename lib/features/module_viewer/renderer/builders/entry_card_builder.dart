@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -91,7 +91,8 @@ class _EntryCardWidget extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.karla(
+                  style: TextStyle(
+                    fontFamily: 'Karla',
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: colors.onBackground,
@@ -101,7 +102,8 @@ class _EntryCardWidget extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.karla(
+                    style: TextStyle(
+                      fontFamily: 'Karla',
                       fontSize: 13,
                       color: colors.onBackgroundMuted,
                     ),
@@ -113,7 +115,8 @@ class _EntryCardWidget extends StatelessWidget {
           if (trailing != null && trailing.isNotEmpty)
             Text(
               trailing,
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: colors.accent,
@@ -213,28 +216,30 @@ class _EntryCardWidget extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Confirm',
-          style: GoogleFonts.karla(
+          style: TextStyle(
+            fontFamily: 'Karla',
             fontWeight: FontWeight.w600,
             color: colors.onBackground,
           ),
         ),
         content: Text(
           message,
-          style: GoogleFonts.karla(color: colors.onBackground),
+          style: TextStyle(fontFamily: 'Karla', color: colors.onBackground),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(false),
             child: Text(
               'Cancel',
-              style: GoogleFonts.karla(color: colors.onBackgroundMuted),
+              style: TextStyle(fontFamily: 'Karla', color: colors.onBackgroundMuted),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(true),
             child: Text(
               'Delete',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 color: colors.error,
                 fontWeight: FontWeight.w600,
               ),

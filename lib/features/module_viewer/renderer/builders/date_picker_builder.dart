@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_spacing.dart';
@@ -41,7 +41,8 @@ class _DatePickerWidget extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: colors.onBackgroundMuted,
@@ -91,7 +92,8 @@ class _DatePickerWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       displayText,
-                      style: GoogleFonts.karla(
+                      style: TextStyle(
+                        fontFamily: 'Karla',
                         fontSize: 15,
                         color: parsed != null
                             ? colors.onBackground

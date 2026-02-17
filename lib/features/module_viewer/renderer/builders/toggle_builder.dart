@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../blueprint_node.dart';
@@ -31,7 +29,8 @@ class _ToggleWidget extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.karla(
+            style: TextStyle(
+              fontFamily: 'Karla',
               fontSize: 15,
               color: colors.onBackground,
             ),

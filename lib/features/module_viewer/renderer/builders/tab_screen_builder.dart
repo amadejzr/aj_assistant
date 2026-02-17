@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -66,7 +65,8 @@ class _TabScreenShell extends StatelessWidget {
             title: tabScreen.title != null
                 ? Text(
                     tabScreen.title!,
-                    style: GoogleFonts.cormorantGaramond(
+                    style: TextStyle(
+                      fontFamily: 'CormorantGaramond',
                       fontSize: 26,
                       fontWeight: FontWeight.w600,
                       color: colors.onBackground,
@@ -88,11 +88,13 @@ class _TabScreenShell extends StatelessWidget {
               indicatorWeight: 2.5,
               labelColor: colors.accent,
               unselectedLabelColor: colors.onBackgroundMuted,
-              labelStyle: GoogleFonts.karla(
+              labelStyle: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
-              unselectedLabelStyle: GoogleFonts.karla(
+              unselectedLabelStyle: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),

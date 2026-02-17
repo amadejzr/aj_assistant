@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/field_type.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -64,7 +63,8 @@ class FieldDraftRow extends StatelessWidget {
             children: [
               Text(
                 'Field ${index + 1}',
-                style: GoogleFonts.karla(
+                style: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
@@ -92,7 +92,8 @@ class FieldDraftRow extends StatelessWidget {
                   style: TextStyle(color: colors.onBackground, fontSize: 14),
                   decoration: InputDecoration(
                     labelText: 'Key',
-                    labelStyle: GoogleFonts.karla(
+                    labelStyle: TextStyle(
+                      fontFamily: 'Karla',
                       fontSize: 12,
                       color: colors.onBackgroundMuted,
                     ),
@@ -117,7 +118,8 @@ class FieldDraftRow extends StatelessWidget {
                   style: TextStyle(color: colors.onBackground, fontSize: 14),
                   decoration: InputDecoration(
                     labelText: 'Label',
-                    labelStyle: GoogleFonts.karla(
+                    labelStyle: TextStyle(
+                      fontFamily: 'Karla',
                       fontSize: 12,
                       color: colors.onBackgroundMuted,
                     ),
@@ -144,7 +146,8 @@ class FieldDraftRow extends StatelessWidget {
                 child: InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Type',
-                    labelStyle: GoogleFonts.karla(
+                    labelStyle: TextStyle(
+                      fontFamily: 'Karla',
                       fontSize: 12,
                       color: colors.onBackgroundMuted,
                     ),
@@ -188,7 +191,8 @@ class FieldDraftRow extends StatelessWidget {
                 children: [
                   Text(
                     'Req',
-                    style: GoogleFonts.karla(
+                    style: TextStyle(
+                      fontFamily: 'Karla',
                       fontSize: 11,
                       color: colors.onBackgroundMuted,
                     ),
@@ -212,7 +216,8 @@ class FieldDraftRow extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(
               'OPTIONS',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.8,
@@ -260,7 +265,8 @@ class FieldDraftRow extends StatelessWidget {
               style: TextStyle(color: colors.onBackground, fontSize: 14),
               decoration: InputDecoration(
                 labelText: 'Reference Schema Key',
-                labelStyle: GoogleFonts.karla(
+                labelStyle: TextStyle(
+                  fontFamily: 'Karla',
                   fontSize: 12,
                   color: colors.onBackgroundMuted,
                 ),

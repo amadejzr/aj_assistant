@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
 import 'render_context.dart';
@@ -75,21 +74,22 @@ class BlueprintActionDispatcher {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Confirm',
-          style: GoogleFonts.karla(
+          style: TextStyle(
+            fontFamily: 'Karla',
             fontWeight: FontWeight.w600,
             color: colors.onBackground,
           ),
         ),
         content: Text(
           message,
-          style: GoogleFonts.karla(color: colors.onBackground),
+          style: TextStyle(fontFamily: 'Karla', color: colors.onBackground),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
             child: Text(
               'Cancel',
-              style: GoogleFonts.karla(color: colors.onBackgroundMuted),
+              style: TextStyle(fontFamily: 'Karla', color: colors.onBackgroundMuted),
             ),
           ),
           TextButton(
@@ -99,7 +99,8 @@ class BlueprintActionDispatcher {
             },
             child: Text(
               'Delete',
-              style: GoogleFonts.karla(
+              style: TextStyle(
+                fontFamily: 'Karla',
                 color: colors.error,
                 fontWeight: FontWeight.w600,
               ),
