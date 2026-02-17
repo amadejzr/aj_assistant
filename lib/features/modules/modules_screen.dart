@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../core/dev/mock_expense_module.dart';
+import '../../core/dev/mock_hiking_module.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
@@ -173,7 +173,7 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
                 final repo = context.read<ModuleRepository>();
                 await repo.createModule(
                   authState.user.uid,
-                  createMockExpenseModule(),
+                  createMockHikingModule(),
                 );
               },
               icon: Icon(
@@ -182,7 +182,7 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
                 color: colors.accent,
               ),
               label: Text(
-                'Seed Expense Module',
+                'Seed Hiking Module',
                 style: TextStyle(
                   fontFamily: 'Karla',
                   fontSize: 14,

@@ -292,6 +292,8 @@ class BlueprintParser {
     return DateCalendarNode(
       dateField: json['dateField'] as String? ?? 'date',
       filter: json['filter'] ?? const <String, dynamic>{},
+      onEntryTap: json['onEntryTap'] as Map<String, dynamic>?,
+      forwardFields: List<String>.from(json['forwardFields'] as List? ?? []),
       properties: json,
     );
   }

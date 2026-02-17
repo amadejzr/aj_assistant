@@ -305,10 +305,14 @@ class CardGridNode extends BlueprintNode {
 class DateCalendarNode extends BlueprintNode {
   final String dateField;
   final dynamic filter;
+  final Map<String, dynamic>? onEntryTap;
+  final List<String> forwardFields;
 
   const DateCalendarNode({
     this.dateField = 'date',
     this.filter = const {},
+    this.onEntryTap,
+    this.forwardFields = const [],
     super.properties,
   }) : super(type: 'date_calendar');
 }

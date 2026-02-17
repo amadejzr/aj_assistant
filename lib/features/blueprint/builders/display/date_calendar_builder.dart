@@ -254,51 +254,77 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
                   entry.data['entryType']?.toString() ??
                   '';
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: colors.accent,
-                        borderRadius: BorderRadius.circular(2),
+              final onEntryTap = widget.calendar.onEntryTap;
+
+              return GestureDetector(
+                onTap: onEntryTap != null
+                    ? () {
+                        final screen = onEntryTap['screen'] as String?;
+                        if (screen == null) return;
+                        final params = <String, dynamic>{};
+                        if (entry.id.isNotEmpty) {
+                          params['_entryId'] = entry.id;
+                        }
+                        for (final key in widget.calendar.forwardFields) {
+                          if (entry.data.containsKey(key)) {
+                            params[key] = entry.data[key];
+                          }
+                        }
+                        widget.ctx.onNavigateToScreen(screen, params: params);
+                      }
+                    : null,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: colors.accent,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: TextStyle(
-                              fontFamily: 'Karla',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: colors.onBackground,
-                            ),
-                          ),
-                          if (sub.isNotEmpty)
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              sub,
+                              name,
                               style: TextStyle(
                                 fontFamily: 'Karla',
-                                fontSize: 13,
-                                color: colors.onBackgroundMuted,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: colors.onBackground,
                               ),
                             ),
-                        ],
+                            if (sub.isNotEmpty)
+                              Text(
+                                sub,
+                                style: TextStyle(
+                                  fontFamily: 'Karla',
+                                  fontSize: 13,
+                                  color: colors.onBackgroundMuted,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      if (onEntryTap != null)
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: colors.onBackgroundMuted,
+                        ),
+                    ],
+                  ),
                 ),
               );
             }),
