@@ -13,6 +13,7 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 
 import 'templates/finance_template.dart';
+import 'templates/fitness_template.dart';
 import 'templates/hiking_template.dart';
 
 Future<void> main() async {
@@ -26,6 +27,7 @@ Future<void> main() async {
 
   final templates = {
     'tpl_finance': financeTemplate,
+    'tpl_fitness': fitnessTemplate,
     'tpl_hiking': hikingTemplate,
   };
 

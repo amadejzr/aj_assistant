@@ -96,7 +96,10 @@ export function buildSystemPrompt(
     "- For enum fields, only use values from the options list.\n" +
     "- For reference fields, use getModuleSummary or queryEntries first " +
     "to find the correct entry ID.\n" +
-    "- Confirm before bulk operations or deletions.\n" +
+    "- For write operations (creating or updating entries), always call " +
+    "the tool directly. The app shows the user an approval card before " +
+    "anything is saved — do NOT ask for confirmation in text first.\n" +
+    "- For deletions, confirm with the user in text before proceeding.\n" +
     "- When the user mentions an amount without specifying a module, " +
     "use context to infer which module they mean.\n" +
     "- Keep responses short. After creating/updating data, briefly " +

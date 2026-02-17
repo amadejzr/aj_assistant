@@ -150,7 +150,7 @@ export const chat = onCall(
         try {
           response = await client.messages.create({
             model: "claude-sonnet-4-5-20250929",
-            max_tokens: 1024,
+            max_tokens: 4096,
             system: systemPrompt,
             tools: toolDefinitions,
             messages,
@@ -180,6 +180,13 @@ export const chat = onCall(
 
         if (textBlocks.length > 0) {
           finalText = textBlocks.join("\n");
+        }
+
+        if (response.stop_reason === "max_tokens") {
+          logger.warn("Response truncated — max_tokens reached", {round});
+          finalText += "\n\nI tried to do too much at once. " +
+            "Could you break that into smaller requests?";
+          break;
         }
 
         if (response.stop_reason !== "tool_use") break;
@@ -291,7 +298,6 @@ export const chat = onCall(
     await convRef.update({
       lastMessageAt: FieldValue.serverTimestamp(),
       messageCount: FieldValue.increment(2),
-      ...(context ? {context} : {}),
     });
 
     return {
