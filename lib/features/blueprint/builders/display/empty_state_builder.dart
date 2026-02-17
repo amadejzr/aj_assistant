@@ -7,6 +7,16 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a centered empty state placeholder with an icon, title, and subtitle.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "empty_state", "icon": "list", "title": "No entries yet", "subtitle": "Add your first entry to get started"}
+/// ```
+///
+/// - `icon` (`String?`, optional): Icon name resolved to a Phosphor icon (e.g., `"list"`, `"workout"`, `"chart"`, `"calendar"`, `"note"`).
+/// - `title` (`String?`, optional): Primary empty state message.
+/// - `subtitle` (`String?`, optional): Secondary descriptive text below the title.
 Widget buildEmptyState(BlueprintNode node, RenderContext ctx) {
   final empty = node as EmptyStateNode;
   return _EmptyStateWidget(empty: empty);

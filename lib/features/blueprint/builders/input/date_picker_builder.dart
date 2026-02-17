@@ -7,6 +7,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a tappable date picker field that opens the platform date dialog and stores an ISO 8601 string.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "date_picker", "fieldKey": "date"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this picker is bound to. The selected date is stored as an ISO 8601 string.
 Widget buildDatePicker(BlueprintNode node, RenderContext ctx) {
   final input = node as DatePickerNode;
   return _DatePickerWidget(input: input, ctx: ctx);
@@ -75,17 +83,16 @@ class _DatePickerWidget extends StatelessWidget {
                 );
               }
             },
-            borderRadius: BorderRadius.circular(10),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: 14,
+              padding: const EdgeInsets.only(
+                top: 12,
+                bottom: 10,
               ),
               decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: colors.border),
+                border: Border(
+                  bottom: BorderSide(color: colors.border),
+                ),
               ),
               child: Row(
                 children: [
@@ -94,7 +101,7 @@ class _DatePickerWidget extends StatelessWidget {
                       displayText,
                       style: TextStyle(
                         fontFamily: 'Karla',
-                        fontSize: 15,
+                        fontSize: 16,
                         color: parsed != null
                             ? colors.onBackground
                             : colors.onBackgroundMuted,

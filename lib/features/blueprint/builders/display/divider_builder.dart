@@ -5,6 +5,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a horizontal divider line with vertical padding.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "divider"}
+/// ```
+///
+/// This widget has no configurable properties.
 Widget buildDividerWidget(BlueprintNode node, RenderContext ctx) {
   return _DividerWidget();
 }

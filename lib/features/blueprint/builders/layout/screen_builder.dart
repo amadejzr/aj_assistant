@@ -6,6 +6,16 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
 
+/// Renders a full-screen scaffold with an app bar, paper background, and optional FAB.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "screen", "title": "Expenses", "children": [], "fab": {"type": "fab", "icon": "add", "action": {}}}
+/// ```
+///
+/// - `title` (`String?`, optional): Title displayed in the app bar.
+/// - `children` (`List<BlueprintNode>`, optional): Child widgets rendered in a column within the screen body.
+/// - `fab` (`BlueprintNode?`, optional): A floating action button node rendered at the bottom-right.
 Widget buildScreen(BlueprintNode node, RenderContext ctx) {
   final screen = node as ScreenNode;
   return _ScreenShell(screen: screen, ctx: ctx);

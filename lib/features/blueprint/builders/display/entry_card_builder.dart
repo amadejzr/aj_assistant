@@ -10,6 +10,19 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/reference_resolver.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a single entry as a card with title, subtitle, trailing value, tap navigation, and swipe actions.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "entry_card", "title": "{{name}}", "subtitle": "{{category}}", "trailing": "{{amount}}", "trailingFormat": "currency"}
+/// ```
+///
+/// - `titleTemplate` (`String?`, optional): Mustache-style template for the card title (e.g., `"{{name}}"`).
+/// - `subtitleTemplate` (`String?`, optional): Mustache-style template for the card subtitle.
+/// - `trailingTemplate` (`String?`, optional): Mustache-style template for the trailing value on the right.
+/// - `trailingFormat` (`String?`, optional): Format hint for the trailing value (e.g., `"currency"`).
+/// - `onTap` (`Map<String, dynamic>`, optional): Navigation action triggered on tap, with `screen` and optional `forwardFields`.
+/// - `swipeActions` (`Map<String, dynamic>`, optional): Swipe-to-dismiss actions (e.g., `right` with `confirm` and `confirmMessage`).
 Widget buildEntryCard(BlueprintNode node, RenderContext ctx) {
   final card = node as EntryCardNode;
   return _EntryCardWidget(card: card, ctx: ctx);

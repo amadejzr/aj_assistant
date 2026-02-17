@@ -4,6 +4,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a tappable time picker field that opens the platform time dialog and stores a `"HH:mm"` string.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "time_picker", "fieldKey": "startTime"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this picker is bound to. The selected time is stored as a `"HH:mm"` formatted string.
 Widget buildTimePicker(BlueprintNode node, RenderContext ctx) {
   final input = node as TimePickerNode;
   return _TimePickerWidget(input: input, ctx: ctx);
@@ -73,17 +81,16 @@ class _TimePickerWidget extends StatelessWidget {
                 ctx.onFormValueChanged(input.fieldKey, formatted);
               }
             },
-            borderRadius: BorderRadius.circular(10),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: 14,
+              padding: const EdgeInsets.only(
+                top: 12,
+                bottom: 10,
               ),
               decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: colors.border),
+                border: Border(
+                  bottom: BorderSide(color: colors.border),
+                ),
               ),
               child: Row(
                 children: [
@@ -92,7 +99,7 @@ class _TimePickerWidget extends StatelessWidget {
                       displayText,
                       style: TextStyle(
                         fontFamily: 'Karla',
-                        fontSize: 15,
+                        fontSize: 16,
                         color: parsed != null
                             ? colors.onBackground
                             : colors.onBackgroundMuted,

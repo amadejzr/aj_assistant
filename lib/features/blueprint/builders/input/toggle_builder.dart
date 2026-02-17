@@ -4,6 +4,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a labeled boolean toggle switch bound to a schema field.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "toggle", "fieldKey": "completed"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this toggle is bound to. Stores a `bool` value.
 Widget buildToggle(BlueprintNode node, RenderContext ctx) {
   final input = node as ToggleNode;
   return _ToggleWidget(input: input, ctx: ctx);

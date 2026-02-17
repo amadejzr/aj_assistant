@@ -5,6 +5,16 @@ import '../../renderer/blueprint_node.dart';
 import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a labeled linear progress bar with a value computed from an expression.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "progress_bar", "label": "Budget Used", "expression": "percentage(sum(amount), settings.monthlyBudget)", "format": "percentage"}
+/// ```
+///
+/// - `label` (`String?`, optional): Display label shown above the progress bar.
+/// - `expression` (`String?`, optional): Expression string evaluated to produce the progress value (0-100).
+/// - `format` (`String?`, optional): Output format. Use `"percentage"` to display as percent; otherwise shows raw value.
 Widget buildProgressBar(BlueprintNode node, RenderContext ctx) {
   final bar = node as ProgressBarNode;
   return _ProgressBarWidget(bar: bar, ctx: ctx);

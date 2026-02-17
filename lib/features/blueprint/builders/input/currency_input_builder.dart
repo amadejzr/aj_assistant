@@ -6,6 +6,16 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a currency form field with a prefix symbol, decimal formatting on blur, and numeric input.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "currency_input", "fieldKey": "amount", "currencySymbol": "$", "decimalPlaces": 2}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this input is bound to.
+/// - `currencySymbol` (`String`, optional): Currency symbol displayed as a prefix. Defaults to `"$"`.
+/// - `decimalPlaces` (`int`, optional): Number of decimal places shown on blur. Defaults to `2`.
 Widget buildCurrencyInput(BlueprintNode node, RenderContext ctx) {
   final input = node as CurrencyInputNode;
   return _CurrencyInputWidget(input: input, ctx: ctx);

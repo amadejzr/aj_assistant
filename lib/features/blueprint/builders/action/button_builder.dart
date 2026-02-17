@@ -6,6 +6,16 @@ import '../../engine/action_dispatcher.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a tappable button that dispatches a blueprint action, with elevated, outlined, and destructive style variants.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "button", "label": "Delete", "action": {"type": "delete_entry"}, "buttonStyle": "destructive"}
+/// ```
+///
+/// - `label` (`String`, required): Text displayed on the button.
+/// - `action` (`Map<String, dynamic>`, optional): Action configuration dispatched via `BlueprintActionDispatcher` on tap.
+/// - `buttonStyle` (`String?`, optional): Visual style variant. One of `"outlined"`, `"destructive"`, or default elevated style.
 Widget buildButton(BlueprintNode node, RenderContext ctx) {
   final button = node as ButtonNode;
   return _ButtonWidget(button: button, ctx: ctx);
@@ -23,7 +33,6 @@ class _ButtonWidget extends StatelessWidget {
 
     final isOutlined = button.buttonStyle == 'outlined';
     final isDestructive = button.buttonStyle == 'destructive';
-    final isPrimary = button.buttonStyle == 'primary';
 
     void handleAction() {
       BlueprintActionDispatcher.dispatch(
@@ -40,12 +49,12 @@ class _ButtonWidget extends StatelessWidget {
         child: OutlinedButton(
           onPressed: handleAction,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: colors.error),
+            side: BorderSide(color: colors.error, width: 1.5),
             foregroundColor: colors.error,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
-            textStyle: TextStyle(
+            textStyle: const TextStyle(
               fontFamily: 'Karla',
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -62,12 +71,12 @@ class _ButtonWidget extends StatelessWidget {
         child: OutlinedButton(
           onPressed: handleAction,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: colors.accent),
+            side: BorderSide(color: colors.accent, width: 1.5),
             foregroundColor: colors.accent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
-            textStyle: TextStyle(
+            textStyle: const TextStyle(
               fontFamily: 'Karla',
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -83,12 +92,13 @@ class _ButtonWidget extends StatelessWidget {
       child: ElevatedButton(
         onPressed: handleAction,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? colors.accent : colors.accent,
+          backgroundColor: colors.accent,
           foregroundColor: Colors.white,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontFamily: 'Karla',
             fontSize: 15,
             fontWeight: FontWeight.w600,

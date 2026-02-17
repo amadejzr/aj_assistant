@@ -5,6 +5,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a chip-based selector for single or multiple enum values derived from the schema field options.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "enum_selector", "fieldKey": "category", "multiSelect": false}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this selector is bound to. Options are derived from the field definition.
+/// - `multiSelect` (`bool`, optional): Whether multiple options can be selected simultaneously. Defaults to `false`.
 Widget buildEnumSelector(BlueprintNode node, RenderContext ctx) {
   final input = node as EnumSelectorNode;
   return _EnumSelectorWidget(input: input, ctx: ctx);

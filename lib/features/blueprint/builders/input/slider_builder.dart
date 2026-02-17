@@ -4,6 +4,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a labeled slider input with min/max/divisions derived from schema field constraints.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "slider", "fieldKey": "intensity"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this slider is bound to. Min, max, and divisions are read from the field's `constraints`.
 Widget buildSliderInput(BlueprintNode node, RenderContext ctx) {
   final input = node as SliderNode;
   return _SliderWidget(input: input, ctx: ctx);

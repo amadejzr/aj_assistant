@@ -7,6 +7,15 @@ import '../../engine/action_dispatcher.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a popup menu button with a list of labeled action items, each dispatching a blueprint action on selection.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "action_menu", "icon": "dots-three", "items": [{"label": "Edit", "icon": "edit", "action": {"type": "navigate", "screen": "edit"}}]}
+/// ```
+///
+/// - `icon` (`String`, optional): Trigger icon name resolved to a Phosphor icon. Defaults to `"dots-three"`.
+/// - `items` (`List<Map<String, dynamic>>`, optional): Menu items, each with `label` (String), optional `icon` (String), and `action` (Map) dispatched on selection.
 Widget buildActionMenu(BlueprintNode node, RenderContext ctx) {
   final menu = node as ActionMenuNode;
   return _ActionMenuWidget(menu: menu, ctx: ctx);

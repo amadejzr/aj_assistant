@@ -7,6 +7,16 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../widgets/reference_entry_sheet.dart';
 
+/// Renders a chip-based picker for selecting a reference entry from another schema, with inline create and edit support.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "reference_picker", "fieldKey": "exerciseId", "schemaKey": "exercises", "displayField": "name"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this picker is bound to. Stores the selected entry's ID.
+/// - `schemaKey` (`String`, required): The key of the target schema whose entries are listed as options.
+/// - `displayField` (`String`, optional): Field key from the referenced entries used as the display label. Defaults to `"name"`.
 Widget buildReferencePicker(BlueprintNode node, RenderContext ctx) {
   final input = node as ReferencePickerNode;
   return _ReferencePickerWidget(input: input, ctx: ctx);

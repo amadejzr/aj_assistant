@@ -6,6 +6,16 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
 
+/// Renders a collapsible section with an animated expand/collapse toggle.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "expandable", "title": "Details", "initiallyExpanded": false, "children": [{"type": "text_display", "text": "More info"}]}
+/// ```
+///
+/// - `title` (`String?`, optional): Heading text displayed in the expandable header.
+/// - `children` (`List<BlueprintNode>`, optional): Child widgets shown when the section is expanded.
+/// - `initiallyExpanded` (`bool`, optional): Whether the section starts expanded. Defaults to `false`.
 Widget buildExpandable(BlueprintNode node, RenderContext ctx) {
   final expandable = node as ExpandableNode;
   return _ExpandableWidget(expandable: expandable, ctx: ctx);

@@ -5,6 +5,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a styled text widget with mustache-template interpolation from screen params and form values.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "text_display", "text": "Hello, {{name}}!", "style": "headline"}
+/// ```
+///
+/// - `text` (`String`, required): Text content with optional `{{key}}` template placeholders.
+/// - `style` (`String?`, optional): Text style variant. One of `"headline"`, `"title"`, `"caption"`, or default body style.
 Widget buildTextDisplay(BlueprintNode node, RenderContext ctx) {
   final display = node as TextDisplayNode;
   return _TextDisplayWidget(display: display, ctx: ctx);

@@ -6,6 +6,16 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a small styled badge label with a slight hanko-seal rotation.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "badge", "text": "New", "variant": "accent"}
+/// ```
+///
+/// - `text` (`String`, required): Display text shown inside the badge.
+/// - `expression` (`String?`, optional): Expression string whose resolved value overrides the text.
+/// - `variant` (`String`, optional): Color variant. One of `"default"`, `"accent"`, `"success"`, or `"warning"`. Defaults to `"default"`.
 Widget buildBadge(BlueprintNode node, RenderContext ctx) {
   final badge = node as BadgeNode;
   return _BadgeWidget(badge: badge, ctx: ctx);

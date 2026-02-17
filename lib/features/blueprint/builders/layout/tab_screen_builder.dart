@@ -7,6 +7,16 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
 
+/// Renders a tabbed screen scaffold with a tab bar, paper background, and optional FAB.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "tab_screen", "title": "Tracker", "tabs": [{"label": "List", "icon": "list", "content": {"type": "scroll_column", "children": []}}]}
+/// ```
+///
+/// - `title` (`String?`, optional): Title displayed in the app bar.
+/// - `tabs` (`List<TabDef>`, optional): Tab definitions, each with a label, optional icon, and content node.
+/// - `fab` (`BlueprintNode?`, optional): A floating action button node rendered at the bottom-right.
 Widget buildTabScreen(BlueprintNode node, RenderContext ctx) {
   final tab = node as TabScreenNode;
   return _TabScreenShell(tabScreen: tab, ctx: ctx);

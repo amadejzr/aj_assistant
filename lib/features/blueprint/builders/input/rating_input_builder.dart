@@ -6,6 +6,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a star-based rating input with tap-to-select and tap-to-clear behavior.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "rating_input", "fieldKey": "rating"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this rating is bound to. Max stars are read from the field's `constraints.max` (defaults to 5). Stores an `int` value.
 Widget buildRatingInput(BlueprintNode node, RenderContext ctx) {
   final input = node as RatingInputNode;
   return _RatingInputWidget(input: input, ctx: ctx);

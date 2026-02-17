@@ -10,6 +10,15 @@ import '../../renderer/blueprint_node.dart';
 import '../../engine/entry_filter.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders an interactive monthly calendar view that highlights days with entries and shows entry details on tap.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "date_calendar", "dateField": "date"}
+/// ```
+///
+/// - `dateField` (`String`, optional): The entry field key containing date values. Defaults to `"date"`.
+/// - `filter` (`dynamic`, optional): Entry filter to scope which entries appear on the calendar.
 Widget buildDateCalendar(BlueprintNode node, RenderContext ctx) {
   final calendar = node as DateCalendarNode;
   return _DateCalendarWidget(calendar: calendar, ctx: ctx);

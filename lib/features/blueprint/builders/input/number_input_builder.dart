@@ -5,6 +5,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a numeric form field with decimal support and min/max validation from schema constraints.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "number_input", "fieldKey": "duration"}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this input is bound to. Label, required flag, and min/max constraints are derived from the field definition.
 Widget buildNumberInput(BlueprintNode node, RenderContext ctx) {
   final input = node as NumberInputNode;
   return _NumberInputWidget(input: input, ctx: ctx);
@@ -49,23 +57,11 @@ class _NumberInputWidget extends StatelessWidget {
             color: colors.onBackgroundMuted,
             letterSpacing: 0.8,
           ),
-          filled: true,
-          fillColor: colors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+          enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: colors.border),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: colors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: colors.accent, width: 1.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 14,
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.accent, width: 2),
           ),
         ),
         validator: (v) {

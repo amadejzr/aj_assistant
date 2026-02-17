@@ -11,6 +11,17 @@ import '../../engine/entry_filter.dart';
 import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a chart (pie, donut, or bar) by grouping entries and computing aggregates.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "chart", "chartType": "donut", "groupBy": "category", "aggregate": "sum(amount)"}
+/// ```
+///
+/// - `chartType` (`String`, optional): Chart visualization type. One of `"pie"`, `"donut"`, or `"bar"`. Defaults to `"donut"`.
+/// - `groupBy` (`String?`, optional): Entry field key used to group data into chart segments.
+/// - `aggregate` (`String?`, optional): Expression string evaluated per group (e.g., `"sum(amount)"`). Defaults to count if omitted.
+/// - `filter` (`dynamic`, optional): Entry filter to scope which entries are included in the chart.
 Widget buildChart(BlueprintNode node, RenderContext ctx) {
   final chart = node as ChartNode;
   return _ChartWidget(chart: chart, ctx: ctx);
@@ -23,13 +34,13 @@ class _ChartWidget extends StatelessWidget {
   const _ChartWidget({required this.chart, required this.ctx});
 
   static const _palette = [
-    Color(0xFFD94E33), // vermillion
+    Color(0xFFD94E33), // vermillion (hanko red)
+    Color(0xFF4A4A48), // charcoal (sumi ink)
+    Color(0xFF8B6E4E), // warm brown (walnut ink)
+    Color(0xFFC9A84C), // warm gold (aged paper)
     Color(0xFF5B8C5A), // sage green
-    Color(0xFF4A90A4), // muted blue
-    Color(0xFFC9A84C), // warm gold
-    Color(0xFF8B6E99), // muted purple
     Color(0xFFCC7744), // copper
-    Color(0xFF6B9E6B), // forest green
+    Color(0xFF7A8B8B), // warm gray (stone)
     Color(0xFF9E6B6B), // dusty rose
   ];
 

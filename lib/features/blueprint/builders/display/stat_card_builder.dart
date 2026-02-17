@@ -6,6 +6,18 @@ import '../../engine/entry_filter.dart';
 import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a stat card showing a computed value from entry data.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "stat_card", "label": "Total", "stat": "count", "expression": "sum(amount)", "format": "currency"}
+/// ```
+///
+/// - `label` (`String`, required): Display label shown above the computed value.
+/// - `stat` (`String`, required): Legacy stat type (e.g., `"count"`, `"streak"`, `"sum_amount"`, `"this_week"`, `"this_month"`, `"avg_duration"`, `"total_duration"`, `"sum_field"`, `"param_value"`).
+/// - `expression` (`String?`, optional): Expression string evaluated by `ExpressionEvaluator` for dynamic computation.
+/// - `format` (`String?`, optional): Output format hint (e.g., `"minutes"`, `"currency"`).
+/// - `filter` (`dynamic`, optional): Entry filter to scope which entries are included in the computation.
 Widget buildStatCard(BlueprintNode node, RenderContext ctx) {
   final card = node as StatCardNode;
   return _StatCardWidget(card: card, ctx: ctx);

@@ -7,6 +7,16 @@ import '../../engine/action_dispatcher.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a circular icon button with an optional tooltip that dispatches a blueprint action on tap.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "icon_button", "icon": "edit", "action": {"type": "navigate", "screen": "edit"}, "tooltip": "Edit entry"}
+/// ```
+///
+/// - `icon` (`String`, required): Icon name resolved to a Phosphor icon (e.g., `"add"`, `"edit"`, `"delete"`, `"settings"`, `"share"`, `"close"`, `"arrow-left"`, `"arrow-right"`).
+/// - `action` (`Map<String, dynamic>`, optional): Action configuration dispatched via `BlueprintActionDispatcher` on tap.
+/// - `tooltip` (`String?`, optional): Tooltip text shown on long press.
 Widget buildIconButton(BlueprintNode node, RenderContext ctx) {
   final btn = node as IconButtonNode;
   return _IconButtonWidget(btn: btn, ctx: ctx);

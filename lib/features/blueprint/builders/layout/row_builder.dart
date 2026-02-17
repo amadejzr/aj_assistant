@@ -5,6 +5,14 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
 
+/// Renders children in a horizontal row with equal expansion and spacing.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "row", "children": [{"type": "stat_card", "label": "A", "stat": "count"}, {"type": "stat_card", "label": "B", "stat": "count"}]}
+/// ```
+///
+/// - `children` (`List<BlueprintNode>`, optional): Child widgets rendered side-by-side, each wrapped in `Expanded`.
 Widget buildRow(BlueprintNode node, RenderContext ctx) {
   final row = node as RowNode;
   final registry = WidgetRegistry.instance;

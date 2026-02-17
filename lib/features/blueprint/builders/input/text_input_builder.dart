@@ -4,6 +4,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a text form field bound to a schema field, with optional multiline support.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "text_input", "fieldKey": "name", "multiline": false}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key this input is bound to. Label and validation are derived from the field definition.
+/// - `multiline` (`bool`, optional): Whether to render a multiline text area (4 lines) instead of a single line. Defaults to `false`.
 Widget buildTextInput(BlueprintNode node, RenderContext ctx) {
   final input = node as TextInputNode;
   return _TextInputWidget(input: input, ctx: ctx);
@@ -44,23 +53,11 @@ class _TextInputWidget extends StatelessWidget {
             color: colors.onBackgroundMuted,
             letterSpacing: 0.8,
           ),
-          filled: true,
-          fillColor: colors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+          enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: colors.border),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: colors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: colors.accent, width: 1.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 14,
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.accent, width: 2),
           ),
         ),
         validator: isRequired

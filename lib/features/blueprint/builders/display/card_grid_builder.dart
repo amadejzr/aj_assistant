@@ -6,6 +6,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
+/// Renders a 2-column grid of tappable cards, one per enum option, showing the entry count for each.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "card_grid", "fieldKey": "category", "action": {"screen": "category_detail", "paramKey": "category"}}
+/// ```
+///
+/// - `fieldKey` (`String`, required): Schema field key whose enum options populate the grid cards.
+/// - `action` (`Map<String, dynamic>`, optional): Navigation action on card tap, with `screen` and optional `paramKey`.
 Widget buildCardGrid(BlueprintNode node, RenderContext ctx) {
   final grid = node as CardGridNode;
   return _CardGridWidget(grid: grid, ctx: ctx);

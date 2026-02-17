@@ -7,6 +7,20 @@ import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
 
+/// Renders a form screen with input fields, a submit button, and optional default values.
+///
+/// Blueprint JSON:
+/// ```json
+/// {"type": "form_screen", "title": "Add Entry", "submitLabel": "Save", "children": [{"type": "text_input", "fieldKey": "name"}]}
+/// ```
+///
+/// - `title` (`String?`, optional): Title displayed in the app bar.
+/// - `children` (`List<BlueprintNode>`, optional): Input widget nodes rendered inside the scrollable form body.
+/// - `submitLabel` (`String`, optional): Label for the submit button. Defaults to `"Save"`.
+/// - `editLabel` (`String?`, optional): Alternative submit button label used when editing an existing entry.
+/// - `submitAction` (`Map<String, dynamic>`, optional): Action configuration dispatched on form submission.
+/// - `defaults` (`Map<String, dynamic>`, optional): Default form field values merged with screen params.
+/// - `nav` (`BlueprintNode?`, optional): An optional navigation widget rendered below the form fields.
 Widget buildFormScreen(BlueprintNode node, RenderContext ctx) {
   final form = node as FormScreenNode;
 
