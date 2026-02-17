@@ -9,6 +9,8 @@ import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/marketplace/screens/marketplace_screen.dart';
+import 'features/marketplace/screens/template_detail_screen.dart';
 import 'features/module_info/screens/module_info_screen.dart';
 import 'features/module_viewer/screens/module_viewer_screen.dart';
 import 'features/schema/screens/schema_screen.dart';
@@ -83,6 +85,26 @@ GoRouter createRouter(AuthBloc authBloc) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: HomeScreen(),
             ),
+          ),
+        ],
+      ),
+      // Marketplace — full-screen, outside the shell
+      GoRoute(
+        path: '/marketplace',
+        pageBuilder: (context, state) => _pageFadeSlide(
+          key: state.pageKey,
+          child: const MarketplaceScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: ':templateId',
+            pageBuilder: (context, state) {
+              final templateId = state.pathParameters['templateId']!;
+              return _pageFadeSlide(
+                key: state.pageKey,
+                child: TemplateDetailScreen(templateId: templateId),
+              );
+            },
           ),
         ],
       ),

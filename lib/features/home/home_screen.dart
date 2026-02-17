@@ -8,6 +8,7 @@ import '../../core/dev/mock_finance_2_module.dart';
 import '../../core/dev/mock_finance_module.dart';
 import '../../core/dev/mock_hiking_module.dart';
 import '../../core/dev/mock_pushup_module.dart';
+import '../../core/dev/seed_marketplace.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
@@ -284,6 +285,12 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
                   label: 'Seed Finance 2.0',
                   colors: colors,
                   onPressed: () => _seedModule(createMockFinance2Module()),
+                ),
+                _DebugSeedButton(
+                  icon: PhosphorIcons.storefront(PhosphorIconsStyle.bold),
+                  label: 'Seed Marketplace',
+                  colors: colors,
+                  onPressed: () => seedMarketplaceTemplates(),
                 ),
               ],
             ],
