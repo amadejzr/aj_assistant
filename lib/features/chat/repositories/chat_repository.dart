@@ -82,9 +82,12 @@ class ChatRepository {
       final message = data['message'] as String? ?? '';
       Log.i('Function returned: ${message.length} chars', tag: _tag);
       return message;
+    } on FirebaseFunctionsException catch (e) {
+      Log.e('Function error [${e.code}]: ${e.message}', tag: _tag);
+      throw ChatException(_friendlyError(e.code, e.message));
     } catch (e) {
       Log.e('Function call failed: $e', tag: _tag);
-      rethrow;
+      throw ChatException('Unable to reach AJ. Check your connection.');
     }
   }
 
@@ -122,4 +125,29 @@ class ChatRepository {
         .get();
     return snap.docs.map(Conversation.fromFirestore).toList();
   }
+
+  static String _friendlyError(String code, String? message) {
+    switch (code) {
+      case 'unauthenticated':
+        return 'Please sign in again to continue.';
+      case 'unavailable':
+        return 'AJ is temporarily unavailable. Please try again.';
+      case 'deadline-exceeded':
+        return 'Request timed out. Try a simpler message.';
+      case 'resource-exhausted':
+        return 'Too many requests. Please wait a moment.';
+      case 'internal':
+        return message ?? 'Something went wrong. Please try again.';
+      default:
+        return message ?? 'Something went wrong. Please try again.';
+    }
+  }
+}
+
+class ChatException implements Exception {
+  final String message;
+  const ChatException(this.message);
+
+  @override
+  String toString() => message;
 }

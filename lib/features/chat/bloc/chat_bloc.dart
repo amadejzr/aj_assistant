@@ -114,6 +114,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (latest is ChatReady) {
         emit(latest.copyWith(isAiTyping: false));
       }
+    } on ChatException catch (e) {
+      Log.e('sendMessage failed: $e', tag: _tag);
+      final latest = state;
+      if (latest is ChatReady) {
+        emit(latest.copyWith(isAiTyping: false, error: e.message));
+      }
     } catch (e, stack) {
       Log.e('sendMessage failed: $e', tag: _tag);
       Log.e('$stack', tag: _tag);
@@ -121,7 +127,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (latest is ChatReady) {
         emit(latest.copyWith(
           isAiTyping: false,
-          error: 'Failed to send message: $e',
+          error: 'Something went wrong. Please try again.',
         ));
       }
     }

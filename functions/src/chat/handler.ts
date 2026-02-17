@@ -148,115 +148,149 @@ export const chat = onCall(
     const messages = [...history];
     let finalText = "";
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      logger.info(`Claude round ${round + 1}`, {
-        messageCount: messages.length,
-      });
+    try {
+      for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+        logger.info(`Claude round ${round + 1}`, {
+          messageCount: messages.length,
+        });
 
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-5-20250929",
-        max_tokens: 1024,
-        system: systemPrompt,
-        tools: toolDefinitions,
-        messages,
-      });
+        let response: Anthropic.Messages.Message;
+        try {
+          response = await client.messages.create({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 1024,
+            system: systemPrompt,
+            tools: toolDefinitions,
+            messages,
+          });
+        } catch (apiErr) {
+          const msg = (apiErr as Error).message ?? "Unknown API error";
+          logger.error("Claude API call failed", {error: msg});
 
-      const textBlocks = response.content
-        .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
-        .map((b) => b.text);
+          // Save an error message so the user sees something
+          await messagesRef.add({
+            role: "assistant",
+            content: "Sorry, I'm having trouble right now. Please try again.",
+            timestamp: FieldValue.serverTimestamp(),
+          });
 
-      if (textBlocks.length > 0) {
-        finalText = textBlocks.join("\n");
-      }
+          throw new HttpsError(
+            "unavailable",
+            `AI service error: ${msg}`,
+          );
+        }
 
-      if (response.stop_reason !== "tool_use") break;
+        const textBlocks = response.content
+          .filter(
+            (b): b is Anthropic.Messages.TextBlock => b.type === "text",
+          )
+          .map((b) => b.text);
 
-      const toolUses = response.content
-        .filter(
-          (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use",
+        if (textBlocks.length > 0) {
+          finalText = textBlocks.join("\n");
+        }
+
+        if (response.stop_reason !== "tool_use") break;
+
+        const toolUses = response.content
+          .filter(
+            (b): b is Anthropic.Messages.ToolUseBlock =>
+              b.type === "tool_use",
+          );
+        if (toolUses.length === 0) break;
+
+        // Split: auto-execute read-only tools, pause for write tools
+        const autoTools = toolUses.filter(
+          (t) => !TOOLS_REQUIRING_APPROVAL.has(t.name),
         );
-      if (toolUses.length === 0) break;
+        const approvalTools = toolUses.filter(
+          (t) => TOOLS_REQUIRING_APPROVAL.has(t.name),
+        );
 
-      // Split: auto-execute read-only tools, pause for write tools
-      const autoTools = toolUses.filter(
-        (t) => !TOOLS_REQUIRING_APPROVAL.has(t.name),
-      );
-      const approvalTools = toolUses.filter(
-        (t) => TOOLS_REQUIRING_APPROVAL.has(t.name),
-      );
+        if (approvalTools.length > 0) {
+          // Execute read-only tools first
+          for (const toolUse of autoTools) {
+            await executeToolCall(userId, {
+              id: toolUse.id,
+              name: toolUse.name,
+              input: toolUse.input as Record<string, unknown>,
+            });
+          }
 
-      if (approvalTools.length > 0) {
-        // Execute read-only tools first
-        for (const toolUse of autoTools) {
-          await executeToolCall(userId, {
+          // Build pending actions for Flutter to show
+          const pendingActions: PendingAction[] = approvalTools.map((t) => ({
+            toolUseId: t.id,
+            name: t.name,
+            input: t.input as Record<string, unknown>,
+            description: describeAction(
+              t.name, t.input as Record<string, unknown>,
+            ),
+          }));
+
+          logger.info("Pausing for approval", {
+            tools: approvalTools.map((t) => t.name),
+          });
+
+          // Save AI text (if any) as a message
+          if (finalText) {
+            await messagesRef.add({
+              role: "assistant",
+              content: finalText,
+              timestamp: FieldValue.serverTimestamp(),
+            });
+          }
+
+          // Save pending actions as a special message
+          await messagesRef.add({
+            role: "assistant",
+            content: "",
+            pendingActions,
+            approvalStatus: "pending",
+            timestamp: FieldValue.serverTimestamp(),
+          });
+
+          await convRef.update({
+            lastMessageAt: FieldValue.serverTimestamp(),
+            messageCount: FieldValue.increment(2),
+            ...(context ? {context} : {}),
+          });
+
+          return {
+            message: finalText,
+            conversationId,
+            pendingActions,
+          };
+        }
+
+        // All tools are read-only — execute and continue loop
+        messages.push({role: "assistant", content: response.content});
+
+        const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
+        for (const toolUse of toolUses) {
+          const result = await executeToolCall(userId, {
             id: toolUse.id,
             name: toolUse.name,
             input: toolUse.input as Record<string, unknown>,
           });
+          toolResults.push(result);
         }
 
-        // Build pending actions for Flutter to show
-        const pendingActions: PendingAction[] = approvalTools.map((t) => ({
-          toolUseId: t.id,
-          name: t.name,
-          input: t.input as Record<string, unknown>,
-          description: describeAction(
-            t.name, t.input as Record<string, unknown>,
-          ),
-        }));
-
-        logger.info("Pausing for approval", {
-          tools: approvalTools.map((t) => t.name),
-        });
-
-        // Save AI text (if any) as a message
-        if (finalText) {
-          await messagesRef.add({
-            role: "assistant",
-            content: finalText,
-            timestamp: FieldValue.serverTimestamp(),
-          });
-        }
-
-        // Save pending actions as a special message
-        await messagesRef.add({
-          role: "assistant",
-          content: "",
-          pendingActions,
-          timestamp: FieldValue.serverTimestamp(),
-        });
-
-        await convRef.update({
-          lastMessageAt: FieldValue.serverTimestamp(),
-          messageCount: FieldValue.increment(2),
-          ...(context ? {context} : {}),
-        });
-
-        // Return — Flutter will execute writes client-side on approve
-        return {
-          message: finalText,
-          conversationId,
-          pendingActions,
-        };
+        messages.push({role: "user", content: toolResults});
       }
+    } catch (err) {
+      // Re-throw HttpsErrors (already handled above)
+      if (err instanceof HttpsError) throw err;
 
-      // All tools are read-only — execute and continue loop
-      messages.push({role: "assistant", content: response.content});
-
-      const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
-      for (const toolUse of toolUses) {
-        const result = await executeToolCall(userId, {
-          id: toolUse.id,
-          name: toolUse.name,
-          input: toolUse.input as Record<string, unknown>,
-        });
-        toolResults.push(result);
-      }
-
-      messages.push({role: "user", content: toolResults});
+      const msg = (err as Error).message ?? "Unknown error";
+      logger.error("Chat handler error", {error: msg});
+      throw new HttpsError("internal", `Chat failed: ${msg}`);
     }
 
     // Save final response
+    if (!finalText) {
+      finalText = "I wasn't able to generate a response. Please try again.";
+    }
+
     await messagesRef.add({
       role: "assistant",
       content: finalText,

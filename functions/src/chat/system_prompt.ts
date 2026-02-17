@@ -95,6 +95,9 @@ export function buildSystemPrompt(
 
   sections.push(
     "RULES:\n" +
+    "- ONLY operate on modules the user already has. If the user asks to " +
+    "add data that doesn't fit any existing module, tell them they need " +
+    "to create that module first. Never invent module IDs or schema keys.\n" +
     "- Use the tools provided to perform data operations. Never make up data.\n" +
     "- Always match field keys exactly as defined in the schema.\n" +
     "- For enum fields, only use values from the options list.\n" +

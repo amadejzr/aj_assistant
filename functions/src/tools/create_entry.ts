@@ -1,4 +1,5 @@
 import {getFirestore, FieldValue, Timestamp} from "firebase-admin/firestore";
+import * as logger from "firebase-functions/logger";
 import {executeEffects} from "../effects/post_submit_effect_executor.js";
 
 interface CreateEntryInput {
@@ -54,30 +55,44 @@ export async function createEntry(
   const entriesRef = moduleRef.collection("entries");
   const entryDoc = entriesRef.doc();
 
-  await entryDoc.set({
-    data,
-    schemaKey,
-    schemaVersion: schema.version ?? 1,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+  try {
+    await entryDoc.set({
+      data,
+      schemaKey,
+      schemaVersion: schema.version ?? 1,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    return JSON.stringify({
+      error: `Failed to write entry: ${(err as Error).message}`,
+    });
+  }
 
-  // Execute onSubmit effects from the form screen if any exist
-  // Look for onSubmit effects in the module's screens
-  const screens = moduleData.screens ?? {};
-  for (const screen of Object.values(screens)) {
-    const screenDef = screen as Record<string, unknown>;
-    const onSubmit = screenDef.onSubmit as Record<string, unknown>[] | undefined;
-    if (onSubmit && Array.isArray(onSubmit)) {
-      // Fetch current entries for effect computation
-      const entriesSnap = await entriesRef.get();
-      const entries = entriesSnap.docs.map((doc) => ({
-        id: doc.id,
-        data: (doc.data().data ?? {}) as Record<string, unknown>,
-      }));
-      await executeEffects(userId, moduleId, onSubmit as never[], data, entries);
-      break;
+  // Execute onSubmit effects (non-fatal — log but don't fail the create)
+  try {
+    const screens = moduleData.screens ?? {};
+    for (const screen of Object.values(screens)) {
+      const screenDef = screen as Record<string, unknown>;
+      const onSubmit = screenDef.onSubmit as
+        Record<string, unknown>[] | undefined;
+      if (onSubmit && Array.isArray(onSubmit)) {
+        const entriesSnap = await entriesRef.get();
+        const entries = entriesSnap.docs.map((doc) => ({
+          id: doc.id,
+          data: (doc.data().data ?? {}) as Record<string, unknown>,
+        }));
+        await executeEffects(
+          userId, moduleId, onSubmit as never[], data, entries,
+        );
+        break;
+      }
     }
+  } catch (err) {
+    // Effects failing shouldn't prevent the entry from being created
+    logger.warn("onSubmit effects failed (entry was still created)", {
+      error: (err as Error).message,
+    });
   }
 
   // Read back for timestamp

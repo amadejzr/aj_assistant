@@ -1,4 +1,5 @@
 import {getFirestore, FieldValue, Timestamp} from "firebase-admin/firestore";
+import * as logger from "firebase-functions/logger";
 import {executeEffects} from "../effects/post_submit_effect_executor.js";
 
 interface UpdateEntryInput {
@@ -59,26 +60,39 @@ export async function updateEntry(
     updateFields[`data.${key}`] = value;
   }
 
-  await entryRef.update(updateFields);
+  try {
+    await entryRef.update(updateFields);
+  } catch (err) {
+    return JSON.stringify({
+      error: `Failed to update entry: ${(err as Error).message}`,
+    });
+  }
 
-  // Execute onSubmit effects for the changed fields
-  const mergedData = {...(existingData.data ?? {}), ...data};
-  const screens = moduleData.screens ?? {};
-  for (const screen of Object.values(screens)) {
-    const screenDef = screen as Record<string, unknown>;
-    const onSubmit = screenDef.onSubmit as Record<string, unknown>[] | undefined;
-    if (onSubmit && Array.isArray(onSubmit)) {
-      const entriesSnap = await moduleRef.collection("entries").get();
-      const entries = entriesSnap.docs.map((doc) => ({
-        id: doc.id,
-        data: (doc.data().data ?? {}) as Record<string, unknown>,
-      }));
-      await executeEffects(
-        userId, moduleId, onSubmit as never[],
-        mergedData as Record<string, unknown>, entries,
-      );
-      break;
+  // Execute onSubmit effects (non-fatal)
+  try {
+    const mergedData = {...(existingData.data ?? {}), ...data};
+    const screens = moduleData.screens ?? {};
+    for (const screen of Object.values(screens)) {
+      const screenDef = screen as Record<string, unknown>;
+      const onSubmit = screenDef.onSubmit as
+        Record<string, unknown>[] | undefined;
+      if (onSubmit && Array.isArray(onSubmit)) {
+        const entriesSnap = await moduleRef.collection("entries").get();
+        const entries = entriesSnap.docs.map((doc) => ({
+          id: doc.id,
+          data: (doc.data().data ?? {}) as Record<string, unknown>,
+        }));
+        await executeEffects(
+          userId, moduleId, onSubmit as never[],
+          mergedData as Record<string, unknown>, entries,
+        );
+        break;
+      }
     }
+  } catch (err) {
+    logger.warn("onSubmit effects failed (entry was still updated)", {
+      error: (err as Error).message,
+    });
   }
 
   // Read back updated entry
