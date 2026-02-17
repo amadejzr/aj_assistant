@@ -1,1 +1,56 @@
-{"firestore":{"database":"(default)","location":"eur3","rules":"firestore.rules","indexes":"firestore.indexes.json"},"functions":[{"source":"functions","codebase":"default","disallowLegacyRuntimeConfig":true,"ignore":["venv",".git","firebase-debug.log","firebase-debug.*.log","*.local"],"runtime":"python313"}],"auth":{"providers":{"emailPassword":true,"googleSignIn":{"oAuthBrandDisplayName":"My App","supportEmail":"support@undefined.firebaseapp.com"}}},"flutter":{"platforms":{"ios":{"default":{"projectId":"assistant-16a63","appId":"1:336897075678:ios:c7ebf6af923fcf3f01554f","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"assistant-16a63","configurations":{"ios":"1:336897075678:ios:c7ebf6af923fcf3f01554f"}}}}}}
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "source": "functions",
+      "runtime": "nodejs22",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ],
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "My App",
+        "supportEmail": "support@undefined.firebaseapp.com"
+      }
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "ios": {
+        "default": {
+          "projectId": "assistant-16a63",
+          "appId": "1:336897075678:ios:c7ebf6af923fcf3f01554f",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "assistant-16a63",
+          "configurations": {
+            "ios": "1:336897075678:ios:c7ebf6af923fcf3f01554f"
+          }
+        }
+      }
+    }
+  }
+}

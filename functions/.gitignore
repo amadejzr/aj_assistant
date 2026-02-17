@@ -1,6 +1,10 @@
-# Python bytecode
-__pycache__/
+# Compiled JavaScript files
+lib/**/*.js
+lib/**/*.js.map
 
-# Python virtual environment
-venv/
+# TypeScript v1 declaration files
+typings/
+
+# Node.js dependency directory
+node_modules/
 *.local
