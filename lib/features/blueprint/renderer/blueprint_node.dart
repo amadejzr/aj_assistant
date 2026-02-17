@@ -377,6 +377,77 @@ class ReferencePickerNode extends BlueprintNode {
   }) : super(type: 'reference_picker');
 }
 
+// ─── New Input ───
+
+class CurrencyInputNode extends BlueprintNode {
+  final String fieldKey;
+  final String currencySymbol;
+  final int decimalPlaces;
+
+  const CurrencyInputNode({
+    required this.fieldKey,
+    this.currencySymbol = '\$',
+    this.decimalPlaces = 2,
+    super.properties,
+  }) : super(type: 'currency_input');
+}
+
+// ─── New Action ───
+
+class IconButtonNode extends BlueprintNode {
+  final String icon;
+  final Map<String, dynamic> action;
+  final String? tooltip;
+
+  const IconButtonNode({
+    required this.icon,
+    this.action = const {},
+    this.tooltip,
+    super.properties,
+  }) : super(type: 'icon_button');
+}
+
+class ActionMenuNode extends BlueprintNode {
+  final String icon;
+  final List<Map<String, dynamic>> items;
+
+  const ActionMenuNode({
+    this.icon = 'dots-three',
+    this.items = const [],
+    super.properties,
+  }) : super(type: 'action_menu');
+}
+
+// ─── New Display ───
+
+class BadgeNode extends BlueprintNode {
+  final String text;
+  final String? expression;
+  final String variant;
+
+  const BadgeNode({
+    required this.text,
+    this.expression,
+    this.variant = 'default',
+    super.properties,
+  }) : super(type: 'badge');
+}
+
+// ─── New Layout ───
+
+class ExpandableNode extends BlueprintNode {
+  final String? title;
+  final List<BlueprintNode> children;
+  final bool initiallyExpanded;
+
+  const ExpandableNode({
+    this.title,
+    this.children = const [],
+    this.initiallyExpanded = false,
+    super.properties,
+  }) : super(type: 'expandable');
+}
+
 // ─── Fallback ───
 
 class UnknownNode extends BlueprintNode {

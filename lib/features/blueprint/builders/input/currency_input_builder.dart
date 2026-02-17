@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../renderer/blueprint_node.dart';
+import '../../renderer/render_context.dart';
+
+Widget buildCurrencyInput(BlueprintNode node, RenderContext ctx) {
+  final input = node as CurrencyInputNode;
+  return _CurrencyInputWidget(input: input, ctx: ctx);
+}
+
+class _CurrencyInputWidget extends StatefulWidget {
+  final CurrencyInputNode input;
+  final RenderContext ctx;
+
+  const _CurrencyInputWidget({required this.input, required this.ctx});
+
+  @override
+  State<_CurrencyInputWidget> createState() => _CurrencyInputWidgetState();
+}
+
+class _CurrencyInputWidgetState extends State<_CurrencyInputWidget> {
+  late final TextEditingController _controller;
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    final current = widget.ctx.getFormValue(widget.input.fieldKey);
+    _controller = TextEditingController(
+      text: current != null ? _formatDisplay(current) : '',
+    );
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  String _formatDisplay(dynamic value) {
+    final num = double.tryParse(value.toString());
+    if (num == null) return value.toString();
+    return num.toStringAsFixed(widget.input.decimalPlaces);
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      // Format on blur
+      final raw = _controller.text.replaceAll(RegExp(r'[^0-9.]'), '');
+      final num = double.tryParse(raw);
+      if (num != null) {
+        _controller.text = _formatDisplay(num);
+        widget.ctx.onFormValueChanged(widget.input.fieldKey, num);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final field = widget.ctx.getFieldDefinition(widget.input.fieldKey);
+    final label = field?.label ?? widget.input.fieldKey;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: TextFormField(
+        controller: _controller,
+        focusNode: _focusNode,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+        ],
+        style: TextStyle(
+          fontFamily: 'Karla',
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: colors.onBackground,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            fontFamily: 'Karla',
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: colors.onBackgroundMuted,
+            letterSpacing: 0.8,
+          ),
+          prefixText: '${widget.input.currencySymbol} ',
+          prefixStyle: TextStyle(
+            fontFamily: 'Karla',
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: colors.onBackground,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.border),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.accent, width: 2),
+          ),
+        ),
+        validator: (value) {
+          if (field?.required == true && (value == null || value.isEmpty)) {
+            return '$label is required';
+          }
+          return null;
+        },
+        onChanged: (value) {
+          final raw = value.replaceAll(RegExp(r'[^0-9.]'), '');
+          final num = double.tryParse(raw);
+          if (num != null) {
+            widget.ctx.onFormValueChanged(widget.input.fieldKey, num);
+          }
+        },
+      ),
+    );
+  }
+}

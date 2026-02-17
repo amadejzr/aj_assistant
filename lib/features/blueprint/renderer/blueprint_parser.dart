@@ -38,6 +38,11 @@ class BlueprintParser {
       'chart' => _parseChart(properties),
       'divider' => _parseDivider(properties),
       'reference_picker' => _parseReferencePicker(properties),
+      'currency_input' => _parseCurrencyInput(properties),
+      'icon_button' => _parseIconButton(properties),
+      'action_menu' => _parseActionMenu(properties),
+      'badge' => _parseBadge(properties),
+      'expandable' => _parseExpandable(properties),
       _ => UnknownNode(type: type, properties: properties),
     };
   }
@@ -332,6 +337,56 @@ class BlueprintParser {
       fieldKey: json['fieldKey'] as String? ?? '',
       schemaKey: json['schemaKey'] as String? ?? '',
       displayField: json['displayField'] as String? ?? 'name',
+      properties: json,
+    );
+  }
+
+  // ─── New Builders ───
+
+  CurrencyInputNode _parseCurrencyInput(Map<String, dynamic> json) {
+    return CurrencyInputNode(
+      fieldKey: json['fieldKey'] as String? ?? '',
+      currencySymbol: json['currencySymbol'] as String? ?? '\$',
+      decimalPlaces: json['decimalPlaces'] as int? ?? 2,
+      properties: json,
+    );
+  }
+
+  IconButtonNode _parseIconButton(Map<String, dynamic> json) {
+    return IconButtonNode(
+      icon: json['icon'] as String? ?? 'circle',
+      action: Map<String, dynamic>.from(json['action'] as Map? ?? {}),
+      tooltip: json['tooltip'] as String?,
+      properties: json,
+    );
+  }
+
+  ActionMenuNode _parseActionMenu(Map<String, dynamic> json) {
+    final items = (json['items'] as List? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    return ActionMenuNode(
+      icon: json['icon'] as String? ?? 'dots-three',
+      items: items,
+      properties: json,
+    );
+  }
+
+  BadgeNode _parseBadge(Map<String, dynamic> json) {
+    return BadgeNode(
+      text: json['text'] as String? ?? '',
+      expression: json['expression'] as String?,
+      variant: json['variant'] as String? ?? 'default',
+      properties: json,
+    );
+  }
+
+  ExpandableNode _parseExpandable(Map<String, dynamic> json) {
+    return ExpandableNode(
+      title: json['title'] as String?,
+      children: _parseChildren(json['children']),
+      initiallyExpanded: json['initiallyExpanded'] as bool? ?? false,
       properties: json,
     );
   }
