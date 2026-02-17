@@ -314,6 +314,7 @@ class BlueprintParser {
       label: json['label'] as String?,
       expression: json['expression'] as String?,
       format: json['format'] as String?,
+      filter: json['filter'],
       properties: json,
     );
   }

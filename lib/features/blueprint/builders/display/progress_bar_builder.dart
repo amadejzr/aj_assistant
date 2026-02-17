@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
+import '../../engine/entry_filter.dart';
 import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
@@ -32,9 +33,10 @@ class _ProgressBarWidget extends StatelessWidget {
 
     num? value;
     if (bar.expression != null) {
+      final result = EntryFilter.filter(ctx.entries, bar.filter, ctx.screenParams);
       final evaluator = ExpressionEvaluator(
-        entries: ctx.entries,
-        params: {...ctx.module.settings, ...ctx.screenParams},
+        entries: result.entries,
+        params: {...ctx.module.settings, ...ctx.screenParams, ...result.meta},
       );
       value = evaluator.evaluate(bar.expression!);
     }

@@ -59,7 +59,10 @@ class EntryFilter {
 
     final filtered = entries.where((entry) {
       for (final c in conditions) {
-        if (!_matches(entry.data[c.field], c.op, c.value)) return false;
+        // schemaKey lives on the Entry object, not inside entry.data
+        final entryValue =
+            c.field == 'schemaKey' ? entry.schemaKey : entry.data[c.field];
+        if (!_matches(entryValue, c.op, c.value)) return false;
       }
       return true;
     }).toList();

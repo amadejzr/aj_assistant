@@ -187,6 +187,12 @@ class _EntryCardWidget extends StatelessWidget {
           final forwardFields = card.onTap['forwardFields'] as List?;
           final params = <String, dynamic>{...ctx.screenParams};
 
+          // Merge explicit params from the onTap action
+          final actionParams = card.onTap['params'] as Map<String, dynamic>?;
+          if (actionParams != null) {
+            params.addAll(actionParams);
+          }
+
           if (forwardFields != null) {
             for (final field in forwardFields) {
               final key = field.toString();
@@ -199,6 +205,13 @@ class _EntryCardWidget extends StatelessWidget {
           // Forward entry ID so forms can update instead of create
           if (entryId != null) {
             params['_entryId'] = entryId;
+          }
+
+          // Forward entry's schemaKey so edit forms resolve the right schema
+          final entrySchemaKey =
+              ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
+          if (entrySchemaKey != null && entrySchemaKey != 'default') {
+            params.putIfAbsent('_schemaKey', () => entrySchemaKey);
           }
 
           ctx.onNavigateToScreen(screen, params: params);

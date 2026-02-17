@@ -39,6 +39,11 @@ class RenderContext {
 
   FieldDefinition? getFieldDefinition(String fieldKey, {String? schemaKey}) {
     if (schemaKey != null) return module.schemas[schemaKey]?.fields[fieldKey];
+    // Fall back to _schemaKey from screenParams for multi-schema modules
+    final contextSchemaKey = screenParams['_schemaKey'] as String?;
+    if (contextSchemaKey != null) {
+      return module.schemas[contextSchemaKey]?.fields[fieldKey];
+    }
     return module.schema.fields[fieldKey];
   }
 

@@ -56,6 +56,10 @@ class ExpressionEvaluator {
       'value' => _value(args.isNotEmpty ? args[0] : ''),
       'subtract' =>
         args.length >= 2 ? _subtract(args[0], args[1]) : null,
+      'multiply' =>
+        args.length >= 2 ? _multiply(args[0], args[1]) : null,
+      'divide' =>
+        args.length >= 2 ? _divide(args[0], args[1]) : null,
       'percentage' =>
         args.length >= 2 ? _percentage(args[0], args[1]) : null,
       _ => null,
@@ -108,7 +112,10 @@ class ExpressionEvaluator {
           final op = parts[1].trim();
           final value = parts[2].trim();
           filtered = filtered.where((e) {
-            final v = e.data[whereField];
+            // schemaKey lives on the Entry object, not inside entry.data
+            final v = whereField == 'schemaKey'
+                ? e.schemaKey
+                : e.data[whereField];
             if (v == null) return false;
             final vStr = v.toString();
             return switch (op) {
@@ -234,6 +241,20 @@ class ExpressionEvaluator {
     final b = _resolveArg(bExpr);
     if (a == null || b == null) return null;
     return a - b;
+  }
+
+  num? _multiply(String aExpr, String bExpr) {
+    final a = _resolveArg(aExpr);
+    final b = _resolveArg(bExpr);
+    if (a == null || b == null) return null;
+    return a * b;
+  }
+
+  num? _divide(String aExpr, String bExpr) {
+    final a = _resolveArg(aExpr);
+    final b = _resolveArg(bExpr);
+    if (a == null || b == null || b == 0) return null;
+    return a / b;
   }
 
   num? _percentage(String aExpr, String bExpr) {

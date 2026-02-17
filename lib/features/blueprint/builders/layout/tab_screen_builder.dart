@@ -69,6 +69,11 @@ class _TabScreenShellState extends State<_TabScreenShell>
       'settings' => PhosphorIcons.gear(PhosphorIconsStyle.regular),
       'activity' => PhosphorIcons.lightning(PhosphorIconsStyle.regular),
       'stats' => PhosphorIcons.trendUp(PhosphorIconsStyle.regular),
+      'compass' => PhosphorIcons.compass(PhosphorIconsStyle.regular),
+      'check_circle' => PhosphorIcons.checkCircle(PhosphorIconsStyle.regular),
+      'piggy_bank' => PhosphorIcons.piggyBank(PhosphorIconsStyle.regular),
+      'cash' => PhosphorIcons.money(PhosphorIconsStyle.regular),
+      'wallet' => PhosphorIcons.wallet(PhosphorIconsStyle.regular),
       _ => null,
     };
   }

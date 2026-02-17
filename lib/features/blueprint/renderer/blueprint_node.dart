@@ -338,11 +338,13 @@ class ProgressBarNode extends BlueprintNode {
   final String? label;
   final String? expression;
   final String? format;
+  final dynamic filter;
 
   const ProgressBarNode({
     this.label,
     this.expression,
     this.format,
+    this.filter = const {},
     super.properties,
   }) : super(type: 'progress_bar');
 }
