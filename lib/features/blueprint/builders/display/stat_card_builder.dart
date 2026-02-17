@@ -144,36 +144,56 @@ class _StatCardWidget extends StatelessWidget {
     final value = _computeStat();
 
     final suffix = card.format == 'minutes' ? ' min' : '';
+    final hasAccent = card.properties['accent'] == true;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: colors.surface,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.surface,
+            Color.lerp(colors.surface, colors.background, 0.3)!,
+          ],
+        ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            card.label,
-            style: TextStyle(
-              fontFamily: 'Karla',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colors.onBackgroundMuted,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '$value$suffix',
-            style: TextStyle(
-              fontFamily: 'CormorantGaramond',
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: colors.onBackground,
-              height: 1.1,
+          if (hasAccent)
+            Container(width: 3, color: colors.accent),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.label.toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'Karla',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: colors.onBackgroundMuted,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '$value$suffix',
+                    style: TextStyle(
+                      fontFamily: 'CormorantGaramond',
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: colors.onBackground,
+                      height: 1.1,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

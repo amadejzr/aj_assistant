@@ -90,60 +90,77 @@ class _EntryCardWidget extends StatelessWidget {
 
     final content = Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.border),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Karla',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: colors.onBackground,
-                  ),
-                ),
-                if (subtitle != null && subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontFamily: 'Karla',
-                      fontSize: 13,
-                      color: colors.onBackgroundMuted,
-                    ),
-                  ),
-                ],
-              ],
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Ink-stroke left accent border
+            Container(
+              width: 2.5,
+              color: colors.accent.withValues(alpha: 0.3),
             ),
-          ),
-          if (trailing != null && trailing.isNotEmpty)
-            Text(
-              trailing,
-              style: TextStyle(
-                fontFamily: 'Karla',
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: colors.accent,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontFamily: 'Karla',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: colors.onBackground,
+                            ),
+                          ),
+                          if (subtitle != null && subtitle.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              style: TextStyle(
+                                fontFamily: 'Karla',
+                                fontSize: 13,
+                                color: colors.onBackgroundMuted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (trailing != null && trailing.isNotEmpty)
+                      Text(
+                        trailing,
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: colors.accent,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    if (hasTap) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Icon(
+                        PhosphorIcons.caretRight(PhosphorIconsStyle.regular),
+                        size: 16,
+                        color: colors.onBackgroundMuted,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          if (hasTap) ...[
-            const SizedBox(width: AppSpacing.sm),
-            Icon(
-              PhosphorIcons.caretRight(PhosphorIconsStyle.regular),
-              size: 16,
-              color: colors.onBackgroundMuted,
-            ),
           ],
-        ],
+        ),
       ),
     );
 
