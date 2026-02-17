@@ -72,7 +72,7 @@ class _ChartWidget extends StatelessWidget {
 
         final evaluator = ExpressionEvaluator(
           entries: syntheticEntries,
-          params: ctx.screenParams,
+          params: {...ctx.module.settings, ...ctx.screenParams},
         );
         result[entry.key] = evaluator.evaluate(chart.aggregate!) ?? 0;
       } else {

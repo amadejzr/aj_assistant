@@ -28,7 +28,7 @@ class _NumberInputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = field?.label ?? input.fieldKey;
+    final label = input.properties['label'] as String? ?? field?.label ?? input.fieldKey;
     final isRequired = field?.required ?? false;
     final min = field?.constraints['min'] as num?;
     final max = field?.constraints['max'] as num?;

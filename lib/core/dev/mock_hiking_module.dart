@@ -188,12 +188,6 @@ Module createMockHikingModule() {
                       'label': 'Completed',
                       'expression': 'count(where(status, ==, completed))',
                     },
-                    {
-                      'type': 'stat_card',
-                      'label': 'Avg Rating',
-                      'expression': 'avg(rating)',
-                      'format': 'decimal',
-                    },
                   ],
                 },
                 {

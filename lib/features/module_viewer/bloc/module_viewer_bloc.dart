@@ -139,6 +139,31 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final data = Map<String, dynamic>.from(current.formValues)
         ..removeWhere((key, _) => key.startsWith('_'));
 
+      // Settings mode — update module settings instead of entries
+      if (current.screenParams['_settingsMode'] == true) {
+        final updatedSettings = {
+          ...current.module.settings,
+          ...data,
+        };
+        final updatedModule = current.module.copyWith(settings: updatedSettings);
+        await moduleRepository.updateModule(userId, updatedModule);
+
+        final stack = List<ScreenEntry>.from(current.screenStack);
+        final previous = stack.isNotEmpty
+            ? stack.removeLast()
+            : const ScreenEntry('main');
+
+        emit(current.copyWith(
+          module: updatedModule,
+          currentScreenId: previous.screenId,
+          screenParams: previous.params,
+          screenStack: stack,
+          formValues: {},
+          isSubmitting: false,
+        ));
+        return;
+      }
+
       final entryId = current.screenParams['_entryId'] as String?;
       final schemaKey =
           current.screenParams['_schemaKey'] as String? ?? 'default';

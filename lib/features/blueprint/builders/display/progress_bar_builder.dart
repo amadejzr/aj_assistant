@@ -34,7 +34,7 @@ class _ProgressBarWidget extends StatelessWidget {
     if (bar.expression != null) {
       final evaluator = ExpressionEvaluator(
         entries: ctx.entries,
-        params: ctx.screenParams,
+        params: {...ctx.module.settings, ...ctx.screenParams},
       );
       value = evaluator.evaluate(bar.expression!);
     }

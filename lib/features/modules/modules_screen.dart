@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/dev/mock_hiking_module.dart';
+import '../../core/dev/mock_pushup_module.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
@@ -183,6 +184,31 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
               ),
               label: Text(
                 'Seed Hiking Module',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockPushupModule(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.barbell(PhosphorIconsStyle.bold),
+                size: 16,
+                color: colors.accent,
+              ),
+              label: Text(
+                'Seed Pushup Module',
                 style: TextStyle(
                   fontFamily: 'Karla',
                   fontSize: 14,

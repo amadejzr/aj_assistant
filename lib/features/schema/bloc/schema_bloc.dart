@@ -74,12 +74,7 @@ class SchemaBloc extends Bloc<SchemaEvent, SchemaState> {
   ) {
     final current = state;
     if (current is! SchemaLoaded) return;
-
-    if (current.screenStack.isEmpty) {
-      // Signal to parent that we want to exit the schema editor
-      emit(current.copyWith(currentScreen: '_exit'));
-      return;
-    }
+    if (current.screenStack.isEmpty) return;
 
     final stack = List<SchemaScreenEntry>.from(current.screenStack);
     final previous = stack.removeLast();

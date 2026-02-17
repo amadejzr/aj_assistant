@@ -5,13 +5,14 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/widgets/paper_background.dart';
 import '../bloc/schema_bloc.dart';
-import '../bloc/schema_event.dart';
 import '../bloc/schema_state.dart';
 import '../widgets/add_schema_sheet.dart';
 import '../widgets/schema_card.dart';
 
 class SchemaListScreen extends StatelessWidget {
-  const SchemaListScreen({super.key});
+  final VoidCallback? onExit;
+
+  const SchemaListScreen({super.key, this.onExit});
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +34,7 @@ class SchemaListScreen extends StatelessWidget {
             elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: colors.onBackground),
-              onPressed: () {
-                context
-                    .read<SchemaBloc>()
-                    .add(const SchemaNavigateBack());
-              },
+              onPressed: () => onExit?.call(),
             ),
             title: Text(
               'Settings',

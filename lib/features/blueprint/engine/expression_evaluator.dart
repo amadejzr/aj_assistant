@@ -47,11 +47,11 @@ class ExpressionEvaluator {
     final args = _splitArgs(argsStr);
 
     return switch (funcName) {
-      'count' => _count(),
-      'sum' => _sum(args.isNotEmpty ? args[0] : ''),
-      'avg' => _avg(args.isNotEmpty ? args[0] : ''),
-      'min' => _min(args.isNotEmpty ? args[0] : ''),
-      'max' => _max(args.isNotEmpty ? args[0] : ''),
+      'count' => _count(args),
+      'sum' => _sum(args),
+      'avg' => _avg(args),
+      'min' => _min(args),
+      'max' => _max(args),
       'streak' => _streak(args.isNotEmpty ? args[0] : 'date'),
       'value' => _value(args.isNotEmpty ? args[0] : ''),
       'subtract' =>
@@ -93,32 +93,99 @@ class ExpressionEvaluator {
     return num.tryParse(arg);
   }
 
-  num _count() => entries.length;
+  /// Apply where() and period() filters from args, returning
+  /// the filtered entries and the remaining field-name arg (if any).
+  ({List<Entry> filtered, String? field}) _applyFilters(List<String> args) {
+    var filtered = entries;
+    String? field;
 
-  num? _sum(String field) {
-    if (field.isEmpty) return null;
-    final values = _numericValues(field);
+    for (final arg in args) {
+      if (arg.startsWith('where(')) {
+        final inner = arg.substring(6, arg.length - 1).trim();
+        final parts = _splitArgs(inner);
+        if (parts.length >= 3) {
+          final whereField = parts[0].trim();
+          final op = parts[1].trim();
+          final value = parts[2].trim();
+          filtered = filtered.where((e) {
+            final v = e.data[whereField];
+            if (v == null) return false;
+            final vStr = v.toString();
+            return switch (op) {
+              '==' => vStr == value,
+              '!=' => vStr != value,
+              '>' => (num.tryParse(vStr) ?? 0) > (num.tryParse(value) ?? 0),
+              '<' => (num.tryParse(vStr) ?? 0) < (num.tryParse(value) ?? 0),
+              '>=' => (num.tryParse(vStr) ?? 0) >= (num.tryParse(value) ?? 0),
+              '<=' => (num.tryParse(vStr) ?? 0) <= (num.tryParse(value) ?? 0),
+              _ => false,
+            };
+          }).toList();
+        }
+      } else if (arg.startsWith('period(')) {
+        final period = arg.substring(7, arg.length - 1).trim();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        filtered = filtered.where((e) {
+          final dateStr = e.data['date'] as String?;
+          if (dateStr == null) return false;
+          final date = DateTime.tryParse(dateStr);
+          if (date == null) return false;
+          final dateOnly = DateTime(date.year, date.month, date.day);
+          return switch (period) {
+            'today' => dateOnly == today,
+            'week' => dateOnly.isAfter(today.subtract(const Duration(days: 7))),
+            'month' => date.month == now.month && date.year == now.year,
+            'year' => date.year == now.year,
+            _ => true,
+          };
+        }).toList();
+      } else if (arg.isNotEmpty) {
+        field = arg;
+      }
+    }
+
+    return (filtered: filtered, field: field);
+  }
+
+  num _count(List<String> args) {
+    if (args.isEmpty) return entries.length;
+    final result = _applyFilters(args);
+    return result.filtered.length;
+  }
+
+  num? _sum(List<String> args) {
+    final result = _applyFilters(args);
+    final field = result.field;
+    if (field == null || field.isEmpty) return null;
+    final values = _numericValuesFrom(result.filtered, field);
     if (values.isEmpty) return 0;
     return values.reduce((a, b) => a + b);
   }
 
-  num? _avg(String field) {
-    if (field.isEmpty) return null;
-    final values = _numericValues(field);
+  num? _avg(List<String> args) {
+    final result = _applyFilters(args);
+    final field = result.field;
+    if (field == null || field.isEmpty) return null;
+    final values = _numericValuesFrom(result.filtered, field);
     if (values.isEmpty) return null;
     return values.reduce((a, b) => a + b) / values.length;
   }
 
-  num? _min(String field) {
-    if (field.isEmpty) return null;
-    final values = _numericValues(field);
+  num? _min(List<String> args) {
+    final result = _applyFilters(args);
+    final field = result.field;
+    if (field == null || field.isEmpty) return null;
+    final values = _numericValuesFrom(result.filtered, field);
     if (values.isEmpty) return null;
     return values.reduce((a, b) => a < b ? a : b);
   }
 
-  num? _max(String field) {
-    if (field.isEmpty) return null;
-    final values = _numericValues(field);
+  num? _max(List<String> args) {
+    final result = _applyFilters(args);
+    final field = result.field;
+    if (field == null || field.isEmpty) return null;
+    final values = _numericValuesFrom(result.filtered, field);
     if (values.isEmpty) return null;
     return values.reduce((a, b) => a > b ? a : b);
   }
@@ -176,8 +243,8 @@ class ExpressionEvaluator {
     return a / b * 100;
   }
 
-  List<num> _numericValues(String field) {
-    return entries
+  List<num> _numericValuesFrom(List<Entry> source, String field) {
+    return source
         .map((e) {
           final v = e.data[field];
           if (v is num) return v;

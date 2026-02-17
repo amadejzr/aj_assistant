@@ -30,8 +30,13 @@ Widget buildFormScreen(BlueprintNode node, RenderContext ctx) {
     ctx.screenParams.entries.where((e) => !e.key.startsWith('_')),
   );
 
+  // In settings mode, seed form with current module settings
+  final settingsDefaults = ctx.screenParams['_settingsMode'] == true
+      ? Map<String, dynamic>.from(ctx.module.settings)
+      : <String, dynamic>{};
+
   // Merge screenParams into defaults so navigated params auto-fill fields.
-  final mergedDefaults = {...form.defaults, ...filteredParams};
+  final mergedDefaults = {...form.defaults, ...settingsDefaults, ...filteredParams};
 
   // If the form has defaults, inject them into the context so they get
   // included when the form is submitted.
@@ -60,6 +65,7 @@ Widget buildFormScreen(BlueprintNode node, RenderContext ctx) {
       resolvedExpressions: ctx.resolvedExpressions,
       onCreateEntry: ctx.onCreateEntry,
       onUpdateEntry: ctx.onUpdateEntry,
+      onScreenParamChanged: ctx.onScreenParamChanged,
     );
   }
 

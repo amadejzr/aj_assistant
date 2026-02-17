@@ -39,7 +39,7 @@ class _StatCardWidget extends StatelessWidget {
     if (card.expression != null && card.expression!.isNotEmpty) {
       final evaluator = ExpressionEvaluator(
         entries: entries,
-        params: {...ctx.screenParams, ...meta},
+        params: {...ctx.module.settings, ...ctx.screenParams, ...meta},
       );
       final value = evaluator.evaluate(card.expression!);
       if (value == null) return '--';
