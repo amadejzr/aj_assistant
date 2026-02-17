@@ -130,13 +130,13 @@ class _TabScreenShellState extends State<_TabScreenShell>
                 params: const {},
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
-              onPressed: () => ctx.onNavigateToScreen(
-                '_settings',
-                params: const {},
-              ),
-            ),
+            // IconButton(
+            //   icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
+            //   onPressed: () => ctx.onNavigateToScreen(
+            //     '_settings',
+            //     params: const {},
+            //   ),
+            // ),
           ],
           bottom: TabBar(
             controller: _tabController,

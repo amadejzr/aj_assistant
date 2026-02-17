@@ -1,20 +1,15 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../core/dev/mock_finance_2_module.dart';
-import '../../core/dev/mock_finance_module.dart';
-import '../../core/dev/mock_hiking_module.dart';
-import '../../core/dev/mock_pushup_module.dart';
-import '../../core/dev/seed_marketplace.dart';
 import '../../core/models/module.dart';
 import '../../core/repositories/module_repository.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/module_display_utils.dart';
+import '../../core/widgets/app_toast.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/bloc/auth_event.dart';
 import '../auth/bloc/auth_state.dart';
@@ -67,13 +62,13 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
       parent: _animController,
       curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     );
-    _contentSlide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: const Interval(0.3, 0.8, curve: Curves.easeOutBack),
-    ));
+    _contentSlide =
+        Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.3, 0.8, curve: Curves.easeOutBack),
+          ),
+        );
     _contentFade = CurvedAnimation(
       parent: _animController,
       curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
@@ -116,26 +111,33 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
                 builder: (context, state) {
                   return switch (state) {
                     ModulesListInitial() ||
-                    ModulesListLoading() =>
-                      const SliverFillRemaining(
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    ModulesListLoaded(:final modules) => modules.isEmpty
-                        ? SliverFillRemaining(
-                            child: _buildEmptyState(context, colors),
-                          )
-                        : _buildModulesSection(context, colors, modules),
+                    ModulesListLoading() => const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    ModulesListLoaded(:final modules) =>
+                      modules.isEmpty
+                          ? SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(context, colors),
+                            )
+                          : SliverMainAxisGroup(
+                              slivers: [
+                                _buildModulesSection(context, colors, modules),
+                                SliverToBoxAdapter(
+                                  child: _buildMarketplaceCard(context, colors),
+                                ),
+                                const SliverToBoxAdapter(
+                                  child: SizedBox(height: 100),
+                                ),
+                              ],
+                            ),
                     ModulesListError() => SliverFillRemaining(
-                        child: _buildEmptyState(context, colors),
-                      ),
+                      hasScrollBody: false,
+                      child: _buildEmptyState(context, colors),
+                    ),
                   };
                 },
-              ),
-              SliverToBoxAdapter(
-                child: _buildMarketplaceCard(context, colors),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
               ),
             ],
           ),
@@ -182,9 +184,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
     List<Module> modules,
   ) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.screenPadding,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
       sliver: SliverMainAxisGroup(
         slivers: [
           SliverToBoxAdapter(
@@ -208,16 +208,14 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
           SliverFadeTransition(
             opacity: _contentFade,
             sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final module = modules[index];
-                  return _ModuleCard(
-                    module: module,
-                    onTap: () => context.push('/module/${module.id}'),
-                  );
-                },
-                childCount: modules.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final module = modules[index];
+                return _ModuleCard(
+                  module: module,
+                  onTap: () => context.push('/module/${module.id}'),
+                  onLongPress: () => _confirmDeleteModule(module),
+                );
+              }, childCount: modules.length),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: AppSpacing.md,
@@ -256,43 +254,44 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Start a conversation to create\nyour first module',
+                'Browse the marketplace to get started',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium,
               ),
-              if (kDebugMode) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _DebugSeedButton(
-                  icon: PhosphorIcons.bug(PhosphorIconsStyle.bold),
-                  label: 'Seed Hiking Module',
-                  colors: colors,
-                  onPressed: () => _seedModule(createMockHikingModule()),
+              const SizedBox(height: AppSpacing.lg),
+              GestureDetector(
+                onTap: () => context.push('/marketplace'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.accent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        PhosphorIcons.storefront(PhosphorIconsStyle.bold),
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Explore Marketplace',
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _DebugSeedButton(
-                  icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
-                  label: 'Seed Pushup Module',
-                  colors: colors,
-                  onPressed: () => _seedModule(createMockPushupModule()),
-                ),
-                _DebugSeedButton(
-                  icon: PhosphorIcons.wallet(PhosphorIconsStyle.bold),
-                  label: 'Seed Finance Module',
-                  colors: colors,
-                  onPressed: () => _seedModule(createMockFinanceModule()),
-                ),
-                _DebugSeedButton(
-                  icon: PhosphorIcons.trendUp(PhosphorIconsStyle.bold),
-                  label: 'Seed Finance 2.0',
-                  colors: colors,
-                  onPressed: () => _seedModule(createMockFinance2Module()),
-                ),
-                _DebugSeedButton(
-                  icon: PhosphorIcons.storefront(PhosphorIconsStyle.bold),
-                  label: 'Seed Marketplace',
-                  colors: colors,
-                  onPressed: () => seedMarketplaceTemplates(),
-                ),
-              ],
+              ),
             ],
           ),
         ),
@@ -362,50 +361,92 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
     );
   }
 
-  Future<void> _seedModule(Module module) async {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is! AuthAuthenticated) return;
-    final repo = context.read<ModuleRepository>();
-    await repo.createModule(authState.user.uid, module);
-  }
-}
-
-class _DebugSeedButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final AppColors colors;
-  final VoidCallback onPressed;
-
-  const _DebugSeedButton({
-    required this.icon,
-    required this.label,
-    required this.colors,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 16, color: colors.accent),
-      label: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Karla',
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: colors.accent,
+  Future<void> _confirmDeleteModule(Module module) async {
+    final colors = context.colors;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Text(
+          'Delete "${module.name}"?',
+          style: TextStyle(
+            fontFamily: 'CormorantGaramond',
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: colors.onBackground,
+          ),
         ),
+        content: Text(
+          'This will permanently remove the module and all its data.',
+          style: TextStyle(
+            fontFamily: 'Karla',
+            fontSize: 14,
+            color: colors.onBackgroundMuted,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'Karla',
+                color: colors.onBackgroundMuted,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Delete',
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontWeight: FontWeight.w700,
+                color: colors.error,
+              ),
+            ),
+          ),
+        ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+
+    try {
+      final repo = context.read<ModuleRepository>();
+      await repo.deleteModule(authState.user.uid, module.id);
+      if (mounted) {
+        AppToast.show(
+          context,
+          message: '"${module.name}" deleted',
+          type: AppToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          message: 'Failed to delete module',
+          type: AppToastType.error,
+        );
+      }
+    }
   }
 }
 
 class _ModuleCard extends StatelessWidget {
   final Module module;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
-  const _ModuleCard({required this.module, required this.onTap});
+  const _ModuleCard({
+    required this.module,
+    required this.onTap,
+    this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -414,6 +455,7 @@ class _ModuleCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
           color: colors.surface,

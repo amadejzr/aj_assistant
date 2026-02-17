@@ -24,6 +24,7 @@ class MarketplaceLoaded extends MarketplaceState {
   final String? selectedCategory;
   final String searchQuery;
   final String? installingId;
+  final Set<String> installedIds;
 
   const MarketplaceLoaded({
     required this.allTemplates,
@@ -32,7 +33,10 @@ class MarketplaceLoaded extends MarketplaceState {
     this.selectedCategory,
     this.searchQuery = '',
     this.installingId,
+    this.installedIds = const {},
   });
+
+  bool isInstalled(String templateId) => installedIds.contains(templateId);
 
   MarketplaceLoaded copyWith({
     List<ModuleTemplate>? allTemplates,
@@ -41,6 +45,7 @@ class MarketplaceLoaded extends MarketplaceState {
     String? Function()? selectedCategory,
     String? searchQuery,
     String? Function()? installingId,
+    Set<String>? installedIds,
   }) {
     return MarketplaceLoaded(
       allTemplates: allTemplates ?? this.allTemplates,
@@ -51,6 +56,7 @@ class MarketplaceLoaded extends MarketplaceState {
       searchQuery: searchQuery ?? this.searchQuery,
       installingId:
           installingId != null ? installingId() : this.installingId,
+      installedIds: installedIds ?? this.installedIds,
     );
   }
 
@@ -62,6 +68,7 @@ class MarketplaceLoaded extends MarketplaceState {
         selectedCategory,
         searchQuery,
         installingId,
+        installedIds,
       ];
 }
 

@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/log.dart';
 import '../../../core/models/module_template.dart';
@@ -14,8 +13,6 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   final MarketplaceRepository marketplaceRepository;
   final ModuleRepository moduleRepository;
   final String userId;
-
-  static const _uuid = Uuid();
 
   MarketplaceBloc({
     required this.marketplaceRepository,
@@ -39,10 +36,15 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       final categories =
           templates.map((t) => t.category).toSet().toList()..sort();
 
+      // Fetch user's installed modules to check which templates are already installed
+      final userModules = await moduleRepository.watchModules(userId).first;
+      final installedIds = userModules.map((m) => m.id).toSet();
+
       emit(MarketplaceLoaded(
         allTemplates: templates,
         filteredTemplates: templates,
         categories: categories,
+        installedIds: installedIds,
       ));
     } catch (e) {
       Log.e('Failed to load templates', tag: _tag, error: e);
@@ -102,14 +104,14 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
         (t) => t.id == event.templateId,
       );
 
-      final newModuleId = _uuid.v4();
-      final module = template.toModule(newModuleId);
+      // Use template ID as module ID — prevents duplicates on re-install.
+      final module = template.toModule(event.templateId);
 
       await moduleRepository.createModule(userId, module);
       await marketplaceRepository.incrementInstallCount(event.templateId);
 
       Log.i(
-        'Installed template "${template.name}" as module $newModuleId',
+        'Installed template "${template.name}" as module ${event.templateId}',
         tag: _tag,
       );
 
@@ -141,6 +143,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       final updated = current.copyWith(
         allTemplates: updatedTemplates,
         installingId: () => null,
+        installedIds: {...current.installedIds, event.templateId},
       );
 
       emit(updated.copyWith(

@@ -147,6 +147,7 @@ class _LoadedContent extends StatelessWidget {
                   return _TemplateCard(
                     template: template,
                     isInstalling: state.installingId == template.id,
+                    isInstalled: state.isInstalled(template.id),
                     onTap: () =>
                         context.push('/marketplace/${template.id}'),
                   );
@@ -325,11 +326,13 @@ class _Chip extends StatelessWidget {
 class _TemplateCard extends StatelessWidget {
   final ModuleTemplate template;
   final bool isInstalling;
+  final bool isInstalled;
   final VoidCallback onTap;
 
   const _TemplateCard({
     required this.template,
     required this.isInstalling,
+    required this.isInstalled,
     required this.onTap,
   });
 
@@ -430,7 +433,38 @@ class _TemplateCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (template.installCount > 0) ...[
+                if (isInstalled)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+                          size: 11,
+                          color: colors.accent,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          'Installed',
+                          style: TextStyle(
+                            fontFamily: 'Karla',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: colors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (template.installCount > 0) ...[
                   Icon(
                     PhosphorIcons.downloadSimple(PhosphorIconsStyle.bold),
                     size: 12,

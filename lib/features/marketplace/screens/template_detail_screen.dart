@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/models/module_template.dart';
@@ -10,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/module_display_utils.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/widgets/paper_background.dart';
@@ -48,13 +48,7 @@ class _DetailBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return BlocConsumer<MarketplaceBloc, MarketplaceState>(
-      listener: (context, state) {
-        if (state is MarketplaceLoaded && state.installingId == null) {
-          // Check if we just finished installing (transitioned from non-null to null)
-          // We detect this by checking if there's a snackbar-worthy event
-        }
-      },
+    return BlocBuilder<MarketplaceBloc, MarketplaceState>(
       builder: (context, state) {
         if (state is! MarketplaceLoaded) {
           return Scaffold(
@@ -91,10 +85,12 @@ class _DetailBody extends StatelessWidget {
         }
 
         final isInstalling = state.installingId == templateId;
+        final isInstalled = state.isInstalled(templateId);
 
         return _TemplateDetailScaffold(
           template: template,
           isInstalling: isInstalling,
+          isInstalled: isInstalled,
         );
       },
     );
@@ -104,10 +100,12 @@ class _DetailBody extends StatelessWidget {
 class _TemplateDetailScaffold extends StatefulWidget {
   final ModuleTemplate template;
   final bool isInstalling;
+  final bool isInstalled;
 
   const _TemplateDetailScaffold({
     required this.template,
     required this.isInstalling,
+    required this.isInstalled,
   });
 
   @override
@@ -137,18 +135,14 @@ class _TemplateDetailScaffoldState extends State<_TemplateDetailScaffold>
   }
 
   void _onInstallComplete() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '"${widget.template.name}" installed!',
-          style: const TextStyle(fontFamily: 'Karla'),
-        ),
-        action: SnackBarAction(
-          label: 'GO TO MODULE',
-          onPressed: () => context.go('/home'),
-        ),
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        message: '"${widget.template.name}" installed!',
+        type: AppToastType.success,
+      );
+    });
   }
 
   @override
@@ -220,6 +214,7 @@ class _TemplateDetailScaffoldState extends State<_TemplateDetailScaffold>
       bottomNavigationBar: _InstallBar(
         template: widget.template,
         isInstalling: widget.isInstalling,
+        isInstalled: widget.isInstalled,
         colors: colors,
       ),
     );
@@ -611,11 +606,13 @@ class _SchemaTab extends StatelessWidget {
 class _InstallBar extends StatelessWidget {
   final ModuleTemplate template;
   final bool isInstalling;
+  final bool isInstalled;
   final AppColors colors;
 
   const _InstallBar({
     required this.template,
     required this.isInstalling,
+    required this.isInstalled,
     required this.colors,
   });
 
@@ -635,38 +632,63 @@ class _InstallBar extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         height: 50,
-        child: ElevatedButton(
-          onPressed: isInstalling
-              ? null
-              : () => context
-                  .read<MarketplaceBloc>()
-                  .add(MarketplaceTemplateInstalled(template.id)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colors.accent,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: colors.accent.withValues(alpha: 0.5),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: isInstalling
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text(
-                  'Install Module',
+        child: isInstalled
+            ? OutlinedButton.icon(
+                onPressed: null,
+                icon: Icon(
+                  PhosphorIcons.checkCircle(PhosphorIconsStyle.bold),
+                  size: 20,
+                  color: colors.accent,
+                ),
+                label: Text(
+                  'Already Installed',
                   style: TextStyle(
                     fontFamily: 'Karla',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
+                    color: colors.accent,
                   ),
                 ),
-        ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colors.accent.withValues(alpha: 0.4)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
+            : ElevatedButton(
+                onPressed: isInstalling
+                    ? null
+                    : () => context
+                        .read<MarketplaceBloc>()
+                        .add(MarketplaceTemplateInstalled(template.id)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.accent,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      colors.accent.withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: isInstalling
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Install Module',
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
       ),
     );
   }
