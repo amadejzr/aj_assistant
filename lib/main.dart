@@ -13,6 +13,7 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
 import 'features/blueprint/renderer/widget_registry.dart';
+import 'features/chat/repositories/chat_repository.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -36,12 +37,14 @@ void main() async {
   final userService = UserService();
   final moduleRepository = FirestoreModuleRepository();
   final entryRepository = FirestoreEntryRepository();
+  final chatRepository = ChatRepository();
 
   runApp(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
         RepositoryProvider<EntryRepository>.value(value: entryRepository),
+        RepositoryProvider<ChatRepository>.value(value: chatRepository),
       ],
       child: BlocProvider(
         create: (_) => AuthBloc(

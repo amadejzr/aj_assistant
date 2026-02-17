@@ -9,16 +9,48 @@ import {executeToolCall} from "../tools/executor.js";
 const MAX_TOOL_ROUNDS = 10;
 const MAX_HISTORY_MESSAGES = 20;
 
+const TOOLS_REQUIRING_APPROVAL = new Set(["createEntry", "updateEntry"]);
+
 interface ChatContext {
   type: "dashboard" | "modules_list" | "module";
   moduleId?: string;
   screenId?: string;
 }
 
+interface PendingAction {
+  toolUseId: string;
+  name: string;
+  input: Record<string, unknown>;
+  description: string;
+}
+
 interface ChatRequest {
   conversationId: string;
   message: string;
   context?: ChatContext;
+}
+
+function describeAction(
+  name: string, input: Record<string, unknown>,
+): string {
+  switch (name) {
+  case "createEntry": {
+    const data = input.data as Record<string, unknown> ?? {};
+    const fields = Object.entries(data)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    return `Create entry in "${input.schemaKey}": ${fields}`;
+  }
+  case "updateEntry": {
+    const data = input.data as Record<string, unknown> ?? {};
+    const fields = Object.entries(data)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    return `Update entry ${input.entryId}: ${fields}`;
+  }
+  default:
+    return `${name}(${JSON.stringify(input)})`;
+  }
 }
 
 export const chat = onCall(
@@ -29,7 +61,6 @@ export const chat = onCall(
     secrets: ["ANTHROPIC_API_KEY"],
   },
   async (request) => {
-    // 1. Authenticate
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Must be signed in.");
     }
@@ -49,7 +80,7 @@ export const chat = onCall(
       .collection("conversations").doc(conversationId);
     const messagesRef = convRef.collection("messages");
 
-    // 2. Ensure conversation doc exists
+    // Ensure conversation exists
     const convDoc = await convRef.get();
     if (!convDoc.exists) {
       await convRef.set({
@@ -60,14 +91,14 @@ export const chat = onCall(
       });
     }
 
-    // 3. Save user message
+    // Save user message
     await messagesRef.add({
       role: "user",
       content: message,
       timestamp: FieldValue.serverTimestamp(),
     });
 
-    // 4. Load conversation history
+    // Load conversation history
     const historySnap = await messagesRef
       .orderBy("timestamp", "asc")
       .limitToLast(MAX_HISTORY_MESSAGES)
@@ -78,12 +109,12 @@ export const chat = onCall(
       const msg = doc.data();
       if (msg.role === "user") {
         history.push({role: "user", content: msg.content});
-      } else if (msg.role === "assistant") {
+      } else if (msg.role === "assistant" && msg.content) {
         history.push({role: "assistant", content: msg.content});
       }
     }
 
-    // 5. Load user's modules for system prompt
+    // Load modules for system prompt
     const modulesSnap = await db
       .collection("users").doc(userId)
       .collection("modules")
@@ -96,21 +127,18 @@ export const chat = onCall(
       settings?: Record<string, unknown>;
     }> = {};
     for (const doc of modulesSnap.docs) {
-      const data = doc.data();
+      const d = doc.data();
       modules[doc.id] = {
-        name: data.name ?? "",
-        description: data.description,
-        schemas: data.schemas,
-        settings: data.settings,
+        name: d.name ?? "",
+        description: d.description,
+        schemas: d.schemas,
+        settings: d.settings,
       };
     }
 
-    const systemPrompt = buildSystemPrompt(
-      modules as never,
-      context,
-    );
+    const systemPrompt = buildSystemPrompt(modules as never, context);
 
-    // 6. Call Claude API with tool loop
+    // Call Claude API
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       throw new HttpsError("internal", "ANTHROPIC_API_KEY not configured.");
@@ -121,7 +149,7 @@ export const chat = onCall(
     let finalText = "";
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      logger.info(`Claude API call round ${round + 1}`, {
+      logger.info(`Claude round ${round + 1}`, {
         messageCount: messages.length,
       });
 
@@ -133,7 +161,6 @@ export const chat = onCall(
         messages,
       });
 
-      // Extract text blocks
       const textBlocks = response.content
         .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
         .map((b) => b.text);
@@ -142,23 +169,80 @@ export const chat = onCall(
         finalText = textBlocks.join("\n");
       }
 
-      // Check if we're done
-      if (response.stop_reason !== "tool_use") {
-        break;
-      }
+      if (response.stop_reason !== "tool_use") break;
 
-      // Extract tool use blocks
       const toolUses = response.content
         .filter(
           (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use",
         );
-
       if (toolUses.length === 0) break;
 
-      // Add assistant response to messages
+      // Split: auto-execute read-only tools, pause for write tools
+      const autoTools = toolUses.filter(
+        (t) => !TOOLS_REQUIRING_APPROVAL.has(t.name),
+      );
+      const approvalTools = toolUses.filter(
+        (t) => TOOLS_REQUIRING_APPROVAL.has(t.name),
+      );
+
+      if (approvalTools.length > 0) {
+        // Execute read-only tools first
+        for (const toolUse of autoTools) {
+          await executeToolCall(userId, {
+            id: toolUse.id,
+            name: toolUse.name,
+            input: toolUse.input as Record<string, unknown>,
+          });
+        }
+
+        // Build pending actions for Flutter to show
+        const pendingActions: PendingAction[] = approvalTools.map((t) => ({
+          toolUseId: t.id,
+          name: t.name,
+          input: t.input as Record<string, unknown>,
+          description: describeAction(
+            t.name, t.input as Record<string, unknown>,
+          ),
+        }));
+
+        logger.info("Pausing for approval", {
+          tools: approvalTools.map((t) => t.name),
+        });
+
+        // Save AI text (if any) as a message
+        if (finalText) {
+          await messagesRef.add({
+            role: "assistant",
+            content: finalText,
+            timestamp: FieldValue.serverTimestamp(),
+          });
+        }
+
+        // Save pending actions as a special message
+        await messagesRef.add({
+          role: "assistant",
+          content: "",
+          pendingActions,
+          timestamp: FieldValue.serverTimestamp(),
+        });
+
+        await convRef.update({
+          lastMessageAt: FieldValue.serverTimestamp(),
+          messageCount: FieldValue.increment(2),
+          ...(context ? {context} : {}),
+        });
+
+        // Return — Flutter will execute writes client-side on approve
+        return {
+          message: finalText,
+          conversationId,
+          pendingActions,
+        };
+      }
+
+      // All tools are read-only — execute and continue loop
       messages.push({role: "assistant", content: response.content});
 
-      // Execute tools and collect results
       const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
       for (const toolUse of toolUses) {
         const result = await executeToolCall(userId, {
@@ -169,25 +253,22 @@ export const chat = onCall(
         toolResults.push(result);
       }
 
-      // Add tool results to messages
       messages.push({role: "user", content: toolResults});
     }
 
-    // 7. Save assistant response
+    // Save final response
     await messagesRef.add({
       role: "assistant",
       content: finalText,
       timestamp: FieldValue.serverTimestamp(),
     });
 
-    // Update conversation metadata
     await convRef.update({
       lastMessageAt: FieldValue.serverTimestamp(),
       messageCount: FieldValue.increment(2),
       ...(context ? {context} : {}),
     });
 
-    // 8. Return response to Flutter
     return {
       message: finalText,
       conversationId,

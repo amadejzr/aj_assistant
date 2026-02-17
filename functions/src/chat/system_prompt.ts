@@ -80,13 +80,17 @@ export function buildSystemPrompt(
 ): string {
   const sections: string[] = [];
 
+  const now = new Date();
+  const dateStr = now.toISOString().split("T")[0];
+
   sections.push(
     "You are AJ, a personal assistant that helps users manage their data. " +
     "You operate within an app where users have created modules (like " +
     "expense trackers, fitness logs, habit trackers, etc.). Each module " +
     "has its own data schema.\n\n" +
     "Your job is to help users create, read, and update entries in their " +
-    "modules through natural conversation. Always be concise and helpful.",
+    "modules through natural conversation. Always be concise and helpful.\n\n" +
+    `Today's date is ${dateStr}.`,
   );
 
   sections.push(
