@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/models/entry.dart';
 import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../../features/auth/bloc/auth_bloc.dart';
@@ -8,8 +9,8 @@ import '../../../features/auth/bloc/auth_state.dart';
 import '../bloc/module_viewer_bloc.dart';
 import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
-import '../renderer/blueprint_renderer.dart';
-import '../renderer/render_context.dart';
+import '../../blueprint/renderer/blueprint_renderer.dart';
+import '../../blueprint/renderer/render_context.dart';
 import '../../schema/bloc/schema_bloc.dart';
 import '../../schema/bloc/schema_event.dart';
 import '../../schema/bloc/schema_state.dart';
@@ -104,9 +105,14 @@ class _LoadedView extends StatelessWidget {
       );
     }
 
+    final entryRepo = context.read<EntryRepository>();
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is AuthAuthenticated ? authState.user.uid : '';
+
     final renderContext = RenderContext(
       module: state.module,
       entries: state.entries,
+      allEntries: state.entries,
       formValues: state.formValues,
       screenParams: state.screenParams,
       canGoBack: state.canGoBack,
@@ -124,6 +130,33 @@ class _LoadedView extends StatelessWidget {
       },
       onDeleteEntry: (entryId) {
         bloc.add(ModuleViewerEntryDeleted(entryId));
+      },
+      onCreateEntry: (schemaKey, data) async {
+        final entry = Entry(
+          id: '',
+          data: data,
+          schemaVersion:
+              state.module.schemas[schemaKey]?.version ?? 1,
+          schemaKey: schemaKey,
+        );
+        return entryRepo.createEntry(userId, state.module.id, entry);
+      },
+      onUpdateEntry: (entryId, schemaKey, data) async {
+        final existing = state.entries
+            .where((e) => e.id == entryId)
+            .firstOrNull;
+        final mergedData = {
+          if (existing != null) ...existing.data,
+          ...data,
+        };
+        final updated = Entry(
+          id: entryId,
+          data: mergedData,
+          schemaVersion:
+              state.module.schemas[schemaKey]?.version ?? 1,
+          schemaKey: schemaKey,
+        );
+        await entryRepo.updateEntry(userId, state.module.id, updated);
       },
     );
 

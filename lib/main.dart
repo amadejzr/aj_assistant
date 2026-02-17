@@ -12,7 +12,7 @@ import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
-import 'features/module_viewer/renderer/widget_registry.dart';
+import 'features/blueprint/renderer/widget_registry.dart';
 import 'firebase_options.dart';
 
 void main() async {
