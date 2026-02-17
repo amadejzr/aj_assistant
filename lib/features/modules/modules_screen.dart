@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../core/dev/mock_finance_2_module.dart';
 import '../../core/dev/mock_finance_module.dart';
 import '../../core/dev/mock_hiking_module.dart';
 import '../../core/dev/mock_pushup_module.dart';
@@ -235,6 +236,31 @@ class _ModulesScreenBodyState extends State<_ModulesScreenBody>
               ),
               label: Text(
                 'Seed Finance Module',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.accent,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is! AuthAuthenticated) return;
+                final repo = context.read<ModuleRepository>();
+                await repo.createModule(
+                  authState.user.uid,
+                  createMockFinance2Module(),
+                );
+              },
+              icon: Icon(
+                PhosphorIcons.trendUp(PhosphorIconsStyle.bold),
+                size: 16,
+                color: colors.accent,
+              ),
+              label: Text(
+                'Seed Finance 2.0',
                 style: TextStyle(
                   fontFamily: 'Karla',
                   fontSize: 14,

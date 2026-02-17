@@ -6,6 +6,7 @@ import '../../../core/logging/log.dart';
 import '../../../core/models/entry.dart';
 import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
+import '../../blueprint/engine/post_submit_effect.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 
@@ -195,6 +196,15 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         await entryRepository.createEntry(userId, current.module.id, entry);
       }
 
+      // Execute post-submit effects declared in the screen blueprint
+      final screenDef = current.module.screens[current.currentScreenId];
+      if (screenDef is Map<String, dynamic>) {
+        final effects = screenDef['onSubmit'] as List?;
+        if (effects != null && effects.isNotEmpty) {
+          await _applyPostSubmitEffects(current, effects, data);
+        }
+      }
+
       // Navigate back to previous screen (or main)
       final stack = List<ScreenEntry>.from(current.screenStack);
       final previous = stack.isNotEmpty
@@ -349,6 +359,44 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       await entryRepository.updateEntry(userId, current.module.id, updated);
     } catch (e) {
       Log.e('Failed to update quick entry', tag: 'ModuleViewer', error: e);
+    }
+  }
+
+  /// Applies post-submit effects using [PostSubmitEffectExecutor].
+  Future<void> _applyPostSubmitEffects(
+    ModuleViewerLoaded current,
+    List<dynamic> effects,
+    Map<String, dynamic> formData,
+  ) async {
+    const executor = PostSubmitEffectExecutor();
+    final updates = executor.computeUpdates(
+      effects: effects,
+      formData: formData,
+      entries: current.entries,
+    );
+
+    for (final update in updates.entries) {
+      final existing = current.entries
+          .where((e) => e.id == update.key)
+          .firstOrNull;
+      if (existing == null) continue;
+
+      final updatedEntry = Entry(
+        id: existing.id,
+        data: {...existing.data, ...update.value},
+        schemaVersion: existing.schemaVersion,
+        schemaKey: existing.schemaKey,
+      );
+
+      try {
+        await entryRepository.updateEntry(
+          userId,
+          current.module.id,
+          updatedEntry,
+        );
+      } catch (e) {
+        Log.e('Post-submit effect failed', tag: 'ModuleViewer', error: e);
+      }
     }
   }
 

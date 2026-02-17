@@ -5,8 +5,8 @@ import '../models/module.dart';
 
 Module createMockFinanceModule() {
   const accountFields = ['name', 'balance', 'cap', 'icon'];
-  const expenseFields = ['amount', 'bucket', 'note', 'date'];
-  const incomeFields = ['amount', 'source', 'date'];
+  const expenseFields = ['amount', 'bucket', 'account', 'note', 'date'];
+  const incomeFields = ['amount', 'source', 'account', 'date'];
 
   return const Module(
     id: 'finance',
@@ -70,6 +70,13 @@ Module createMockFinanceModule() {
             required: true,
             options: ['Needs', 'Wants', 'Savings'],
           ),
+          'account': FieldDefinition(
+            key: 'account',
+            type: FieldType.reference,
+            label: 'Account',
+            required: true,
+            constraints: {'schemaKey': 'account'},
+          ),
           'note': FieldDefinition(
             key: 'note',
             type: FieldType.text,
@@ -97,6 +104,12 @@ Module createMockFinanceModule() {
             key: 'source',
             type: FieldType.text,
             label: 'Source',
+          ),
+          'account': FieldDefinition(
+            key: 'account',
+            type: FieldType.reference,
+            label: 'Deposit To',
+            constraints: {'schemaKey': 'account'},
           ),
           'date': FieldDefinition(
             key: 'date',
@@ -193,7 +206,7 @@ Module createMockFinanceModule() {
                       'itemLayout': {
                         'type': 'entry_card',
                         'title': '{{note}}',
-                        'subtitle': '{{bucket}}',
+                        'subtitle': '{{account}} · {{bucket}}',
                         'trailing': '{{amount}}',
                         'trailingFormat': 'currency',
                         'onTap': {
@@ -367,8 +380,18 @@ Module createMockFinanceModule() {
         'title': 'Add Expense',
         'submitLabel': 'Save',
         'defaults': {},
+        'onSubmit': [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'subtract',
+          },
+        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
+          {'type': 'reference_picker', 'fieldKey': 'account', 'schemaKey': 'account', 'displayField': 'name'},
           {'type': 'enum_selector', 'fieldKey': 'bucket'},
           {'type': 'text_input', 'fieldKey': 'note'},
           {'type': 'date_picker', 'fieldKey': 'date'},
@@ -383,6 +406,7 @@ Module createMockFinanceModule() {
         'editLabel': 'Update',
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
+          {'type': 'reference_picker', 'fieldKey': 'account', 'schemaKey': 'account', 'displayField': 'name'},
           {'type': 'enum_selector', 'fieldKey': 'bucket'},
           {'type': 'text_input', 'fieldKey': 'note'},
           {'type': 'date_picker', 'fieldKey': 'date'},
@@ -425,9 +449,24 @@ Module createMockFinanceModule() {
         'title': 'Add Income',
         'submitLabel': 'Save',
         'defaults': {},
+        'onSubmit': [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'amountField': 'amount',
+            'operation': 'add',
+          },
+        ],
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'source'},
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'account',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
           {'type': 'date_picker', 'fieldKey': 'date'},
         ],
       },
@@ -441,6 +480,12 @@ Module createMockFinanceModule() {
         'children': [
           {'type': 'number_input', 'fieldKey': 'amount'},
           {'type': 'text_input', 'fieldKey': 'source'},
+          {
+            'type': 'reference_picker',
+            'fieldKey': 'account',
+            'schemaKey': 'account',
+            'displayField': 'name',
+          },
           {'type': 'date_picker', 'fieldKey': 'date'},
         ],
       },
