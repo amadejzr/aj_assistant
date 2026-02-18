@@ -6,3 +6,4 @@ environment:
 
 dependencies:
   dart_firebase_admin: ^0.4.1
+  image: ^4.5.3

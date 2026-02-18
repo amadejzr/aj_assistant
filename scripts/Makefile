@@ -1,4 +1,7 @@
-.PHONY: setup seed clean
+.PHONY: setup seed clean export-logo
+
+export-logo:
+	cd .. && flutter test test/export_logo_test.dart --tags export
 
 setup:
 	dart pub get
