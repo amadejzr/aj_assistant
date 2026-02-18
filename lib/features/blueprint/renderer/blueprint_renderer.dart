@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/logging/log.dart';
 import 'blueprint_parser.dart';
 import 'blueprint_node.dart';
 import 'render_context.dart';
@@ -27,6 +28,7 @@ class _BlueprintRendererState extends State<BlueprintRenderer> {
   void initState() {
     super.initState();
     _node = _parser.parse(widget.blueprintJson);
+    Log.d('Parsed blueprint for initial build', tag: 'Perf');
   }
 
   @override
@@ -34,6 +36,9 @@ class _BlueprintRendererState extends State<BlueprintRenderer> {
     super.didUpdateWidget(old);
     if (!identical(widget.blueprintJson, old.blueprintJson)) {
       _node = _parser.parse(widget.blueprintJson);
+      Log.d('Blueprint changed — re-parsing', tag: 'Perf');
+    } else {
+      Log.d('Blueprint identical — skipped parse', tag: 'Perf');
     }
   }
 

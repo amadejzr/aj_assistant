@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/logging/log.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
@@ -40,12 +41,14 @@ class _StatCardWidget extends StatelessWidget {
       // Use cached value when the card has no filter
       if (_isEmptyFilter(card.filter) &&
           ctx.resolvedExpressions.containsKey(card.expression)) {
+        Log.d('stat_card "${card.label}": cache HIT for ${card.expression}', tag: 'Perf');
         final value = ctx.resolvedExpressions[card.expression] as num?;
         if (value == null) return '--';
         if (value == value.truncateToDouble()) return '${value.round()}';
         return value.toStringAsFixed(1);
       }
 
+      Log.d('stat_card "${card.label}": cache MISS (has filter)', tag: 'Perf');
       final evaluator = ExpressionEvaluator(
         entries: entries,
         params: {...ctx.module.settings, ...ctx.screenParams, ...meta},

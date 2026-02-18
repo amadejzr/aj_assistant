@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/logging/log.dart';
 import '../../../../core/models/entry.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -63,6 +64,7 @@ class _ChartWidget extends StatelessWidget {
       // Use cached value when the chart has no filter
       if (_isEmptyFilter(chart.filter) &&
           ctx.resolvedExpressions.containsKey(chart.expression)) {
+        Log.d('chart "${chart.chartType}": cache HIT for ${chart.expression}', tag: 'Perf');
         final cached = ctx.resolvedExpressions[chart.expression];
         if (cached is Map<String, num>) return cached;
         if (cached is Map) {
@@ -71,6 +73,7 @@ class _ChartWidget extends StatelessWidget {
         return {};
       }
 
+      Log.d('chart "${chart.chartType}": cache MISS (has filter)', tag: 'Perf');
       final evaluator = ExpressionEvaluator(
         entries: filtered,
         params: {...ctx.module.settings, ...ctx.screenParams},

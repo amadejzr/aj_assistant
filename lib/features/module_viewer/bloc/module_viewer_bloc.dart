@@ -348,6 +348,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
 
+    Log.d('Entries updated: ${event.entries.length} entries', tag: 'Perf');
+
     final resolved = _resolveExpressions(
       current.module,
       current.currentScreenId,
@@ -518,6 +520,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         resolved[expr] = evaluator.evaluate(expr);
       }
     }
+    Log.d('Resolved ${expressions.length} expressions for screen "$screenId"', tag: 'Perf');
     return resolved;
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/logging/log.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
@@ -43,8 +44,10 @@ class _ProgressBarWidget extends StatelessWidget {
       // Use cached value when the bar has no filter
       if (_isEmptyFilter(bar.filter) &&
           ctx.resolvedExpressions.containsKey(bar.expression)) {
+        Log.d('progress_bar "${bar.label}": cache HIT for ${bar.expression}', tag: 'Perf');
         value = ctx.resolvedExpressions[bar.expression] as num?;
       } else {
+        Log.d('progress_bar "${bar.label}": cache MISS (has filter)', tag: 'Perf');
         final result = EntryFilter.filter(ctx.entries, bar.filter, ctx.screenParams);
         final evaluator = ExpressionEvaluator(
           entries: result.entries,
