@@ -146,6 +146,7 @@ class ApprovalCard extends StatelessWidget {
 }
 
 /// Displays a single pending action with its data fields clearly laid out.
+/// Handles both single-entry actions and batch actions.
 class _ActionItem extends StatelessWidget {
   final PendingAction action;
   final bool isResolved;
@@ -157,8 +158,16 @@ class _ActionItem extends StatelessWidget {
     required this.isApproved,
   });
 
+  bool get _isBatch =>
+      action.name == 'createEntries' || action.name == 'updateEntries';
+
   @override
   Widget build(BuildContext context) {
+    if (_isBatch) return _buildBatch(context);
+    return _buildSingle(context);
+  }
+
+  Widget _buildSingle(BuildContext context) {
     final colors = context.colors;
     final isCreate = action.name == 'createEntry';
     final data = action.input['data'] as Map? ?? {};
@@ -172,79 +181,187 @@ class _ActionItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Action type header
-          Row(
-            children: [
-              Icon(
-                isCreate ? Icons.add_circle_outline : Icons.edit_outlined,
-                size: 15,
-                color: accentColor,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isCreate
-                    ? 'Create${schemaKey != null ? ' in $schemaKey' : ''}'
-                    : 'Update entry',
-                style: TextStyle(
-                  fontFamily: 'Karla',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: accentColor,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
+          _actionHeader(
+            icon: isCreate ? Icons.add_circle_outline : Icons.edit_outlined,
+            label: isCreate
+                ? 'Create${schemaKey != null ? ' in $schemaKey' : ''}'
+                : 'Update entry',
+            color: accentColor,
           ),
           if (data.isNotEmpty) ...[
             const SizedBox(height: 6),
-            // Data fields
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: colors.background,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: data.entries.map((e) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            e.key,
-                            style: TextStyle(
-                              fontFamily: 'Karla',
-                              fontSize: 12,
-                              color: colors.onBackgroundMuted,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${e.value}',
-                            style: TextStyle(
-                              fontFamily: 'Karla',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: colors.onBackground,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+            _dataBox(colors, data),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildBatch(BuildContext context) {
+    final colors = context.colors;
+    final isCreate = action.name == 'createEntries';
+    final entries = (action.input['entries'] as List?) ?? [];
+    final schemaKey = action.input['schemaKey'] as String?;
+    final count = entries.length;
+
+    final accentColor =
+        isResolved ? colors.onBackgroundMuted : colors.accent;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _actionHeader(
+            icon: isCreate
+                ? Icons.playlist_add_rounded
+                : Icons.edit_note_rounded,
+            label: isCreate
+                ? 'Create $count entries${schemaKey != null ? ' in $schemaKey' : ''}'
+                : 'Update $count entries',
+            color: accentColor,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < entries.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 12,
+                      thickness: 0.5,
+                      color: colors.onBackgroundMuted.withValues(alpha: 0.15),
+                    ),
+                  _batchEntryRow(colors, entries[i] as Map, i + 1),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compact row for a single entry within a batch.
+  /// Shows the entry number and up to 2 key data fields.
+  Widget _batchEntryRow(dynamic colors, Map entry, int index) {
+    final data = entry['data'] as Map? ?? {};
+    // Pick the most descriptive fields to show (first 2 non-empty string values)
+    final preview = data.entries
+        .where((e) => e.value != null && '${e.value}'.isNotEmpty)
+        .take(2)
+        .map((e) => '${e.value}')
+        .join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 22,
+            child: Text(
+              '$index.',
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 11,
+                color: colors.onBackgroundMuted,
+                height: 1.4,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              preview.isNotEmpty ? preview : '(empty)',
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: colors.onBackground,
+                height: 1.4,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionHeader({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Karla',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dataBox(dynamic colors, Map data) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: data.entries.map((e) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: Text(
+                    e.key,
+                    style: TextStyle(
+                      fontFamily: 'Karla',
+                      fontSize: 12,
+                      color: colors.onBackgroundMuted,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '${e.value}',
+                    style: TextStyle(
+                      fontFamily: 'Karla',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: colors.onBackground,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

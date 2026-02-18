@@ -181,6 +181,57 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             await _entryRepository.updateEntry(_userId, moduleId, entry);
             Log.i('Updated entry $entryId in $moduleId', tag: _tag);
             results.add('Updated entry');
+
+          case 'createEntries':
+            final moduleId = action.input['moduleId'] as String;
+            final schemaKey =
+                action.input['schemaKey'] as String? ?? 'default';
+            final entriesList =
+                (action.input['entries'] as List?) ?? [];
+            var created = 0;
+            for (final raw in entriesList) {
+              final entryMap = raw as Map;
+              final data = Map<String, dynamic>.from(
+                entryMap['data'] as Map? ?? {},
+              );
+              final entry = Entry(
+                id: '',
+                data: data,
+                schemaKey: schemaKey,
+              );
+              await _entryRepository.createEntry(
+                _userId, moduleId, entry,
+              );
+              created++;
+            }
+            Log.i('Batch created $created entries in $moduleId',
+                tag: _tag);
+            results.add('Created $created entries');
+
+          case 'updateEntries':
+            final moduleId = action.input['moduleId'] as String;
+            final entriesList =
+                (action.input['entries'] as List?) ?? [];
+            var updated = 0;
+            for (final raw in entriesList) {
+              final entryMap = raw as Map;
+              final entryId = entryMap['entryId'] as String;
+              final data = Map<String, dynamic>.from(
+                entryMap['data'] as Map? ?? {},
+              );
+              final entry = Entry(id: entryId, data: data);
+              await _entryRepository.updateEntry(
+                _userId, moduleId, entry,
+              );
+              updated++;
+            }
+            Log.i('Batch updated $updated entries in $moduleId',
+                tag: _tag);
+            results.add('Updated $updated entries');
+
+          default:
+            Log.e('Unhandled action: ${action.name}', tag: _tag);
+            results.add('Unsupported action: ${action.name}');
         }
       } catch (e) {
         Log.e('Action ${action.name} failed: $e', tag: _tag);

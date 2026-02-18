@@ -1,7 +1,9 @@
 import * as logger from "firebase-functions/logger";
 import {createEntry} from "./create_entry.js";
+import {createEntries} from "./create_entries.js";
 import {queryEntries} from "./query_entries.js";
 import {updateEntry} from "./update_entry.js";
+import {updateEntries} from "./update_entries.js";
 import {getModuleSummary} from "./get_module_summary.js";
 
 interface ToolUse {
@@ -29,11 +31,17 @@ export async function executeToolCall(
     case "createEntry":
       result = await createEntry(userId, tool.input as never);
       break;
+    case "createEntries":
+      result = await createEntries(userId, tool.input as never);
+      break;
     case "queryEntries":
       result = await queryEntries(userId, tool.input as never);
       break;
     case "updateEntry":
       result = await updateEntry(userId, tool.input as never);
+      break;
+    case "updateEntries":
+      result = await updateEntries(userId, tool.input as never);
       break;
     case "getModuleSummary":
       result = await getModuleSummary(userId, tool.input as never);

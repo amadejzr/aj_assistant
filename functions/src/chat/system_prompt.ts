@@ -102,6 +102,10 @@ export function buildSystemPrompt(
     "- For deletions, confirm with the user in text before proceeding.\n" +
     "- When the user mentions an amount without specifying a module, " +
     "use context to infer which module they mean.\n" +
+    "- When creating multiple entries at once (e.g. a week of meals, " +
+    "several expenses, a batch of workouts), ALWAYS use createEntries " +
+    "instead of calling createEntry multiple times. Same for updates: " +
+    "use updateEntries to update several entries in one call.\n" +
     "- Keep responses short. After creating/updating data, briefly " +
     "confirm what was done.",
   );

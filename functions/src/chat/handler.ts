@@ -9,7 +9,9 @@ import {executeToolCall} from "../tools/executor.js";
 const MAX_TOOL_ROUNDS = 10;
 const MAX_HISTORY_MESSAGES = 20;
 
-const TOOLS_REQUIRING_APPROVAL = new Set(["createEntry", "updateEntry"]);
+const TOOLS_REQUIRING_APPROVAL = new Set([
+  "createEntry", "createEntries", "updateEntry", "updateEntries",
+]);
 
 interface PendingAction {
   toolUseId: string;
@@ -34,12 +36,20 @@ function describeAction(
       .join(", ");
     return `Create entry in "${input.schemaKey}": ${fields}`;
   }
+  case "createEntries": {
+    const entries = input.entries as Record<string, unknown>[] ?? [];
+    return `Create ${entries.length} entries in "${input.schemaKey}"`;
+  }
   case "updateEntry": {
     const data = input.data as Record<string, unknown> ?? {};
     const fields = Object.entries(data)
       .map(([k, v]) => `${k}: ${v}`)
       .join(", ");
     return `Update entry ${input.entryId}: ${fields}`;
+  }
+  case "updateEntries": {
+    const entries = input.entries as Record<string, unknown>[] ?? [];
+    return `Update ${entries.length} entries in module`;
   }
   default:
     return `${name}(${JSON.stringify(input)})`;
