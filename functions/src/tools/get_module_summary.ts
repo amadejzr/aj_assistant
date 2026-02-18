@@ -32,7 +32,17 @@ export async function getModuleSummary(
     query = query.where("schemaKey", "==", schemaKey);
   }
 
-  const snapshot = await query.get();
+  // Get accurate total count
+  const countResult = await query.count().get();
+  const totalEntries = countResult.data().count;
+
+  // Cap entries fetched to 500 most recent
+  const snapshot = await query
+    .orderBy("createdAt", "desc")
+    .limit(500)
+    .get();
+
+  const entriesTruncated = totalEntries > 500;
 
   // Group entries by schema
   const bySchema: Record<string, Array<{
@@ -115,7 +125,8 @@ export async function getModuleSummary(
 
   return JSON.stringify({
     moduleName: moduleData.name,
-    totalEntries: snapshot.size,
+    totalEntries,
+    entriesTruncated,
     schemas: schemaSummaries,
   });
 }

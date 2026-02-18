@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/logging/log.dart';
 import '../../../core/models/entry.dart';
+import '../../../core/models/module.dart';
 import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
+import '../../blueprint/engine/expression_collector.dart';
+import '../../blueprint/engine/expression_evaluator.dart';
 import '../../blueprint/engine/post_submit_effect.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
@@ -51,10 +54,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       emit(ModuleViewerLoaded(module: module));
 
-      // Subscribe to entries
+      // Subscribe to entries (capped at 500 most recent to limit reads)
       _entriesSub?.cancel();
       _entriesSub = entryRepository
-          .watchEntries(userId, event.moduleId)
+          .watchEntries(userId, event.moduleId, limit: 500)
           .listen(
             (entries) => add(ModuleViewerEntriesUpdated(entries)),
             onError: (e) => Log.e('Entries stream error', tag: 'ModuleViewer', error: e),
@@ -78,11 +81,18 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       ScreenEntry(current.currentScreenId, params: current.screenParams),
     ];
 
+    final resolved = _resolveExpressions(
+      current.module,
+      event.screenId,
+      current.entries,
+    );
+
     emit(current.copyWith(
       currentScreenId: event.screenId,
       screenParams: event.params,
       screenStack: updatedStack,
       formValues: {},
+      resolvedExpressions: resolved,
     ));
   }
 
@@ -338,7 +348,16 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
 
-    emit(current.copyWith(entries: event.entries));
+    final resolved = _resolveExpressions(
+      current.module,
+      current.currentScreenId,
+      event.entries,
+    );
+
+    emit(current.copyWith(
+      entries: event.entries,
+      resolvedExpressions: resolved,
+    ));
   }
 
   Future<void> _onModuleRefreshed(
@@ -468,6 +487,38 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         Log.e('Post-submit effect failed', tag: 'ModuleViewer', error: e);
       }
     }
+  }
+
+  static const _expressionCollector = ExpressionCollector();
+
+  /// Pre-resolves all unfiltered expressions for the given screen so that
+  /// individual widget builders can read cached values instead of each
+  /// creating their own [ExpressionEvaluator].
+  Map<String, dynamic> _resolveExpressions(
+    Module module,
+    String screenId,
+    List<Entry> entries,
+  ) {
+    final blueprint = module.screens[screenId];
+    if (blueprint == null) return const {};
+
+    final expressions = _expressionCollector.collect(blueprint);
+    if (expressions.isEmpty) return const {};
+
+    final evaluator = ExpressionEvaluator(
+      entries: entries,
+      params: module.settings,
+    );
+
+    final resolved = <String, dynamic>{};
+    for (final expr in expressions) {
+      if (expr.startsWith('group(')) {
+        resolved[expr] = evaluator.evaluateGroup(expr);
+      } else {
+        resolved[expr] = evaluator.evaluate(expr);
+      }
+    }
+    return resolved;
   }
 
   @override

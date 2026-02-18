@@ -27,18 +27,31 @@ class _ProgressBarWidget extends StatelessWidget {
 
   const _ProgressBarWidget({required this.bar, required this.ctx});
 
+  static bool _isEmptyFilter(dynamic filter) {
+    if (filter == null) return true;
+    if (filter is Map && filter.isEmpty) return true;
+    if (filter is List && filter.isEmpty) return true;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
     num? value;
     if (bar.expression != null) {
-      final result = EntryFilter.filter(ctx.entries, bar.filter, ctx.screenParams);
-      final evaluator = ExpressionEvaluator(
-        entries: result.entries,
-        params: {...ctx.module.settings, ...ctx.screenParams, ...result.meta},
-      );
-      value = evaluator.evaluate(bar.expression!);
+      // Use cached value when the bar has no filter
+      if (_isEmptyFilter(bar.filter) &&
+          ctx.resolvedExpressions.containsKey(bar.expression)) {
+        value = ctx.resolvedExpressions[bar.expression] as num?;
+      } else {
+        final result = EntryFilter.filter(ctx.entries, bar.filter, ctx.screenParams);
+        final evaluator = ExpressionEvaluator(
+          entries: result.entries,
+          params: {...ctx.module.settings, ...ctx.screenParams, ...result.meta},
+        );
+        value = evaluator.evaluate(bar.expression!);
+      }
     }
 
     final percent = (value ?? 0).toDouble().clamp(0.0, 100.0);

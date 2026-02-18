@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../engine/entry_filter.dart';
 import '../../renderer/render_context.dart';
@@ -34,10 +35,13 @@ class _EntryListWidgetState extends State<_EntryListWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _hasAnimated = false;
+  late int _displayCount;
 
   @override
   void initState() {
     super.initState();
+    _displayCount =
+        (widget.listNode.query['limit'] as int?) ?? 20;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -82,12 +86,6 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       });
     }
 
-    // Limit
-    final limit = widget.listNode.query['limit'] as int?;
-    if (limit != null && entries.length > limit) {
-      entries = entries.sublist(0, limit);
-    }
-
     // Empty state
     if (entries.isEmpty) {
       final emptyNode = EmptyStateNode(
@@ -104,58 +102,83 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       return const SizedBox.shrink();
     }
 
-    final itemCount = entries.length;
+    final totalFiltered = entries.length;
+    final hasMore = totalFiltered > _displayCount;
+    final visibleEntries =
+        hasMore ? entries.sublist(0, _displayCount) : entries;
+    final itemCount = visibleEntries.length;
 
     return Column(
-      children: List.generate(itemCount, (index) {
-        final entry = entries[index];
-        final entryCtx = RenderContext(
-          module: widget.ctx.module,
-          entries: [entry],
-          allEntries: widget.ctx.allEntries,
-          formValues: entry.data,
-          screenParams: widget.ctx.screenParams,
-          canGoBack: widget.ctx.canGoBack,
-          onFormValueChanged: widget.ctx.onFormValueChanged,
-          onFormSubmit: widget.ctx.onFormSubmit,
-          onNavigateToScreen: widget.ctx.onNavigateToScreen,
-          onNavigateBack: widget.ctx.onNavigateBack,
-          onDeleteEntry: widget.ctx.onDeleteEntry,
-          resolvedExpressions: widget.ctx.resolvedExpressions,
-          onCreateEntry: widget.ctx.onCreateEntry,
-          onUpdateEntry: widget.ctx.onUpdateEntry,
-        );
+      children: [
+        ...List.generate(itemCount, (index) {
+          final entry = visibleEntries[index];
+          final entryCtx = RenderContext(
+            module: widget.ctx.module,
+            entries: [entry],
+            allEntries: widget.ctx.allEntries,
+            formValues: entry.data,
+            screenParams: widget.ctx.screenParams,
+            canGoBack: widget.ctx.canGoBack,
+            onFormValueChanged: widget.ctx.onFormValueChanged,
+            onFormSubmit: widget.ctx.onFormSubmit,
+            onNavigateToScreen: widget.ctx.onNavigateToScreen,
+            onNavigateBack: widget.ctx.onNavigateBack,
+            onDeleteEntry: widget.ctx.onDeleteEntry,
+            resolvedExpressions: widget.ctx.resolvedExpressions,
+            onCreateEntry: widget.ctx.onCreateEntry,
+            onUpdateEntry: widget.ctx.onUpdateEntry,
+          );
 
-        final child = WidgetRegistry.instance.build(itemLayout, entryCtx);
+          final child = WidgetRegistry.instance.build(itemLayout, entryCtx);
 
-        // Stagger delay: each item starts 80ms after the previous
-        final staggerStart = (index * 0.08).clamp(0.0, 0.7);
-        final staggerEnd = (staggerStart + 0.3).clamp(0.0, 1.0);
+          // Stagger delay: each item starts 80ms after the previous
+          final staggerStart = (index * 0.08).clamp(0.0, 0.7);
+          final staggerEnd = (staggerStart + 0.3).clamp(0.0, 1.0);
 
-        final slideAnimation = Tween<Offset>(
-          begin: const Offset(0, 0.08),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _controller,
-          curve: Interval(staggerStart, staggerEnd, curve: Curves.easeOut),
-        ));
+          final slideAnimation = Tween<Offset>(
+            begin: const Offset(0, 0.08),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _controller,
+            curve: Interval(staggerStart, staggerEnd, curve: Curves.easeOut),
+          ));
 
-        final fadeAnimation = Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: _controller,
-          curve: Interval(staggerStart, staggerEnd, curve: Curves.easeOut),
-        ));
+          final fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(
+            parent: _controller,
+            curve: Interval(staggerStart, staggerEnd, curve: Curves.easeOut),
+          ));
 
-        return SlideTransition(
-          position: slideAnimation,
-          child: FadeTransition(
-            opacity: fadeAnimation,
-            child: child,
+          return SlideTransition(
+            position: slideAnimation,
+            child: FadeTransition(
+              opacity: fadeAnimation,
+              child: child,
+            ),
+          );
+        }),
+        if (hasMore)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _displayCount += 20;
+                });
+              },
+              child: Text(
+                'Show more (${totalFiltered - _displayCount} remaining)',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 13,
+                  color: context.colors.accent,
+                ),
+              ),
+            ),
           ),
-        );
-      }),
+      ],
     );
   }
 }

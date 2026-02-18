@@ -37,6 +37,15 @@ class _StatCardWidget extends StatelessWidget {
 
     // If expression is provided, use ExpressionEvaluator
     if (card.expression != null && card.expression!.isNotEmpty) {
+      // Use cached value when the card has no filter
+      if (_isEmptyFilter(card.filter) &&
+          ctx.resolvedExpressions.containsKey(card.expression)) {
+        final value = ctx.resolvedExpressions[card.expression] as num?;
+        if (value == null) return '--';
+        if (value == value.truncateToDouble()) return '${value.round()}';
+        return value.toStringAsFixed(1);
+      }
+
       final evaluator = ExpressionEvaluator(
         entries: entries,
         params: {...ctx.module.settings, ...ctx.screenParams, ...meta},
@@ -148,6 +157,13 @@ class _StatCardWidget extends StatelessWidget {
       default:
         return '--';
     }
+  }
+
+  static bool _isEmptyFilter(dynamic filter) {
+    if (filter == null) return true;
+    if (filter is Map && filter.isEmpty) return true;
+    if (filter is List && filter.isEmpty) return true;
+    return false;
   }
 
   @override

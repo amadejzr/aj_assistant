@@ -132,4 +132,63 @@ void main() {
     final widget = WidgetRegistry.instance.build(node, ctx);
     expect(widget, isNot(isA<SizedBox>()));
   });
+
+  testWidgets('shows "Show more" button when entries exceed display limit',
+      (tester) async {
+    // Create 5 entries but limit display to 2
+    const manyEntries = [
+      Entry(id: 'e1', data: {'note': 'A', 'amount': 1}),
+      Entry(id: 'e2', data: {'note': 'B', 'amount': 2}),
+      Entry(id: 'e3', data: {'note': 'C', 'amount': 3}),
+      Entry(id: 'e4', data: {'note': 'D', 'amount': 4}),
+      Entry(id: 'e5', data: {'note': 'E', 'amount': 5}),
+    ];
+
+    await tester.pumpWidget(buildWidget(
+      node: const EntryListNode(
+        query: {'limit': 2},
+        itemLayout: EntryCardNode(titleTemplate: '{{note}}'),
+      ),
+      testEntries: manyEntries,
+    ));
+    await tester.pumpAndSettle();
+
+    // Should show "Show more" button with remaining count
+    expect(find.textContaining('Show more'), findsOneWidget);
+    expect(find.textContaining('3 remaining'), findsOneWidget);
+  });
+
+  testWidgets('tapping "Show more" reveals more entries', (tester) async {
+    const manyEntries = [
+      Entry(id: 'e1', data: {'note': 'A', 'amount': 1}),
+      Entry(id: 'e2', data: {'note': 'B', 'amount': 2}),
+      Entry(id: 'e3', data: {'note': 'C', 'amount': 3}),
+      Entry(id: 'e4', data: {'note': 'D', 'amount': 4}),
+      Entry(id: 'e5', data: {'note': 'E', 'amount': 5}),
+    ];
+
+    await tester.pumpWidget(buildWidget(
+      node: const EntryListNode(
+        query: {'limit': 2},
+        itemLayout: EntryCardNode(titleTemplate: '{{note}}'),
+      ),
+      testEntries: manyEntries,
+    ));
+    await tester.pumpAndSettle();
+
+    // Initially: 2 visible, 3 hidden
+    expect(find.text('A'), findsOneWidget);
+    expect(find.text('B'), findsOneWidget);
+    expect(find.text('C'), findsNothing);
+
+    // Tap "Show more"
+    await tester.tap(find.textContaining('Show more'));
+    await tester.pumpAndSettle();
+
+    // After tap: all 5 visible (2 + 20 > 5), no "Show more"
+    expect(find.text('A'), findsOneWidget);
+    expect(find.text('C'), findsOneWidget);
+    expect(find.text('E'), findsOneWidget);
+    expect(find.textContaining('Show more'), findsNothing);
+  });
 }

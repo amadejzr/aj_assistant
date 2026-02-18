@@ -108,6 +108,7 @@ class _LoadedView extends StatelessWidget {
         formValues: state.formValues,
         screenParams: state.screenParams,
         canGoBack: state.canGoBack,
+        resolvedExpressions: state.resolvedExpressions,
         onFormValueChanged: (fieldKey, value) {
           bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
         },

@@ -163,5 +163,63 @@ void main() {
       final widget = WidgetRegistry.instance.build(node, ctx);
       expect(widget, isNot(isA<SizedBox>()));
     });
+
+    testWidgets('uses resolvedExpressions from context when filter is empty',
+        (tester) async {
+      final ctx = RenderContext(
+        module: testModule,
+        entries: testEntries,
+        resolvedExpressions: const {'sum(amount)': 100},
+        onFormValueChanged: (_, _) {},
+        onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
+      );
+
+      const node = StatCardNode(
+        label: 'Cached Total',
+        stat: 'count',
+        expression: 'sum(amount)',
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.dark(),
+        home: Scaffold(
+          body: WidgetRegistry.instance.build(node, ctx),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('100'), findsOneWidget);
+    });
+
+    testWidgets('falls back to evaluator when filter is present',
+        (tester) async {
+      final ctx = RenderContext(
+        module: testModule,
+        entries: testEntries,
+        resolvedExpressions: const {'sum(amount)': 999},
+        onFormValueChanged: (_, _) {},
+        onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
+      );
+
+      const node = StatCardNode(
+        label: 'Filtered Total',
+        stat: 'count',
+        expression: 'sum(amount)',
+        filter: {'someField': 'someValue'},
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.dark(),
+        home: Scaffold(
+          body: WidgetRegistry.instance.build(node, ctx),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Should NOT use the cached 999 — should fall back to evaluator
+      // With the filter, no entries match 'someField'='someValue', so sum = 0
+      // The evaluator returns 0 for sum of filtered (empty) set
+      expect(find.text('999'), findsNothing);
+    });
   });
 }

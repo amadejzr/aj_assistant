@@ -44,6 +44,13 @@ class _ChartWidget extends StatelessWidget {
     Color(0xFF9E6B6B), // dusty rose
   ];
 
+  static bool _isEmptyFilter(dynamic filter) {
+    if (filter == null) return true;
+    if (filter is Map && filter.isEmpty) return true;
+    if (filter is List && filter.isEmpty) return true;
+    return false;
+  }
+
   Map<String, num> _groupData() {
     // Filter entries
     final filtered = chart.filter != null
@@ -53,6 +60,17 @@ class _ChartWidget extends StatelessWidget {
     // If expression is provided (e.g. "group(category, sum(amount))"),
     // use evaluateGroup() for unified syntax
     if (chart.expression != null && chart.expression!.isNotEmpty) {
+      // Use cached value when the chart has no filter
+      if (_isEmptyFilter(chart.filter) &&
+          ctx.resolvedExpressions.containsKey(chart.expression)) {
+        final cached = ctx.resolvedExpressions[chart.expression];
+        if (cached is Map<String, num>) return cached;
+        if (cached is Map) {
+          return cached.map((k, v) => MapEntry(k.toString(), (v as num?) ?? 0));
+        }
+        return {};
+      }
+
       final evaluator = ExpressionEvaluator(
         entries: filtered,
         params: {...ctx.module.settings, ...ctx.screenParams},
