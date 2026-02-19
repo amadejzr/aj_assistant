@@ -1,6 +1,8 @@
+import 'package:aj_assistant/features/schema/models/field_constraints.dart';
 import 'package:aj_assistant/features/schema/models/field_definition.dart';
 import 'package:aj_assistant/features/schema/models/field_type.dart';
 import 'package:aj_assistant/features/schema/models/module_schema.dart';
+import 'package:aj_assistant/features/schema/models/schema_effect.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -12,6 +14,8 @@ void main() {
       expect(schema.fields, isEmpty);
       expect(schema.label, '');
       expect(schema.icon, isNull);
+      expect(schema.displayField, isNull);
+      expect(schema.effects, isEmpty);
     });
 
     test('construction with values', () {
@@ -19,6 +23,7 @@ void main() {
         version: 2,
         label: 'Expense',
         icon: 'dollar',
+        displayField: 'note',
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
@@ -30,8 +35,31 @@ void main() {
       expect(schema.version, 2);
       expect(schema.label, 'Expense');
       expect(schema.icon, 'dollar');
+      expect(schema.displayField, 'note');
       expect(schema.fields, hasLength(1));
       expect(schema.fields['amount']!.type, FieldType.number);
+    });
+
+    test('construction with effects', () {
+      const schema = ModuleSchema(
+        label: 'Expense',
+        effects: [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'completed',
+          ),
+        ],
+      );
+      expect(schema.effects, hasLength(2));
+      expect(schema.effects[0], isA<AdjustReferenceEffect>());
+      expect(schema.effects[1], isA<SetReferenceEffect>());
     });
 
     test('equality — same fields are equal', () {
@@ -91,21 +119,31 @@ void main() {
         version: 3,
         label: 'Expense',
         icon: 'dollar',
+        displayField: 'note',
         fields: {
           'amount': FieldDefinition(
             key: 'amount',
             type: FieldType.currency,
             label: 'Amount',
             required: true,
+            constraints: CurrencyConstraints(),
           ),
         },
+        effects: [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
+        ],
       );
       final json = original.toJson();
       final restored = ModuleSchema.fromJson(json);
       expect(restored, equals(original));
     });
 
-    test('fromJson backward compat — missing label/icon defaults', () {
+    test('fromJson backward compat — missing label/icon/effects defaults', () {
       final json = {
         'version': 1,
         'fields': <String, dynamic>{},
@@ -113,6 +151,38 @@ void main() {
       final schema = ModuleSchema.fromJson(json);
       expect(schema.label, '');
       expect(schema.icon, isNull);
+      expect(schema.displayField, isNull);
+      expect(schema.effects, isEmpty);
+    });
+
+    test('fromJson — effects deserialized as typed SchemaEffect', () {
+      final json = {
+        'version': 1,
+        'fields': <String, dynamic>{},
+        'effects': [
+          {
+            'type': 'adjust_reference',
+            'referenceField': 'account',
+            'targetField': 'balance',
+            'operation': 'subtract',
+          },
+          {
+            'type': 'set_reference',
+            'referenceField': 'goal',
+            'targetField': 'status',
+            'value': 'done',
+          },
+          {
+            'type': 'future_type',
+            'data': 123,
+          },
+        ],
+      };
+      final schema = ModuleSchema.fromJson(json);
+      expect(schema.effects, hasLength(3));
+      expect(schema.effects[0], isA<AdjustReferenceEffect>());
+      expect(schema.effects[1], isA<SetReferenceEffect>());
+      expect(schema.effects[2], isA<UnknownEffect>());
     });
   });
 }

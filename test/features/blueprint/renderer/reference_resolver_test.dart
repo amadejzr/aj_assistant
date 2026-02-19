@@ -1,6 +1,7 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/features/blueprint/renderer/reference_resolver.dart';
+import 'package:aj_assistant/features/schema/models/field_constraints.dart';
 import 'package:aj_assistant/features/schema/models/field_definition.dart';
 import 'package:aj_assistant/features/schema/models/field_type.dart';
 import 'package:aj_assistant/features/schema/models/module_schema.dart';
@@ -48,13 +49,13 @@ void main() {
             key: 'category',
             type: FieldType.reference,
             label: 'Category',
-            constraints: {'schemaKey': 'category'},
+            constraints: ReferenceConstraints(targetSchema: 'category'),
           ),
           'account': FieldDefinition(
             key: 'account',
             type: FieldType.reference,
             label: 'Account',
-            constraints: {'schemaKey': 'account'},
+            constraints: ReferenceConstraints(targetSchema: 'account'),
           ),
           'amount': FieldDefinition(
             key: 'amount',
@@ -69,8 +70,14 @@ void main() {
   const allEntries = [
     Entry(id: 'cat1', data: {'name': 'Food'}, schemaKey: 'category'),
     Entry(id: 'cat2', data: {'name': 'Transport'}, schemaKey: 'category'),
-    Entry(id: 'acc1', data: {'title': 'Checking', 'balance': 1000}, schemaKey: 'account'),
-    Entry(id: 'exp1', data: {'note': 'Lunch', 'category': 'cat1', 'amount': 15}, schemaKey: 'expense'),
+    Entry(
+        id: 'acc1',
+        data: {'title': 'Checking', 'balance': 1000},
+        schemaKey: 'account'),
+    Entry(
+        id: 'exp1',
+        data: {'note': 'Lunch', 'category': 'cat1', 'amount': 15},
+        schemaKey: 'expense'),
   ];
 
   late ReferenceResolver resolver;
@@ -84,18 +91,21 @@ void main() {
 
   group('ReferenceResolver', () {
     test('resolves reference field to display value', () {
-      final result = resolver.resolve('category', 'cat1', schemaKey: 'expense');
+      final result =
+          resolver.resolve('category', 'cat1', schemaKey: 'expense');
       expect(result, 'Food');
     });
 
     test('resolves different reference field', () {
-      final result = resolver.resolve('category', 'cat2', schemaKey: 'expense');
+      final result =
+          resolver.resolve('category', 'cat2', schemaKey: 'expense');
       expect(result, 'Transport');
     });
 
     test('resolves account reference using first text field', () {
       // account schema has no "name" field, so it should find "title" as first text field
-      final result = resolver.resolve('account', 'acc1', schemaKey: 'expense');
+      final result =
+          resolver.resolve('account', 'acc1', schemaKey: 'expense');
       expect(result, 'Checking');
     });
 
@@ -110,12 +120,14 @@ void main() {
     });
 
     test('returns empty string for null value', () {
-      final result = resolver.resolve('category', null, schemaKey: 'expense');
+      final result =
+          resolver.resolve('category', null, schemaKey: 'expense');
       expect(result, '');
     });
 
     test('returns raw ID when referenced entry not found', () {
-      final result = resolver.resolve('category', 'cat_nonexistent', schemaKey: 'expense');
+      final result = resolver.resolve('category', 'cat_nonexistent',
+          schemaKey: 'expense');
       expect(result, 'cat_nonexistent');
     });
 
@@ -141,7 +153,8 @@ void main() {
                 key: 'ref',
                 type: FieldType.reference,
                 label: 'Ref',
-                constraints: {'schemaKey': 'nonexistent'},
+                constraints:
+                    ReferenceConstraints(targetSchema: 'nonexistent'),
               ),
             },
           ),
@@ -155,6 +168,106 @@ void main() {
 
       final result = badResolver.resolve('ref', 'cat1', schemaKey: 'default');
       expect(result, 'cat1');
+    });
+
+    test('uses displayField from ReferenceConstraints when set', () {
+      const moduleWithDisplayField = Module(
+        id: 'test',
+        name: 'Test',
+        schemas: {
+          'account': ModuleSchema(
+            label: 'Account',
+            fields: {
+              'title': FieldDefinition(
+                key: 'title',
+                type: FieldType.text,
+                label: 'Title',
+              ),
+              'code': FieldDefinition(
+                key: 'code',
+                type: FieldType.text,
+                label: 'Code',
+              ),
+            },
+          ),
+          'default': ModuleSchema(
+            fields: {
+              'ref': FieldDefinition(
+                key: 'ref',
+                type: FieldType.reference,
+                label: 'Account',
+                constraints: ReferenceConstraints(
+                  targetSchema: 'account',
+                  displayField: 'code',
+                ),
+              ),
+            },
+          ),
+        },
+      );
+
+      const entries = [
+        Entry(
+            id: 'acc1',
+            data: {'title': 'Checking', 'code': 'CHK'},
+            schemaKey: 'account'),
+      ];
+
+      final r = const ReferenceResolver(
+        module: moduleWithDisplayField,
+        allEntries: entries,
+      );
+
+      expect(r.resolve('ref', 'acc1', schemaKey: 'default'), 'CHK');
+    });
+
+    test('uses schema displayField when no ref displayField', () {
+      const moduleWithSchemaDisplay = Module(
+        id: 'test',
+        name: 'Test',
+        schemas: {
+          'account': ModuleSchema(
+            label: 'Account',
+            displayField: 'code',
+            fields: {
+              'title': FieldDefinition(
+                key: 'title',
+                type: FieldType.text,
+                label: 'Title',
+              ),
+              'code': FieldDefinition(
+                key: 'code',
+                type: FieldType.text,
+                label: 'Code',
+              ),
+            },
+          ),
+          'default': ModuleSchema(
+            fields: {
+              'ref': FieldDefinition(
+                key: 'ref',
+                type: FieldType.reference,
+                label: 'Account',
+                constraints: ReferenceConstraints(targetSchema: 'account'),
+              ),
+            },
+          ),
+        },
+      );
+
+      const entries = [
+        Entry(
+            id: 'acc1',
+            data: {'title': 'Checking', 'code': 'CHK'},
+            schemaKey: 'account'),
+      ];
+
+      final r = const ReferenceResolver(
+        module: moduleWithSchemaDisplay,
+        allEntries: entries,
+      );
+
+      expect(r.resolve('ref', 'acc1', schemaKey: 'default'), 'CHK');
     });
   });
 }

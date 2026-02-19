@@ -1,5 +1,6 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/features/blueprint/engine/post_submit_effect.dart';
+import 'package:aj_assistant/features/schema/models/schema_effect.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -26,21 +27,19 @@ void main() {
   //  adjust_reference
   // ═══════════════════════════════════════════════
   group('adjust_reference', () {
-    const subtractEffect = {
-      'type': 'adjust_reference',
-      'referenceField': 'account',
-      'targetField': 'balance',
-      'amountField': 'amount',
-      'operation': 'subtract',
-    };
+    const subtractEffect = AdjustReferenceEffect(
+      referenceField: 'account',
+      targetField: 'balance',
+      amountField: 'amount',
+      operation: 'subtract',
+    );
 
-    const addEffect = {
-      'type': 'adjust_reference',
-      'referenceField': 'account',
-      'targetField': 'balance',
-      'amountField': 'amount',
-      'operation': 'add',
-    };
+    const addEffect = AdjustReferenceEffect(
+      referenceField: 'account',
+      targetField: 'balance',
+      amountField: 'amount',
+      operation: 'add',
+    );
 
     test('subtracts amount from referenced entry field', () {
       final result = executor.computeUpdates(
@@ -152,17 +151,15 @@ void main() {
 
     // ── Chaining: multiple effects on same entry ──
     test('chains multiple adjustments on the same entry', () {
+      const feeEffect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amountField: 'fee',
+        operation: 'subtract',
+      );
+
       final result = executor.computeUpdates(
-        effects: [
-          subtractEffect,
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'fee',
-            'operation': 'subtract',
-          },
-        ],
+        effects: [subtractEffect, feeEffect],
         formData: {
           'account': 'acc-wallet',
           'amount': 100,
@@ -178,23 +175,21 @@ void main() {
     });
 
     test('handles effects targeting different entries', () {
+      const fromEffect = AdjustReferenceEffect(
+        referenceField: 'fromAccount',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'subtract',
+      );
+      const toEffect = AdjustReferenceEffect(
+        referenceField: 'toAccount',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'add',
+      );
+
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'fromAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'toAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
-        ],
+        effects: [fromEffect, toEffect],
         formData: {
           'fromAccount': 'acc-wallet',
           'toAccount': 'acc-savings',
@@ -261,16 +256,15 @@ void main() {
     });
 
     test('skips when operation is invalid', () {
+      const invalidOp = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'multiply', // not supported
+      );
+
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'multiply', // not supported
-          },
-        ],
+        effects: [invalidOp],
         formData: {'account': 'acc-wallet', 'amount': 100},
         entries: [wallet],
       );
@@ -278,34 +272,15 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('skips when required config fields are missing', () {
-      // Missing targetField
-      final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
-        formData: {'account': 'acc-wallet', 'amount': 100},
-        entries: [wallet],
+    test('skips when neither amount nor amountField resolves', () {
+      const noAmountEffect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        operation: 'subtract',
       );
 
-      expect(result, isEmpty);
-    });
-
-    test('skips when neither amount nor amountField is provided', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'operation': 'subtract',
-          },
-        ],
+        effects: [noAmountEffect],
         formData: {'account': 'acc-wallet'},
         entries: [wallet],
       );
@@ -315,16 +290,15 @@ void main() {
 
     // ── Literal amount ──
     test('uses literal amount when provided', () {
+      const literalEffect = AdjustReferenceEffect(
+        referenceField: 'program',
+        targetField: 'sessionsCompleted',
+        amount: 1,
+        operation: 'add',
+      );
+
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'program',
-            'targetField': 'sessionsCompleted',
-            'amount': 1,
-            'operation': 'add',
-          },
-        ],
+        effects: [literalEffect],
         formData: {'program': 'goal-1'},
         entries: [goal],
       );
@@ -336,17 +310,16 @@ void main() {
     });
 
     test('literal amount takes precedence over amountField', () {
+      const bothEffect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amount: 10,
+        amountField: 'amount',
+        operation: 'subtract',
+      );
+
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amount': 10,
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-        ],
+        effects: [bothEffect],
         formData: {'account': 'acc-wallet', 'amount': 999},
         entries: [wallet],
       );
@@ -356,44 +329,6 @@ void main() {
         'acc-wallet': {'balance': 990},
       });
     });
-
-    test('literal amount works with string number', () {
-      final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amount': '50',
-            'operation': 'subtract',
-          },
-        ],
-        formData: {'account': 'acc-wallet'},
-        entries: [wallet],
-      );
-
-      expect(result, {
-        'acc-wallet': {'balance': 950},
-      });
-    });
-
-    test('skips when literal amount is non-numeric', () {
-      final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amount': 'abc',
-            'operation': 'subtract',
-          },
-        ],
-        formData: {'account': 'acc-wallet'},
-        entries: [wallet],
-      );
-
-      expect(result, isEmpty);
-    });
   });
 
   // ═══════════════════════════════════════════════
@@ -402,13 +337,12 @@ void main() {
   group('set_reference', () {
     test('sets field to a literal value', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'completed',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'completed',
+          ),
         ],
         formData: {'goal': 'goal-1'},
         entries: [goal],
@@ -421,13 +355,12 @@ void main() {
 
     test('sets field to a numeric literal', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'saved',
-            'value': 999,
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'saved',
+            value: 999,
+          ),
         ],
         formData: {'goal': 'goal-1'},
         entries: [goal],
@@ -440,13 +373,12 @@ void main() {
 
     test('sets field to a boolean literal', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'archived',
-            'value': true,
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'archived',
+            value: true,
+          ),
         ],
         formData: {'goal': 'goal-1'},
         entries: [goal],
@@ -459,13 +391,12 @@ void main() {
 
     test('copies value from form field via sourceField', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'sourceField': 'newStatus',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            sourceField: 'newStatus',
+          ),
         ],
         formData: {'goal': 'goal-1', 'newStatus': 'paused'},
         entries: [goal],
@@ -478,14 +409,13 @@ void main() {
 
     test('sourceField overrides value when both present', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'completed',
-            'sourceField': 'newStatus',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'completed',
+            sourceField: 'newStatus',
+          ),
         ],
         formData: {'goal': 'goal-1', 'newStatus': 'cancelled'},
         entries: [goal],
@@ -498,13 +428,12 @@ void main() {
 
     test('skips when sourceField value is null in form', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'sourceField': 'missing',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            sourceField: 'missing',
+          ),
         ],
         formData: {'goal': 'goal-1'},
         entries: [goal],
@@ -515,12 +444,11 @@ void main() {
 
     test('skips when value is null and no sourceField', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+          ),
         ],
         formData: {'goal': 'goal-1'},
         entries: [goal],
@@ -531,13 +459,12 @@ void main() {
 
     test('skips when referenced entry does not exist', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'completed',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'completed',
+          ),
         ],
         formData: {'goal': 'nonexistent'},
         entries: [goal],
@@ -548,13 +475,12 @@ void main() {
 
     test('skips when referenceField is missing from form', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'completed',
-          },
+        effects: const [
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'completed',
+          ),
         ],
         formData: {},
         entries: [goal],
@@ -570,20 +496,18 @@ void main() {
   group('mixed effects', () {
     test('adjust + set on same entry accumulates correctly', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'goal',
-            'targetField': 'saved',
-            'amountField': 'contribution',
-            'operation': 'add',
-          },
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'in_progress',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'saved',
+            amountField: 'contribution',
+            operation: 'add',
+          ),
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'in_progress',
+          ),
         ],
         formData: {'goal': 'goal-1', 'contribution': 50},
         entries: [goal],
@@ -599,20 +523,18 @@ void main() {
 
     test('effects on different entries stay separate', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-          {
-            'type': 'set_reference',
-            'referenceField': 'goal',
-            'targetField': 'status',
-            'value': 'funded',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
+          SetReferenceEffect(
+            referenceField: 'goal',
+            targetField: 'status',
+            value: 'funded',
+          ),
         ],
         formData: {
           'account': 'acc-wallet',
@@ -632,7 +554,7 @@ void main() {
   group('general edge cases', () {
     test('empty effects list returns empty map', () {
       final result = executor.computeUpdates(
-        effects: [],
+        effects: const [],
         formData: {'account': 'acc-wallet', 'amount': 100},
         entries: [wallet],
       );
@@ -643,10 +565,7 @@ void main() {
     test('unknown effect type is silently skipped', () {
       final result = executor.computeUpdates(
         effects: [
-          {
-            'type': 'send_notification',
-            'message': 'hello',
-          },
+          UnknownEffect(const {'type': 'send_notification', 'message': 'hello'}),
         ],
         formData: {'account': 'acc-wallet'},
         entries: [wallet],
@@ -655,52 +574,21 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('non-map effects in list are silently skipped', () {
-      final result = executor.computeUpdates(
-        effects: ['invalid', 42, null],
-        formData: {'account': 'acc-wallet', 'amount': 100},
-        entries: [wallet],
-      );
-
-      expect(result, isEmpty);
-    });
-
     test('empty entries list skips all effects gracefully', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
         ],
         formData: {'account': 'acc-wallet', 'amount': 100},
         entries: [],
       );
 
       expect(result, isEmpty);
-    });
-
-    test('works with int entry ID stored as dynamic', () {
-      // Reference picker might store ID as different type
-      final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'set_reference',
-            'referenceField': 'item',
-            'targetField': 'status',
-            'value': 'sold',
-          },
-        ],
-        formData: {'item': 'acc-wallet'},
-        entries: [wallet],
-      );
-
-      expect(result, {
-        'acc-wallet': {'status': 'sold'},
-      });
     });
   });
 
@@ -710,14 +598,13 @@ void main() {
   group('finance scenarios', () {
     test('expense subtracts from wallet', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
         ],
         formData: {
           'account': 'acc-wallet',
@@ -733,14 +620,13 @@ void main() {
 
     test('income deposits into savings', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'add',
+          ),
         ],
         formData: {
           'account': 'acc-savings',
@@ -757,21 +643,19 @@ void main() {
 
     test('transfer between accounts (two effects)', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'fromAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'toAccount',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'add',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'fromAccount',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
+          AdjustReferenceEffect(
+            referenceField: 'toAccount',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'add',
+          ),
         ],
         formData: {
           'fromAccount': 'acc-wallet',
@@ -789,14 +673,13 @@ void main() {
 
     test('expense without account selected does nothing', () {
       final result = executor.computeUpdates(
-        effects: [
-          {
-            'type': 'adjust_reference',
-            'referenceField': 'account',
-            'targetField': 'balance',
-            'amountField': 'amount',
-            'operation': 'subtract',
-          },
+        effects: const [
+          AdjustReferenceEffect(
+            referenceField: 'account',
+            targetField: 'balance',
+            amountField: 'amount',
+            operation: 'subtract',
+          ),
         ],
         formData: {
           'amount': 100,
@@ -807,6 +690,64 @@ void main() {
       );
 
       expect(result, isEmpty);
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  //  validateEffects
+  // ═══════════════════════════════════════════════
+  group('validateEffects', () {
+    test('returns null when no min guard', () {
+      const effect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'subtract',
+      );
+
+      final error = executor.validateEffects(
+        effects: [effect],
+        formData: {'account': 'acc-wallet', 'amount': 9999},
+        entries: [wallet],
+      );
+
+      expect(error, isNull);
+    });
+
+    test('returns error when min guard would be violated', () {
+      const effect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'subtract',
+        min: 0,
+      );
+
+      final error = executor.validateEffects(
+        effects: [effect],
+        formData: {'account': 'acc-wallet', 'amount': 1500},
+        entries: [wallet],
+      );
+
+      expect(error, contains('Insufficient'));
+    });
+
+    test('returns null when min guard is satisfied', () {
+      const effect = AdjustReferenceEffect(
+        referenceField: 'account',
+        targetField: 'balance',
+        amountField: 'amount',
+        operation: 'subtract',
+        min: 0,
+      );
+
+      final error = executor.validateEffects(
+        effects: [effect],
+        formData: {'account': 'acc-wallet', 'amount': 500},
+        entries: [wallet],
+      );
+
+      expect(error, isNull);
     });
   });
 }
