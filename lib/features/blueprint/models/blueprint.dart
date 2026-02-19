@@ -227,6 +227,191 @@ class BpButton extends Blueprint {
   List<Object?> get props => [label, action, style, icon];
 }
 
+// ─── Inputs ───
+
+class BpTextInput extends Blueprint {
+  final String fieldKey;
+  final bool multiline;
+
+  const BpTextInput({required this.fieldKey, this.multiline = false});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'text_input',
+        'fieldKey': fieldKey,
+        if (multiline) 'multiline': true,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey, multiline];
+}
+
+class BpNumberInput extends Blueprint {
+  final String fieldKey;
+
+  const BpNumberInput({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'number_input',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpCurrencyInput extends Blueprint {
+  final String fieldKey;
+  final String currencySymbol;
+  final int decimalPlaces;
+
+  const BpCurrencyInput({
+    required this.fieldKey,
+    this.currencySymbol = '\$',
+    this.decimalPlaces = 2,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'currency_input',
+        'fieldKey': fieldKey,
+        if (currencySymbol != '\$') 'currencySymbol': currencySymbol,
+        if (decimalPlaces != 2) 'decimalPlaces': decimalPlaces,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey, currencySymbol, decimalPlaces];
+}
+
+class BpDatePicker extends Blueprint {
+  final String fieldKey;
+
+  const BpDatePicker({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'date_picker',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpTimePicker extends Blueprint {
+  final String fieldKey;
+
+  const BpTimePicker({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'time_picker',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpEnumSelector extends Blueprint {
+  final String fieldKey;
+
+  const BpEnumSelector({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'enum_selector',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpMultiEnumSelector extends Blueprint {
+  final String fieldKey;
+
+  const BpMultiEnumSelector({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'multi_enum_selector',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpToggle extends Blueprint {
+  final String fieldKey;
+
+  const BpToggle({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'toggle',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpSlider extends Blueprint {
+  final String fieldKey;
+
+  const BpSlider({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'slider',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpRatingInput extends Blueprint {
+  final String fieldKey;
+
+  const BpRatingInput({required this.fieldKey});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'rating_input',
+        'fieldKey': fieldKey,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey];
+}
+
+class BpReferencePicker extends Blueprint {
+  final String fieldKey;
+  final String schemaKey;
+  final String displayField;
+
+  const BpReferencePicker({
+    required this.fieldKey,
+    required this.schemaKey,
+    this.displayField = 'name',
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'reference_picker',
+        'fieldKey': fieldKey,
+        'schemaKey': schemaKey,
+        if (displayField != 'name') 'displayField': displayField,
+      };
+
+  @override
+  List<Object?> get props => [fieldKey, schemaKey, displayField];
+}
+
 // ─── Escape hatch ───
 
 /// Wraps raw JSON for node types not yet covered by typed builders.
