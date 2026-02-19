@@ -38,6 +38,7 @@ class _ScreenShell extends StatelessWidget {
     }
 
     final canGoBack = ctx.canGoBack;
+    final customAppBar = screen.appBar;
 
     return PopScope(
       canPop: !canGoBack,
@@ -48,43 +49,14 @@ class _ScreenShell extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: colors.background,
-        appBar: AppBar(
-          backgroundColor: colors.background,
-          elevation: 0,
-          leading: canGoBack
-              ? IconButton(
-                  icon: Icon(Icons.arrow_back, color: colors.onBackground),
-                  onPressed: () => ctx.onNavigateBack?.call(),
-                )
-              : null,
-          title: screen.title != null
-              ? Text(
-                  screen.title!,
-                  style: TextStyle(
-                    fontFamily: 'CormorantGaramond',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w600,
-                    color: colors.onBackground,
-                  ),
-                )
-              : null,
-          iconTheme: IconThemeData(color: colors.onBackground),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.info_outline, color: colors.onBackgroundMuted),
-              onPressed: () => ctx.onNavigateToScreen(
-                '_info',
-                params: const {},
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
-              onPressed: () => ctx.onNavigateToScreen(
-                '_settings',
-                params: const {},
-              ),
-            ),
-          ],
+        appBar: buildBlueprintAppBar(
+          colors: colors,
+          ctx: ctx,
+          registry: registry,
+          canGoBack: canGoBack,
+          title: customAppBar?.title ?? screen.title,
+          showBack: customAppBar?.showBack ?? true,
+          customActions: customAppBar?.actions,
         ),
         body: Stack(
           children: [
@@ -108,4 +80,61 @@ class _ScreenShell extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Builds an AppBar from either custom [AppBarNode] actions or default info/settings buttons.
+///
+/// Shared between screen_builder and tab_screen_builder.
+AppBar buildBlueprintAppBar({
+  required dynamic colors,
+  required RenderContext ctx,
+  required WidgetRegistry registry,
+  required bool canGoBack,
+  String? title,
+  bool showBack = true,
+  List<BlueprintNode>? customActions,
+}) {
+  final showBackButton = canGoBack && showBack;
+
+  List<Widget> actions;
+  if (customActions != null && customActions.isNotEmpty) {
+    actions = [
+      for (final action in customActions) registry.build(action, ctx),
+    ];
+  } else {
+    actions = [
+      IconButton(
+        icon: Icon(Icons.info_outline, color: colors.onBackgroundMuted),
+        onPressed: () => ctx.onNavigateToScreen('_info', params: const {}),
+      ),
+      IconButton(
+        icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
+        onPressed: () => ctx.onNavigateToScreen('_settings', params: const {}),
+      ),
+    ];
+  }
+
+  return AppBar(
+    backgroundColor: colors.background,
+    elevation: 0,
+    leading: showBackButton
+        ? IconButton(
+            icon: Icon(Icons.arrow_back, color: colors.onBackground),
+            onPressed: () => ctx.onNavigateBack?.call(),
+          )
+        : null,
+    title: title != null
+        ? Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
+              fontSize: 26,
+              fontWeight: FontWeight.w600,
+              color: colors.onBackground,
+            ),
+          )
+        : null,
+    iconTheme: IconThemeData(color: colors.onBackground),
+    actions: actions,
+  );
 }

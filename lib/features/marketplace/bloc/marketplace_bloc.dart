@@ -135,6 +135,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
             screens: t.screens,
             settings: t.settings,
             guide: t.guide,
+            navigation: t.navigation,
           );
         }
         return t;

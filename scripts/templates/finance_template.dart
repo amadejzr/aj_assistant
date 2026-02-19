@@ -12,7 +12,7 @@ const financeTemplate = {
   'featured': true,
   'sortOrder': 0,
   'installCount': 0,
-  'version': 2,
+  'version': 3,
   'settings': {
     'needsTarget': 50,
     'wantsTarget': 30,
@@ -34,7 +34,7 @@ const financeTemplate = {
     {
       'title': 'Debt Tracking',
       'body':
-          'Add credit cards and loans under Accounts → Debts. Track balances '
+          'Add credit cards and loans under Accounts. Track balances '
           'and interest rates to see your total liability alongside your assets.',
     },
     {
@@ -51,6 +51,31 @@ const financeTemplate = {
           'automatically. Deleting a transfer reverses the balances.',
     },
   ],
+
+  // ─── Navigation ───
+  //
+  // Bottom nav replaces the old 4-tab layout — each section is its own screen
+  // with a proper appBar and contextual actions.
+  'navigation': {
+    'bottomNav': {
+      'items': [
+        {'label': 'Home', 'icon': 'chart', 'screenId': 'main'},
+        {'label': 'Spending', 'icon': 'receipt', 'screenId': 'spending'},
+        {'label': 'Accounts', 'icon': 'wallet', 'screenId': 'accounts'},
+        {'label': 'Goals', 'icon': 'star', 'screenId': 'goals'},
+      ],
+    },
+    'drawer': {
+      'header': 'Finance',
+      'items': [
+        {'label': 'Add Expense', 'icon': 'receipt', 'screenId': 'add_expense'},
+        {'label': 'Add Income', 'icon': 'cash', 'screenId': 'add_income'},
+        {'label': 'New Account', 'icon': 'wallet', 'screenId': 'add_account'},
+        {'label': 'New Goal', 'icon': 'star', 'screenId': 'add_goal'},
+        {'label': 'Transfer Funds', 'icon': 'wallet', 'screenId': 'add_transfer'},
+      ],
+    },
+  },
 
   // ─── Schemas ───
   'schemas': {
@@ -284,554 +309,164 @@ const financeTemplate = {
   // ─── Screens ───
   'screens': {
     // ═══════════════════════════════════════════
-    //  MAIN — Four-tab layout
+    //  HOME — Dashboard overview
     // ═══════════════════════════════════════════
     'main': {
       'id': 'main',
-      'type': 'tab_screen',
+      'type': 'screen',
       'title': 'Finance',
-      'tabs': [
-        // ────────────── Tab 1: Home ──────────────
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'Finance',
+        'showBack': false,
+        'actions': [
+          {
+            'type': 'icon_button',
+            'icon': 'settings',
+            'action': {'type': 'navigate', 'screen': '_settings'},
+          },
+        ],
+      },
+      'children': [
         {
-          'label': 'Home',
-          'icon': 'chart',
-          'content': {
-            'type': 'scroll_column',
-            'children': [
-              {
-                'type': 'stat_card',
-                'label': 'Net Worth',
-                'expression':
-                    'subtract(sum(balance, where(schemaKey, ==, account)), sum(balance, where(schemaKey, ==, debt)))',
-                'format': 'currency',
-                'properties': {'accent': true},
-              },
-              {
-                'type': 'row',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Income This Month',
-                    'expression':
-                        'sum(amount, period(month), where(schemaKey, ==, income))',
-                    'format': 'currency',
-                  },
-                  {
-                    'type': 'stat_card',
-                    'label': 'Spent This Month',
-                    'expression':
-                        'sum(amount, period(month), where(schemaKey, ==, expense))',
-                    'format': 'currency',
-                  },
-                ],
-              },
-              {
-                'type': 'row',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Debt',
-                    'expression': 'sum(balance, where(schemaKey, ==, debt))',
-                    'format': 'currency',
-                  },
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Saved',
-                    'expression': 'sum(saved, where(schemaKey, ==, goal))',
-                    'format': 'currency',
-                  },
-                ],
-              },
-              {
-                'type': 'section',
-                'title': 'Budget Pulse',
-                'children': [
-                  {
-                    'type': 'progress_bar',
-                    'label': 'Needs',
-                    'expression':
-                        'percentage(sum(amount, period(month), where(category, ==, Needs), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(needsTarget), 100)))',
-                    'format': 'percentage',
-                  },
-                  {
-                    'type': 'progress_bar',
-                    'label': 'Wants',
-                    'expression':
-                        'percentage(sum(amount, period(month), where(category, ==, Wants), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(wantsTarget), 100)))',
-                    'format': 'percentage',
-                  },
-                  {
-                    'type': 'progress_bar',
-                    'label': 'Savings',
-                    'expression':
-                        'percentage(sum(amount, period(month), where(category, ==, Savings), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(savingsTarget), 100)))',
-                    'format': 'percentage',
-                  },
-                ],
-              },
-              {
-                'type': 'button',
-                'label': 'Adjust Budget Targets',
-                'style': 'outlined',
-                'action': {
-                  'type': 'navigate',
-                  'screen': 'edit_budget',
-                  'params': {'_settingsMode': true},
+          'type': 'scroll_column',
+          'children': [
+            {
+              'type': 'stat_card',
+              'label': 'Net Worth',
+              'expression':
+                  'subtract(sum(balance, where(schemaKey, ==, account)), sum(balance, where(schemaKey, ==, debt)))',
+              'format': 'currency',
+              'properties': {'accent': true},
+            },
+            {
+              'type': 'row',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Income This Month',
+                  'expression':
+                      'sum(amount, period(month), where(schemaKey, ==, income))',
+                  'format': 'currency',
                 },
-              },
-              {
-                'type': 'section',
-                'title': 'Recent Spending',
-                'children': [
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
-                    ],
-                    'query': {
-                      'orderBy': 'date',
-                      'direction': 'desc',
-                      'limit': 3,
-                    },
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{note}}',
-                      'subtitle': '{{category}} · {{account}}',
-                      'trailing': '{{amount}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_expense',
-                        'forwardFields': [
-                          'amount',
-                          'category',
-                          'account',
-                          'note',
-                          'date',
-                        ],
-                        'params': {'_schemaKey': 'expense'},
-                      },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-
-        // ────────────── Tab 2: Spending ──────────────
-        {
-          'label': 'Spending',
-          'icon': 'list',
-          'content': {
-            'type': 'scroll_column',
-            'children': [
-              {
-                'type': 'row',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Needs',
-                    'expression':
-                        'sum(amount, period(month), where(category, ==, Needs))',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
-                    ],
-                  },
-                  {
-                    'type': 'stat_card',
-                    'label': 'Wants',
-                    'expression':
-                        'sum(amount, period(month), where(category, ==, Wants))',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
-                    ],
-                  },
-                ],
-              },
-              {
-                'type': 'chart',
-                'chartType': 'donut',
-                'groupBy': 'category',
-                'aggregate': 'sum',
-                'expression': 'group(category, sum(amount), period(month))',
-                'filter': [
-                  {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
-                ],
-              },
-              {
-                'type': 'row',
-                'children': [
-                  {
-                    'type': 'button',
-                    'label': 'Add Expense',
-                    'style': 'filled',
-                    'action': {
-                      'type': 'navigate',
-                      'screen': 'add_expense',
-                      'params': {'_schemaKey': 'expense'},
-                    },
-                  },
-                  {
-                    'type': 'button',
-                    'label': 'Add Income',
-                    'style': 'outlined',
-                    'action': {
-                      'type': 'navigate',
-                      'screen': 'add_income',
-                      'params': {'_schemaKey': 'income'},
-                    },
-                  },
-                ],
-              },
-              {
-                'type': 'section',
-                'title': 'All Expenses',
-                'children': [
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
-                    ],
-                    'query': {
-                      'orderBy': 'date',
-                      'direction': 'desc',
-                      'limit': 30,
-                    },
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{note}}',
-                      'subtitle': '{{category}} · {{account}}',
-                      'trailing': '{{amount}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_expense',
-                        'forwardFields': [
-                          'amount',
-                          'category',
-                          'account',
-                          'note',
-                          'date',
-                        ],
-                        'params': {'_schemaKey': 'expense'},
-                      },
-                      'swipeActions': {
-                        'right': {
-                          'type': 'delete_entry',
-                          'confirm': true,
-                          'confirmMessage': 'Delete this expense?',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-              {
-                'type': 'section',
-                'title': 'Income',
-                'children': [
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'income'},
-                    ],
-                    'query': {
-                      'orderBy': 'date',
-                      'direction': 'desc',
-                      'limit': 10,
-                    },
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{source}}',
-                      'subtitle': '{{date}} · {{account}}',
-                      'trailing': '{{amount}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_income',
-                        'forwardFields': [
-                          'amount',
-                          'source',
-                          'account',
-                          'date',
-                        ],
-                        'params': {'_schemaKey': 'income'},
-                      },
-                      'swipeActions': {
-                        'right': {
-                          'type': 'delete_entry',
-                          'confirm': true,
-                          'confirmMessage': 'Delete this income entry?',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-
-        // ────────────── Tab 3: Accounts ──────────────
-        {
-          'label': 'Accounts',
-          'icon': 'wallet',
-          'content': {
-            'type': 'scroll_column',
-            'children': [
-              {
-                'type': 'section',
-                'title': 'Assets',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Assets',
-                    'expression': 'sum(balance)',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'account'},
-                    ],
-                  },
-                  {
-                    'type': 'button',
-                    'label': 'Add Account',
-                    'style': 'outlined',
-                    'action': {
-                      'type': 'navigate',
-                      'screen': 'add_account',
-                      'params': {'_schemaKey': 'account'},
-                    },
-                  },
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'account'},
-                    ],
-                    'query': {'orderBy': 'name', 'direction': 'asc'},
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{name}}',
-                      'subtitle': '{{accountType}} · {{institution}}',
-                      'trailing': '{{balance}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_account',
-                        'forwardFields': [
-                          'name',
-                          'accountType',
-                          'balance',
-                          'institution',
-                        ],
-                        'params': {'_schemaKey': 'account'},
-                      },
-                      'swipeActions': {
-                        'right': {
-                          'type': 'delete_entry',
-                          'confirm': true,
-                          'confirmMessage': 'Delete this account?',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-              {
-                'type': 'section',
-                'title': 'Debts',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Debt',
-                    'expression': 'sum(balance)',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'debt'},
-                    ],
-                  },
-                  {
-                    'type': 'button',
-                    'label': 'Add Debt',
-                    'style': 'outlined',
-                    'action': {
-                      'type': 'navigate',
-                      'screen': 'add_debt',
-                      'params': {'_schemaKey': 'debt'},
-                    },
-                  },
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'debt'},
-                    ],
-                    'query': {'orderBy': 'balance', 'direction': 'desc'},
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{name}}',
-                      'subtitle':
-                          '{{interestRate}}% · min {{minimumPayment}}',
-                      'trailing': '{{balance}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_debt',
-                        'forwardFields': [
-                          'name',
-                          'balance',
-                          'interestRate',
-                          'minimumPayment',
-                        ],
-                        'params': {'_schemaKey': 'debt'},
-                      },
-                      'swipeActions': {
-                        'right': {
-                          'type': 'delete_entry',
-                          'confirm': true,
-                          'confirmMessage': 'Delete this debt?',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-              {
-                'type': 'section',
-                'title': 'Transfers',
-                'children': [
-                  {
-                    'type': 'button',
-                    'label': 'Transfer Funds',
-                    'style': 'outlined',
-                    'action': {
-                      'type': 'navigate',
-                      'screen': 'add_transfer',
-                      'params': {'_schemaKey': 'transfer'},
-                    },
-                  },
-                  {
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'transfer'},
-                    ],
-                    'query': {
-                      'orderBy': 'date',
-                      'direction': 'desc',
-                      'limit': 10,
-                    },
-                    'itemLayout': {
-                      'type': 'entry_card',
-                      'title': '{{fromAccount}} → {{toAccount}}',
-                      'subtitle': '{{note}}',
-                      'trailing': '{{amount}}',
-                      'trailingFormat': 'currency',
-                      'onTap': {
-                        'type': 'navigate',
-                        'screen': 'edit_transfer',
-                        'forwardFields': [
-                          'amount',
-                          'fromAccount',
-                          'toAccount',
-                          'note',
-                          'date',
-                        ],
-                        'params': {'_schemaKey': 'transfer'},
-                      },
-                      'swipeActions': {
-                        'right': {
-                          'type': 'delete_entry',
-                          'confirm': true,
-                          'confirmMessage':
-                              'Delete this transfer? Balances will be reversed.',
-                        },
-                      },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-
-        // ────────────── Tab 4: Goals ──────────────
-        {
-          'label': 'Goals',
-          'icon': 'stats',
-          'content': {
-            'type': 'scroll_column',
-            'children': [
-              {
-                'type': 'row',
-                'children': [
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Saved',
-                    'expression': 'sum(saved)',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
-                    ],
-                  },
-                  {
-                    'type': 'stat_card',
-                    'label': 'Total Target',
-                    'expression': 'sum(target)',
-                    'format': 'currency',
-                    'filter': [
-                      {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
-                    ],
-                  },
-                ],
-              },
-              {
-                'type': 'progress_bar',
-                'label': 'Overall Goal Progress',
-                'expression': 'percentage(sum(saved), sum(target))',
-                'format': 'percentage',
-                'filter': [
-                  {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
-                ],
-              },
-              {
-                'type': 'button',
-                'label': 'Add Goal',
-                'style': 'outlined',
-                'action': {
-                  'type': 'navigate',
-                  'screen': 'add_goal',
-                  'params': {'_schemaKey': 'goal'},
+                {
+                  'type': 'stat_card',
+                  'label': 'Spent This Month',
+                  'expression':
+                      'sum(amount, period(month), where(schemaKey, ==, expense))',
+                  'format': 'currency',
                 },
-              },
-              {
-                'type': 'entry_list',
-                'filter': [
-                  {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
-                ],
-                'query': {'orderBy': 'name', 'direction': 'asc'},
-                'itemLayout': {
-                  'type': 'entry_card',
-                  'title': '{{name}}',
-                  'subtitle': '{{note}}',
-                  'trailing': '{{saved}} / {{target}}',
-                  'onTap': {
-                    'type': 'navigate',
-                    'screen': 'edit_goal',
-                    'forwardFields': ['name', 'target', 'saved', 'note'],
-                    'params': {'_schemaKey': 'goal'},
-                  },
-                  'swipeActions': {
-                    'right': {
-                      'type': 'delete_entry',
-                      'confirm': true,
-                      'confirmMessage': 'Delete this goal?',
-                    },
-                  },
+              ],
+            },
+            {
+              'type': 'row',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Debt',
+                  'expression': 'sum(balance, where(schemaKey, ==, debt))',
+                  'format': 'currency',
                 },
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Saved',
+                  'expression': 'sum(saved, where(schemaKey, ==, goal))',
+                  'format': 'currency',
+                },
+              ],
+            },
+            {
+              'type': 'section',
+              'title': 'Budget Pulse',
+              'children': [
+                {
+                  'type': 'progress_bar',
+                  'label': 'Needs',
+                  'expression':
+                      'percentage(sum(amount, period(month), where(category, ==, Needs), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(needsTarget), 100)))',
+                  'format': 'percentage',
+                },
+                {
+                  'type': 'progress_bar',
+                  'label': 'Wants',
+                  'expression':
+                      'percentage(sum(amount, period(month), where(category, ==, Wants), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(wantsTarget), 100)))',
+                  'format': 'percentage',
+                },
+                {
+                  'type': 'progress_bar',
+                  'label': 'Savings',
+                  'expression':
+                      'percentage(sum(amount, period(month), where(category, ==, Savings), where(schemaKey, ==, expense)), multiply(sum(amount, period(month), where(schemaKey, ==, income)), divide(value(savingsTarget), 100)))',
+                  'format': 'percentage',
+                },
+              ],
+            },
+            {
+              'type': 'button',
+              'label': 'Adjust Budget Targets',
+              'style': 'outlined',
+              'action': {
+                'type': 'navigate',
+                'screen': 'edit_budget',
+                'params': {'_settingsMode': true},
               },
-            ],
-          },
+            },
+            {
+              'type': 'section',
+              'title': 'Recent Spending',
+              'children': [
+                {
+                  'type': 'conditional',
+                  'condition': {
+                    'expression': 'count(where(schemaKey, ==, expense))',
+                    'op': '>',
+                    'value': 0,
+                  },
+                  'then': [
+                    {
+                      'type': 'entry_list',
+                      'filter': [
+                        {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                      ],
+                      'query': {
+                        'orderBy': 'date',
+                        'direction': 'desc',
+                        'limit': 3,
+                      },
+                      'itemLayout': {
+                        'type': 'entry_card',
+                        'title': '{{note}}',
+                        'subtitle': '{{category}} · {{account}}',
+                        'trailing': '{{amount}}',
+                        'trailingFormat': 'currency',
+                        'onTap': {
+                          'type': 'navigate',
+                          'screen': 'edit_expense',
+                          'forwardFields': [
+                            'amount',
+                            'category',
+                            'account',
+                            'note',
+                            'date',
+                          ],
+                          'params': {'_schemaKey': 'expense'},
+                        },
+                      },
+                    },
+                  ],
+                  'else': [
+                    {
+                      'type': 'empty_state',
+                      'icon': 'receipt',
+                      'title': 'No expenses yet',
+                      'subtitle': 'Tap + to log your first expense',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         },
       ],
       'fab': {
@@ -843,6 +478,472 @@ const financeTemplate = {
           'params': {'_schemaKey': 'expense'},
         },
       },
+    },
+
+    // ═══════════════════════════════════════════
+    //  SPENDING — Expenses & income
+    // ═══════════════════════════════════════════
+    'spending': {
+      'id': 'spending',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'Spending',
+        'showBack': false,
+        'actions': [
+          {
+            'type': 'icon_button',
+            'icon': 'add',
+            'tooltip': 'Add Income',
+            'action': {
+              'type': 'navigate',
+              'screen': 'add_income',
+              'params': {'_schemaKey': 'income'},
+            },
+          },
+        ],
+      },
+      'children': [
+        {
+          'type': 'scroll_column',
+          'children': [
+            {
+              'type': 'row',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Needs',
+                  'expression':
+                      'sum(amount, period(month), where(category, ==, Needs))',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                  ],
+                },
+                {
+                  'type': 'stat_card',
+                  'label': 'Wants',
+                  'expression':
+                      'sum(amount, period(month), where(category, ==, Wants))',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                  ],
+                },
+              ],
+            },
+            {
+              'type': 'chart',
+              'chartType': 'donut',
+              'groupBy': 'category',
+              'aggregate': 'sum',
+              'expression': 'group(category, sum(amount), period(month))',
+              'filter': [
+                {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+              ],
+            },
+            {
+              'type': 'section',
+              'title': 'All Expenses',
+              'children': [
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                  ],
+                  'query': {
+                    'orderBy': 'date',
+                    'direction': 'desc',
+                    'limit': 30,
+                  },
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{note}}',
+                    'subtitle': '{{category}} · {{account}}',
+                    'trailing': '{{amount}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_expense',
+                      'forwardFields': [
+                        'amount',
+                        'category',
+                        'account',
+                        'note',
+                        'date',
+                      ],
+                      'params': {'_schemaKey': 'expense'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Expense',
+                        'message': 'Delete this expense? The account balance will be adjusted.',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              'type': 'section',
+              'title': 'Income',
+              'children': [
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'income'},
+                  ],
+                  'query': {
+                    'orderBy': 'date',
+                    'direction': 'desc',
+                    'limit': 10,
+                  },
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{source}}',
+                    'subtitle': '{{date}} · {{account}}',
+                    'trailing': '{{amount}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_income',
+                      'forwardFields': [
+                        'amount',
+                        'source',
+                        'account',
+                        'date',
+                      ],
+                      'params': {'_schemaKey': 'income'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Income',
+                        'message': 'Delete this income entry?',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      'fab': {
+        'type': 'fab',
+        'icon': 'add',
+        'action': {
+          'type': 'navigate',
+          'screen': 'add_expense',
+          'params': {'_schemaKey': 'expense'},
+        },
+      },
+    },
+
+    // ═══════════════════════════════════════════
+    //  ACCOUNTS — Assets, debts, transfers
+    // ═══════════════════════════════════════════
+    'accounts': {
+      'id': 'accounts',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'Accounts',
+        'showBack': false,
+        'actions': [
+          {
+            'type': 'icon_button',
+            'icon': 'add',
+            'tooltip': 'Transfer Funds',
+            'action': {
+              'type': 'navigate',
+              'screen': 'add_transfer',
+              'params': {'_schemaKey': 'transfer'},
+            },
+          },
+        ],
+      },
+      'children': [
+        {
+          'type': 'scroll_column',
+          'children': [
+            {
+              'type': 'section',
+              'title': 'Assets',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Assets',
+                  'expression': 'sum(balance)',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'account'},
+                  ],
+                },
+                {
+                  'type': 'button',
+                  'label': 'Add Account',
+                  'style': 'outlined',
+                  'action': {
+                    'type': 'navigate',
+                    'screen': 'add_account',
+                    'params': {'_schemaKey': 'account'},
+                  },
+                },
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'account'},
+                  ],
+                  'query': {'orderBy': 'name', 'direction': 'asc'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{name}}',
+                    'subtitle': '{{accountType}} · {{institution}}',
+                    'trailing': '{{balance}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_account',
+                      'forwardFields': [
+                        'name',
+                        'accountType',
+                        'balance',
+                        'institution',
+                      ],
+                      'params': {'_schemaKey': 'account'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Account',
+                        'message': 'Delete this account? This cannot be undone.',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              'type': 'section',
+              'title': 'Debts',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Debt',
+                  'expression': 'sum(balance)',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'debt'},
+                  ],
+                },
+                {
+                  'type': 'button',
+                  'label': 'Add Debt',
+                  'style': 'outlined',
+                  'action': {
+                    'type': 'navigate',
+                    'screen': 'add_debt',
+                    'params': {'_schemaKey': 'debt'},
+                  },
+                },
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'debt'},
+                  ],
+                  'query': {'orderBy': 'balance', 'direction': 'desc'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{name}}',
+                    'subtitle':
+                        '{{interestRate}}% · min {{minimumPayment}}',
+                    'trailing': '{{balance}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_debt',
+                      'forwardFields': [
+                        'name',
+                        'balance',
+                        'interestRate',
+                        'minimumPayment',
+                      ],
+                      'params': {'_schemaKey': 'debt'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Debt',
+                        'message': 'Delete this debt entry?',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              'type': 'section',
+              'title': 'Recent Transfers',
+              'children': [
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'transfer'},
+                  ],
+                  'query': {
+                    'orderBy': 'date',
+                    'direction': 'desc',
+                    'limit': 10,
+                  },
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{fromAccount}} → {{toAccount}}',
+                    'subtitle': '{{note}}',
+                    'trailing': '{{amount}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_transfer',
+                      'forwardFields': [
+                        'amount',
+                        'fromAccount',
+                        'toAccount',
+                        'note',
+                        'date',
+                      ],
+                      'params': {'_schemaKey': 'transfer'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Transfer',
+                        'message':
+                            'Delete this transfer? Balances will be reversed.',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    // ═══════════════════════════════════════════
+    //  GOALS — Savings targets
+    // ═══════════════════════════════════════════
+    'goals': {
+      'id': 'goals',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'Goals',
+        'showBack': false,
+        'actions': [
+          {
+            'type': 'icon_button',
+            'icon': 'add',
+            'tooltip': 'New Goal',
+            'action': {
+              'type': 'navigate',
+              'screen': 'add_goal',
+              'params': {'_schemaKey': 'goal'},
+            },
+          },
+        ],
+      },
+      'children': [
+        {
+          'type': 'scroll_column',
+          'children': [
+            {
+              'type': 'row',
+              'children': [
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Saved',
+                  'expression': 'sum(saved)',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
+                  ],
+                },
+                {
+                  'type': 'stat_card',
+                  'label': 'Total Target',
+                  'expression': 'sum(target)',
+                  'format': 'currency',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
+                  ],
+                },
+              ],
+            },
+            {
+              'type': 'progress_bar',
+              'label': 'Overall Goal Progress',
+              'expression': 'percentage(sum(saved), sum(target))',
+              'format': 'percentage',
+              'filter': [
+                {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
+              ],
+            },
+            {
+              'type': 'conditional',
+              'condition': {
+                'expression': 'count(where(schemaKey, ==, goal))',
+                'op': '>',
+                'value': 0,
+              },
+              'then': [
+                {
+                  'type': 'entry_list',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'goal'},
+                  ],
+                  'query': {'orderBy': 'name', 'direction': 'asc'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{name}}',
+                    'subtitle': '{{note}}',
+                    'trailing': '{{saved}} / {{target}}',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_goal',
+                      'forwardFields': ['name', 'target', 'saved', 'note'],
+                      'params': {'_schemaKey': 'goal'},
+                    },
+                    'swipeActions': {
+                      'right': {
+                        'type': 'confirm',
+                        'title': 'Delete Goal',
+                        'message': 'Delete this savings goal?',
+                        'onConfirm': {'type': 'delete_entry'},
+                      },
+                    },
+                  },
+                },
+              ],
+              'else': [
+                {
+                  'type': 'empty_state',
+                  'icon': 'star',
+                  'title': 'No goals yet',
+                  'subtitle': 'Tap + to set your first savings goal',
+                },
+              ],
+            },
+          ],
+        },
+      ],
     },
 
     // ═══════════════════════════════════════════

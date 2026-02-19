@@ -76,11 +76,14 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
 
-    // Push current screen onto the stack before navigating
-    final updatedStack = [
-      ...current.screenStack,
-      ScreenEntry(current.currentScreenId, params: current.screenParams),
-    ];
+    // Top-level navigation (bottom nav, drawer) resets the stack.
+    // Deep navigation (forms, detail screens) pushes onto it.
+    final updatedStack = event.clearStack
+        ? <ScreenEntry>[]
+        : [
+            ...current.screenStack,
+            ScreenEntry(current.currentScreenId, params: current.screenParams),
+          ];
 
     final resolved = _resolveExpressions(
       current.module,

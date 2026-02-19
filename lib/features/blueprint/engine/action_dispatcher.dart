@@ -73,6 +73,14 @@ class BlueprintActionDispatcher {
       case 'confirm':
         _showConfirmDialog(action, ctx, buildContext, entryData: entryData, entryId: entryId);
 
+      case 'update_entry':
+        final id = entryId ?? ctx.screenParams['_entryId'] as String?;
+        if (id == null || id.isEmpty) return;
+        final data = Map<String, dynamic>.from(action['data'] as Map? ?? {});
+        final schemaKey =
+            ctx.screenParams['_schemaKey'] as String? ?? 'default';
+        ctx.onUpdateEntry?.call(id, schemaKey, data);
+
       case 'toast':
         final message = action['message'] as String? ?? '';
         if (message.isNotEmpty && buildContext.mounted) {

@@ -14,6 +14,8 @@ sealed class BlueprintAction extends Equatable {
       'delete_entry' => DeleteEntryAction.fromJson(json),
       'update_entry' => UpdateEntryAction.fromJson(json),
       'show_form_sheet' => ShowFormSheetAction.fromJson(json),
+      'confirm' => ConfirmAction.fromJson(json),
+      'toast' => ToastAction.fromJson(json),
       _ => RawAction(json),
     };
   }
@@ -140,6 +142,56 @@ class ShowFormSheetAction extends BlueprintAction {
 
   @override
   List<Object?> get props => [screen, title];
+}
+
+class ConfirmAction extends BlueprintAction {
+  final String? title;
+  final String? message;
+  final BlueprintAction onConfirm;
+
+  const ConfirmAction({this.title, this.message, required this.onConfirm});
+
+  factory ConfirmAction.fromJson(Map<String, dynamic> json) {
+    return ConfirmAction(
+      title: json['title'] as String?,
+      message: json['message'] as String?,
+      onConfirm: BlueprintAction.fromJson(
+        Map<String, dynamic>.from(json['onConfirm'] as Map? ?? {}),
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'confirm',
+        if (title != null) 'title': title,
+        if (message != null) 'message': message,
+        'onConfirm': onConfirm.toJson(),
+      };
+
+  @override
+  List<Object?> get props => [title, message, onConfirm];
+}
+
+class ToastAction extends BlueprintAction {
+  final String message;
+
+  const ToastAction({required this.message});
+
+  factory ToastAction.fromJson(Map<String, dynamic> json) {
+    return ToastAction(
+      message: json['message'] as String? ?? '',
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'toast',
+        'message': message,
+      };
+
+  @override
+  List<Object?> get props => [message];
 }
 
 /// Passthrough for unrecognized action types.

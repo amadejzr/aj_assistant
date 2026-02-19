@@ -13,12 +13,38 @@ sealed class Blueprint extends Equatable {
 
 // ─── Layout ───
 
+class BpAppBar extends Blueprint {
+  final String? title;
+  final List<Blueprint> actions;
+  final bool showBack;
+
+  const BpAppBar({this.title, this.actions = const [], this.showBack = true});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'app_bar',
+        if (title != null) 'title': title,
+        if (actions.isNotEmpty)
+          'actions': [for (final a in actions) a.toJson()],
+        if (!showBack) 'showBack': false,
+      };
+
+  @override
+  List<Object?> get props => [title, actions, showBack];
+}
+
 class BpScreen extends Blueprint {
   final String? title;
   final List<Blueprint> children;
   final BpFab? fab;
+  final BpAppBar? appBar;
 
-  const BpScreen({this.title, this.children = const [], this.fab});
+  const BpScreen({
+    this.title,
+    this.children = const [],
+    this.fab,
+    this.appBar,
+  });
 
   @override
   Map<String, dynamic> toJson() => {
@@ -26,10 +52,11 @@ class BpScreen extends Blueprint {
         if (title != null) 'title': title,
         'children': [for (final c in children) c.toJson()],
         if (fab != null) 'fab': fab!.toJson(),
+        if (appBar != null) 'appBar': appBar!.toJson(),
       };
 
   @override
-  List<Object?> get props => [title, children, fab];
+  List<Object?> get props => [title, children, fab, appBar];
 }
 
 class BpFormScreen extends Blueprint {
@@ -65,8 +92,14 @@ class BpTabScreen extends Blueprint {
   final String? title;
   final List<BpTabDef> tabs;
   final BpFab? fab;
+  final BpAppBar? appBar;
 
-  const BpTabScreen({this.title, this.tabs = const [], this.fab});
+  const BpTabScreen({
+    this.title,
+    this.tabs = const [],
+    this.fab,
+    this.appBar,
+  });
 
   @override
   Map<String, dynamic> toJson() => {
@@ -74,10 +107,11 @@ class BpTabScreen extends Blueprint {
         if (title != null) 'title': title,
         'tabs': [for (final t in tabs) t.toJson()],
         if (fab != null) 'fab': fab!.toJson(),
+        if (appBar != null) 'appBar': appBar!.toJson(),
       };
 
   @override
-  List<Object?> get props => [title, tabs, fab];
+  List<Object?> get props => [title, tabs, fab, appBar];
 }
 
 class BpTabDef extends Equatable {
@@ -180,6 +214,32 @@ class BpExpandable extends Blueprint {
 
   @override
   List<Object?> get props => [title, children, initiallyExpanded];
+}
+
+// ─── Conditional ───
+
+class BpConditional extends Blueprint {
+  final dynamic condition;
+  final List<Blueprint> thenChildren;
+  final List<Blueprint> elseChildren;
+
+  const BpConditional({
+    required this.condition,
+    this.thenChildren = const [],
+    this.elseChildren = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'conditional',
+        'condition': condition,
+        'then': [for (final c in thenChildren) c.toJson()],
+        if (elseChildren.isNotEmpty)
+          'else': [for (final c in elseChildren) c.toJson()],
+      };
+
+  @override
+  List<Object?> get props => [condition, thenChildren, elseChildren];
 }
 
 // ─── Actions ───

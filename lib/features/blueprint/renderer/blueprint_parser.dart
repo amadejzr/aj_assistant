@@ -62,6 +62,17 @@ class BlueprintParser {
     return parse(raw);
   }
 
+  AppBarNode? _parseAppBar(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is! Map<String, dynamic>) return null;
+    return AppBarNode(
+      title: raw['title'] as String?,
+      actions: _parseChildren(raw['actions']),
+      showBack: raw['showBack'] as bool? ?? true,
+      properties: Map<String, dynamic>.from(raw),
+    );
+  }
+
   // ─── Layout ───
 
   ScreenNode _parseScreen(Map<String, dynamic> json) {
@@ -71,6 +82,7 @@ class BlueprintParser {
       title: json['title'] as String?,
       children: children,
       fab: _parseChild(json['fab']),
+      appBar: _parseAppBar(json['appBar']),
       properties: json,
     );
   }
@@ -89,6 +101,7 @@ class BlueprintParser {
       title: json['title'] as String?,
       tabs: tabs,
       fab: _parseChild(json['fab']),
+      appBar: _parseAppBar(json['appBar']),
       properties: json,
     );
   }

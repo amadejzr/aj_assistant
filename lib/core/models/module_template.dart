@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../features/blueprint/navigation/module_navigation.dart';
 import '../../features/schema/models/module_schema.dart';
 import 'module.dart';
 
@@ -21,6 +22,7 @@ class ModuleTemplate extends Equatable {
   final Map<String, Map<String, dynamic>> screens;
   final Map<String, dynamic> settings;
   final List<Map<String, String>> guide;
+  final ModuleNavigation? navigation;
 
   const ModuleTemplate({
     required this.id,
@@ -39,6 +41,7 @@ class ModuleTemplate extends Equatable {
     this.screens = const {},
     this.settings = const {},
     this.guide = const [],
+    this.navigation,
   });
 
   factory ModuleTemplate.fromFirestore(
@@ -66,6 +69,10 @@ class ModuleTemplate extends Equatable {
               .map((m) => Map<String, String>.from(m))
               .toList() ??
           [],
+      navigation: data['navigation'] != null
+          ? ModuleNavigation.fromJson(
+              Map<String, dynamic>.from(data['navigation'] as Map))
+          : null,
     );
   }
 
@@ -88,6 +95,7 @@ class ModuleTemplate extends Equatable {
       'screens': screens,
       'settings': settings,
       'guide': guide,
+      if (navigation != null) 'navigation': navigation!.toJson(),
     };
   }
 
@@ -105,6 +113,7 @@ class ModuleTemplate extends Equatable {
       settings: settings,
       guide: guide,
       version: version,
+      navigation: navigation,
     );
   }
 
@@ -148,5 +157,6 @@ class ModuleTemplate extends Equatable {
         screens,
         settings,
         guide,
+        navigation,
       ];
 }

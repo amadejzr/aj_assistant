@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/widgets/paper_background.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
+import '../../utils/icon_resolver.dart';
+import 'screen_builder.dart' show buildBlueprintAppBar;
 
 /// Renders a tabbed screen scaffold with a tab bar, paper background, and optional FAB.
 ///
@@ -61,23 +62,6 @@ class _TabScreenShellState extends State<_TabScreenShell>
     super.dispose();
   }
 
-  IconData? _resolveIcon(String? iconName) {
-    return switch (iconName) {
-      'list' => PhosphorIcons.listBullets(PhosphorIconsStyle.regular),
-      'chart' => PhosphorIcons.chartBar(PhosphorIconsStyle.regular),
-      'calendar' => PhosphorIcons.calendar(PhosphorIconsStyle.regular),
-      'settings' => PhosphorIcons.gear(PhosphorIconsStyle.regular),
-      'activity' => PhosphorIcons.lightning(PhosphorIconsStyle.regular),
-      'stats' => PhosphorIcons.trendUp(PhosphorIconsStyle.regular),
-      'compass' => PhosphorIcons.compass(PhosphorIconsStyle.regular),
-      'check_circle' => PhosphorIcons.checkCircle(PhosphorIconsStyle.regular),
-      'piggy_bank' => PhosphorIcons.piggyBank(PhosphorIconsStyle.regular),
-      'cash' => PhosphorIcons.money(PhosphorIconsStyle.regular),
-      'wallet' => PhosphorIcons.wallet(PhosphorIconsStyle.regular),
-      _ => null,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -91,6 +75,17 @@ class _TabScreenShellState extends State<_TabScreenShell>
     }
 
     final canGoBack = ctx.canGoBack;
+    final customAppBar = tabScreen.appBar;
+
+    final baseAppBar = buildBlueprintAppBar(
+      colors: colors,
+      ctx: ctx,
+      registry: registry,
+      canGoBack: canGoBack,
+      title: customAppBar?.title ?? tabScreen.title,
+      showBack: customAppBar?.showBack ?? true,
+      customActions: customAppBar?.actions,
+    );
 
     return PopScope(
       canPop: !canGoBack,
@@ -102,42 +97,12 @@ class _TabScreenShellState extends State<_TabScreenShell>
       child: Scaffold(
         backgroundColor: colors.background,
         appBar: AppBar(
-          backgroundColor: colors.background,
-          elevation: 0,
-          leading: canGoBack
-              ? IconButton(
-                  icon: Icon(Icons.arrow_back, color: colors.onBackground),
-                  onPressed: () => ctx.onNavigateBack?.call(),
-                )
-              : null,
-          title: tabScreen.title != null
-              ? Text(
-                  tabScreen.title!,
-                  style: TextStyle(
-                    fontFamily: 'CormorantGaramond',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w600,
-                    color: colors.onBackground,
-                  ),
-                )
-              : null,
-          iconTheme: IconThemeData(color: colors.onBackground),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.info_outline, color: colors.onBackgroundMuted),
-              onPressed: () => ctx.onNavigateToScreen(
-                '_info',
-                params: const {},
-              ),
-            ),
-            // IconButton(
-            //   icon: Icon(Icons.settings, color: colors.onBackgroundMuted),
-            //   onPressed: () => ctx.onNavigateToScreen(
-            //     '_settings',
-            //     params: const {},
-            //   ),
-            // ),
-          ],
+          backgroundColor: baseAppBar.backgroundColor,
+          elevation: baseAppBar.elevation,
+          leading: baseAppBar.leading,
+          title: baseAppBar.title,
+          iconTheme: baseAppBar.iconTheme,
+          actions: baseAppBar.actions,
           bottom: TabBar(
             controller: _tabController,
             indicatorColor: colors.accent,
@@ -155,7 +120,7 @@ class _TabScreenShellState extends State<_TabScreenShell>
               fontWeight: FontWeight.w400,
             ),
             tabs: tabScreen.tabs.map((tab) {
-              final icon = _resolveIcon(tab.icon);
+              final icon = resolveIcon(tab.icon);
               if (icon != null) {
                 return Tab(
                   icon: Icon(icon, size: 20),

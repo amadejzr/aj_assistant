@@ -13,15 +13,30 @@ sealed class BlueprintNode extends Equatable {
 
 // ─── Layout Nodes ───
 
+class AppBarNode extends BlueprintNode {
+  final String? title;
+  final List<BlueprintNode> actions;
+  final bool showBack;
+
+  const AppBarNode({
+    this.title,
+    this.actions = const [],
+    this.showBack = true,
+    super.properties,
+  }) : super(type: 'app_bar');
+}
+
 class ScreenNode extends BlueprintNode {
   final String? title;
   final List<BlueprintNode> children;
   final BlueprintNode? fab;
+  final AppBarNode? appBar;
 
   const ScreenNode({
     this.title,
     this.children = const [],
     this.fab,
+    this.appBar,
     super.properties,
   }) : super(type: 'screen');
 }
@@ -89,11 +104,13 @@ class TabScreenNode extends BlueprintNode {
   final String? title;
   final List<TabDef> tabs;
   final BlueprintNode? fab;
+  final AppBarNode? appBar;
 
   const TabScreenNode({
     this.title,
     this.tabs = const [],
     this.fab,
+    this.appBar,
     super.properties,
   }) : super(type: 'tab_screen');
 }
