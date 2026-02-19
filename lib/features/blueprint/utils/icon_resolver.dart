@@ -34,6 +34,7 @@ IconData? resolveIcon(String? iconName) {
     'receipt' => PhosphorIcons.receipt(PhosphorIconsStyle.regular),
 
     // Content
+    'book' => PhosphorIcons.bookOpen(PhosphorIconsStyle.regular),
     'note' => PhosphorIcons.notepad(PhosphorIconsStyle.regular),
     'tag' => PhosphorIcons.tag(PhosphorIconsStyle.regular),
     'star' => PhosphorIcons.star(PhosphorIconsStyle.regular),

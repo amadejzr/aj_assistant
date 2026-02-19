@@ -24,6 +24,7 @@ class BlueprintParser {
       'toggle' => _parseToggle(properties),
       'slider' => _parseSlider(properties),
       'rating_input' => _parseRatingInput(properties),
+      'duration_picker' => _parseNumberInput(properties),
       'stat_card' => _parseStatCard(properties),
       'entry_list' => _parseEntryList(properties),
       'entry_card' => _parseEntryCard(properties),
