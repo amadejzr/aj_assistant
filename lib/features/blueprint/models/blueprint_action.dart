@@ -12,6 +12,7 @@ sealed class BlueprintAction extends Equatable {
       'navigate_back' => const NavigateBackAction(),
       'submit' => const SubmitAction(),
       'delete_entry' => DeleteEntryAction.fromJson(json),
+      'update_entry' => UpdateEntryAction.fromJson(json),
       'show_form_sheet' => ShowFormSheetAction.fromJson(json),
       _ => RawAction(json),
     };
@@ -91,6 +92,30 @@ class DeleteEntryAction extends BlueprintAction {
 
   @override
   List<Object?> get props => [confirm, confirmMessage];
+}
+
+class UpdateEntryAction extends BlueprintAction {
+  final Map<String, dynamic> data;
+  final String? label;
+
+  const UpdateEntryAction({required this.data, this.label});
+
+  factory UpdateEntryAction.fromJson(Map<String, dynamic> json) {
+    return UpdateEntryAction(
+      data: Map<String, dynamic>.from(json['data'] as Map? ?? {}),
+      label: json['label'] as String?,
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'update_entry',
+        'data': data,
+        if (label != null) 'label': label,
+      };
+
+  @override
+  List<Object?> get props => [data, label];
 }
 
 class ShowFormSheetAction extends BlueprintAction {

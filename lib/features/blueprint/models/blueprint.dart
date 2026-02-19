@@ -412,6 +412,368 @@ class BpReferencePicker extends Blueprint {
   List<Object?> get props => [fieldKey, schemaKey, displayField];
 }
 
+// ─── Supporting types ───
+
+class BpFilter extends Equatable {
+  final String field;
+  final String op;
+  final dynamic value;
+
+  const BpFilter({required this.field, this.op = '==', required this.value});
+
+  Map<String, dynamic> toJson() => {
+        'field': field,
+        'op': op,
+        'value': value,
+      };
+
+  @override
+  List<Object?> get props => [field, op, value];
+}
+
+class BpQuery extends Equatable {
+  final String? orderBy;
+  final String direction;
+  final int? limit;
+
+  const BpQuery({this.orderBy, this.direction = 'desc', this.limit});
+
+  Map<String, dynamic> toJson() => {
+        if (orderBy != null) 'orderBy': orderBy,
+        'direction': direction,
+        if (limit != null) 'limit': limit,
+      };
+
+  @override
+  List<Object?> get props => [orderBy, direction, limit];
+}
+
+class BpSwipeActions extends Equatable {
+  final BlueprintAction? left;
+  final BlueprintAction? right;
+
+  const BpSwipeActions({this.left, this.right});
+
+  Map<String, dynamic> toJson() => {
+        if (left != null) 'left': left!.toJson(),
+        if (right != null) 'right': right!.toJson(),
+      };
+
+  @override
+  List<Object?> get props => [left, right];
+}
+
+// ─── Display ───
+
+class BpStatCard extends Blueprint {
+  final String label;
+  final String expression;
+  final String? format;
+  final List<BpFilter> filter;
+
+  const BpStatCard({
+    required this.label,
+    required this.expression,
+    this.format,
+    this.filter = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'stat_card',
+        'label': label,
+        'expression': expression,
+        if (format != null) 'format': format,
+        if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
+      };
+
+  @override
+  List<Object?> get props => [label, expression, format, filter];
+}
+
+class BpEntryList extends Blueprint {
+  final BpQuery? query;
+  final List<BpFilter> filter;
+  final BpEntryCard? itemLayout;
+
+  const BpEntryList({this.query, this.filter = const [], this.itemLayout});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'entry_list',
+        if (query != null) 'query': query!.toJson(),
+        if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
+        if (itemLayout != null) 'itemLayout': itemLayout!.toJson(),
+      };
+
+  @override
+  List<Object?> get props => [query, filter, itemLayout];
+}
+
+class BpEntryCard extends Blueprint {
+  final String? title;
+  final String? subtitle;
+  final String? trailing;
+  final String? trailingFormat;
+  final BlueprintAction? onTap;
+  final BpSwipeActions? swipeActions;
+
+  const BpEntryCard({
+    this.title,
+    this.subtitle,
+    this.trailing,
+    this.trailingFormat,
+    this.onTap,
+    this.swipeActions,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'entry_card',
+        if (title != null) 'title': title,
+        if (subtitle != null) 'subtitle': subtitle,
+        if (trailing != null) 'trailing': trailing,
+        if (trailingFormat != null) 'trailingFormat': trailingFormat,
+        if (onTap != null) 'onTap': onTap!.toJson(),
+        if (swipeActions != null) 'swipeActions': swipeActions!.toJson(),
+      };
+
+  @override
+  List<Object?> get props =>
+      [title, subtitle, trailing, trailingFormat, onTap, swipeActions];
+}
+
+class BpChart extends Blueprint {
+  final String chartType;
+  final String? groupBy;
+  final String? aggregate;
+  final String? expression;
+  final List<BpFilter> filter;
+
+  const BpChart({
+    this.chartType = 'donut',
+    this.groupBy,
+    this.aggregate,
+    this.expression,
+    this.filter = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'chart',
+        'chartType': chartType,
+        if (groupBy != null) 'groupBy': groupBy,
+        if (aggregate != null) 'aggregate': aggregate,
+        if (expression != null) 'expression': expression,
+        if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
+      };
+
+  @override
+  List<Object?> get props => [chartType, groupBy, aggregate, expression, filter];
+}
+
+class BpProgressBar extends Blueprint {
+  final String? label;
+  final String? expression;
+  final String? format;
+  final List<BpFilter> filter;
+
+  const BpProgressBar({
+    this.label,
+    this.expression,
+    this.format,
+    this.filter = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'progress_bar',
+        if (label != null) 'label': label,
+        if (expression != null) 'expression': expression,
+        if (format != null) 'format': format,
+        if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
+      };
+
+  @override
+  List<Object?> get props => [label, expression, format, filter];
+}
+
+class BpDateCalendar extends Blueprint {
+  final String dateField;
+  final List<BpFilter> filter;
+  final BlueprintAction? onEntryTap;
+  final List<String> forwardFields;
+
+  const BpDateCalendar({
+    this.dateField = 'date',
+    this.filter = const [],
+    this.onEntryTap,
+    this.forwardFields = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'date_calendar',
+        'dateField': dateField,
+        if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
+        if (onEntryTap != null) 'onEntryTap': onEntryTap!.toJson(),
+        if (forwardFields.isNotEmpty) 'forwardFields': forwardFields,
+      };
+
+  @override
+  List<Object?> get props => [dateField, filter, onEntryTap, forwardFields];
+}
+
+class BpTextDisplay extends Blueprint {
+  final String text;
+  final String? style;
+
+  const BpTextDisplay({required this.text, this.style});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'text_display',
+        'text': text,
+        if (style != null) 'style': style,
+      };
+
+  @override
+  List<Object?> get props => [text, style];
+}
+
+class BpEmptyState extends Blueprint {
+  final String? icon;
+  final String? title;
+  final String? subtitle;
+
+  const BpEmptyState({this.icon, this.title, this.subtitle});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'empty_state',
+        if (icon != null) 'icon': icon,
+        if (title != null) 'title': title,
+        if (subtitle != null) 'subtitle': subtitle,
+      };
+
+  @override
+  List<Object?> get props => [icon, title, subtitle];
+}
+
+class BpBadge extends Blueprint {
+  final String text;
+  final String? expression;
+  final String variant;
+
+  const BpBadge({
+    required this.text,
+    this.expression,
+    this.variant = 'default',
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'badge',
+        'text': text,
+        if (expression != null) 'expression': expression,
+        if (variant != 'default') 'variant': variant,
+      };
+
+  @override
+  List<Object?> get props => [text, expression, variant];
+}
+
+class BpCardGrid extends Blueprint {
+  final String fieldKey;
+  final BlueprintAction? action;
+
+  const BpCardGrid({required this.fieldKey, this.action});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'card_grid',
+        'fieldKey': fieldKey,
+        if (action != null) 'action': action!.toJson(),
+      };
+
+  @override
+  List<Object?> get props => [fieldKey, action];
+}
+
+class BpDivider extends Blueprint {
+  const BpDivider();
+
+  @override
+  Map<String, dynamic> toJson() => {'type': 'divider'};
+
+  @override
+  List<Object?> get props => [];
+}
+
+class BpIconButton extends Blueprint {
+  final String icon;
+  final BlueprintAction action;
+  final String? tooltip;
+
+  const BpIconButton({
+    required this.icon,
+    required this.action,
+    this.tooltip,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'icon_button',
+        'icon': icon,
+        'action': action.toJson(),
+        if (tooltip != null) 'tooltip': tooltip,
+      };
+
+  @override
+  List<Object?> get props => [icon, action, tooltip];
+}
+
+class BpActionMenu extends Blueprint {
+  final String icon;
+  final List<BpActionMenuItem> items;
+
+  const BpActionMenu({
+    this.icon = 'more_vert',
+    this.items = const [],
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'action_menu',
+        'icon': icon,
+        'items': [for (final item in items) item.toJson()],
+      };
+
+  @override
+  List<Object?> get props => [icon, items];
+}
+
+class BpActionMenuItem extends Equatable {
+  final String label;
+  final String? icon;
+  final BlueprintAction action;
+
+  const BpActionMenuItem({
+    required this.label,
+    this.icon,
+    required this.action,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        if (icon != null) 'icon': icon,
+        'action': action.toJson(),
+      };
+
+  @override
+  List<Object?> get props => [label, icon, action];
+}
+
 // ─── Escape hatch ───
 
 /// Wraps raw JSON for node types not yet covered by typed builders.

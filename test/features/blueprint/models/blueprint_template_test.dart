@@ -1,6 +1,5 @@
 /// Validates that typed Blueprint builders can reproduce a real template
-/// structure (tasks template). Layout and input nodes are typed, display
-/// nodes use RawBlueprint as escape hatch.
+/// structure (tasks template). All nodes use typed builders — no RawBlueprint.
 library;
 
 import 'package:aj_assistant/features/blueprint/models/blueprint.dart';
@@ -30,36 +29,33 @@ BpSection _prioritySection(String title, String priority) {
   return BpSection(
     title: title,
     children: [
-      RawBlueprint({
-        'type': 'entry_list',
-        'filter': [
-          {'field': 'status', 'op': '!=', 'value': 'done'},
-          {'field': 'priority', 'op': '==', 'value': priority},
+      BpEntryList(
+        filter: [
+          const BpFilter(field: 'status', op: '!=', value: 'done'),
+          BpFilter(field: 'priority', value: priority),
         ],
-        'query': {'orderBy': 'due_date', 'direction': 'asc'},
-        'itemLayout': {
-          'type': 'entry_card',
-          'title': '{{title}}',
-          'subtitle': '{{project}}',
-          'trailing': '{{due_date}}',
-          'trailingFormat': 'relative_date',
-          'onTap': const NavigateAction(
+        query: const BpQuery(orderBy: 'due_date', direction: 'asc'),
+        itemLayout: BpEntryCard(
+          title: '{{title}}',
+          subtitle: '{{project}}',
+          trailing: '{{due_date}}',
+          trailingFormat: 'relative_date',
+          onTap: const NavigateAction(
             screen: 'edit_entry',
             forwardFields: _allFields,
-          ).toJson(),
-          'swipeActions': {
-            'left': {
-              'type': 'update_entry',
-              'data': {'status': 'done'},
-              'label': 'Done',
-            },
-            'right': const DeleteEntryAction(
+          ),
+          swipeActions: const BpSwipeActions(
+            left: UpdateEntryAction(
+              data: {'status': 'done'},
+              label: 'Done',
+            ),
+            right: DeleteEntryAction(
               confirm: true,
               confirmMessage: 'Delete this task?',
-            ).toJson(),
-          },
-        },
-      }),
+            ),
+          ),
+        ),
+      ),
     ],
   );
 }
@@ -75,23 +71,20 @@ void main() {
             icon: 'pending_actions',
             content: BpScrollColumn(children: [
               const BpRow(children: [
-                RawBlueprint({
-                  'type': 'stat_card',
-                  'label': 'Overdue',
-                  'expression':
+                BpStatCard(
+                  label: 'Overdue',
+                  expression:
                       'count(where(status, !=, done), where(due_date, <, today))',
-                }),
-                RawBlueprint({
-                  'type': 'stat_card',
-                  'label': 'Due Today',
-                  'expression':
+                ),
+                BpStatCard(
+                  label: 'Due Today',
+                  expression:
                       'count(where(status, !=, done), where(due_date, ==, today))',
-                }),
-                RawBlueprint({
-                  'type': 'stat_card',
-                  'label': 'Open',
-                  'expression': 'count(where(status, !=, done))',
-                }),
+                ),
+                BpStatCard(
+                  label: 'Open',
+                  expression: 'count(where(status, !=, done))',
+                ),
               ]),
               const BpButton(
                 label: 'View Calendar',
@@ -108,26 +101,23 @@ void main() {
             icon: 'check_circle',
             content: BpScrollColumn(children: [
               BpRow(children: [
-                RawBlueprint({
-                  'type': 'stat_card',
-                  'label': 'Completed',
-                  'expression': 'count(where(status, ==, done))',
-                }),
-                RawBlueprint({
-                  'type': 'stat_card',
-                  'label': 'This Week',
-                  'expression': 'count(where(status, ==, done), period(week))',
-                }),
+                BpStatCard(
+                  label: 'Completed',
+                  expression: 'count(where(status, ==, done))',
+                ),
+                BpStatCard(
+                  label: 'This Week',
+                  expression: 'count(where(status, ==, done), period(week))',
+                ),
               ]),
               BpSection(
                 title: 'Completed Tasks',
                 children: [
-                  RawBlueprint({
-                    'type': 'entry_list',
-                    'filter': [
-                      {'field': 'status', 'op': '==', 'value': 'done'},
+                  BpEntryList(
+                    filter: [
+                      BpFilter(field: 'status', value: 'done'),
                     ],
-                  }),
+                  ),
                 ],
               ),
             ]),
@@ -153,6 +143,19 @@ void main() {
       expect((activeChildren[1] as Map)['type'], 'button');
       expect((activeChildren[2] as Map)['type'], 'section');
       expect((activeChildren[2] as Map)['title'], 'High Priority');
+
+      // Stat cards in first row
+      final statCards =
+          (activeChildren[0] as Map)['children'] as List;
+      expect(statCards.length, 3);
+      expect(statCards[0]['type'], 'stat_card');
+      expect(statCards[0]['label'], 'Overdue');
+
+      // Entry list in priority section
+      final highSection = activeChildren[2] as Map;
+      final entryList = (highSection['children'] as List)[0] as Map;
+      expect(entryList['type'], 'entry_list');
+      expect(entryList['itemLayout']['type'], 'entry_card');
 
       // FAB
       expect(json['fab']['type'], 'fab');
@@ -201,17 +204,16 @@ void main() {
       expect((json['children'] as List).length, 6);
     });
 
-    test('calendar screen with raw date_calendar node', () {
+    test('calendar screen with typed date_calendar', () {
       const calendar = BpScreen(
         title: 'Calendar',
         children: [
           BpScrollColumn(children: [
-            RawBlueprint({
-              'type': 'date_calendar',
-              'dateField': 'due_date',
-              'onEntryTap': {'screen': 'edit_entry'},
-              'forwardFields': _allFields,
-            }),
+            BpDateCalendar(
+              dateField: 'due_date',
+              onEntryTap: NavigateAction(screen: 'edit_entry'),
+              forwardFields: _allFields,
+            ),
           ]),
         ],
       );
@@ -224,6 +226,8 @@ void main() {
       final dateCalendar = (scrollCol['children'] as List)[0] as Map;
       expect(dateCalendar['type'], 'date_calendar');
       expect(dateCalendar['dateField'], 'due_date');
+      expect(dateCalendar['onEntryTap']['type'], 'navigate');
+      expect(dateCalendar['forwardFields'], _allFields);
     });
 
     test('priority section helper produces correct structure', () {
@@ -236,15 +240,20 @@ void main() {
       expect(entryList['type'], 'entry_list');
       expect((entryList['filter'] as List)[1]['value'], 'high');
 
-      final onTap = entryList['itemLayout']['onTap'] as Map;
+      final itemLayout = entryList['itemLayout'] as Map;
+      expect(itemLayout['type'], 'entry_card');
+      expect(itemLayout['title'], '{{title}}');
+
+      final onTap = itemLayout['onTap'] as Map;
       expect(onTap['type'], 'navigate');
       expect(onTap['screen'], 'edit_entry');
       expect(onTap['forwardFields'], _allFields);
 
-      final deleteAction =
-          entryList['itemLayout']['swipeActions']['right'] as Map;
-      expect(deleteAction['type'], 'delete_entry');
-      expect(deleteAction['confirm'], true);
+      final swipeActions = itemLayout['swipeActions'] as Map;
+      expect(swipeActions['left']['type'], 'update_entry');
+      expect(swipeActions['left']['data'], {'status': 'done'});
+      expect(swipeActions['right']['type'], 'delete_entry');
+      expect(swipeActions['right']['confirm'], true);
     });
   });
 }
