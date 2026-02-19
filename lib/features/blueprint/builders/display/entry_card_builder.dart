@@ -69,11 +69,26 @@ class _EntryCardWidget extends StatelessWidget {
         ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
 
     return template.replaceAllMapped(
-      RegExp(r'\{\{(\w+)\}\}'),
+      RegExp(r'\{\{([\w.]+)\}\}'),
       (match) {
-        final key = match.group(1)!;
-        final value = data[key];
-        final resolved = resolver.resolve(key, value, schemaKey: schemaKey);
+        final expr = match.group(1)!;
+        final dotIndex = expr.indexOf('.');
+        if (dotIndex != -1) {
+          // Dot notation: {{field.subField}} — resolve a specific field
+          // from the referenced entry
+          final fieldKey = expr.substring(0, dotIndex);
+          final subField = expr.substring(dotIndex + 1);
+          final value = data[fieldKey];
+          final resolved = resolver.resolveField(
+            fieldKey,
+            subField,
+            value,
+            schemaKey: schemaKey,
+          );
+          return resolved.isNotEmpty ? resolved : _formatValue(value);
+        }
+        final value = data[expr];
+        final resolved = resolver.resolve(expr, value, schemaKey: schemaKey);
         // If resolver returned the raw value, format it (dates, etc.)
         if (resolved == (value?.toString() ?? '')) {
           return _formatValue(value);
