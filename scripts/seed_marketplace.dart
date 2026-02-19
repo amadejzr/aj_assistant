@@ -16,6 +16,7 @@ import 'templates/finance_template.dart';
 import 'templates/fitness_template.dart';
 import 'templates/hiking_template.dart';
 import 'templates/meals_template.dart';
+import 'templates/tasks_template.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -31,6 +32,7 @@ Future<void> main() async {
     'tpl_fitness': fitnessTemplate,
     'tpl_hiking': hikingTemplate,
     'tpl_meals': mealsTemplate,
+    'tpl_tasks': tasksTemplate,
   };
 
   for (final entry in templates.entries) {
