@@ -1,6 +1,8 @@
 /// Validates that typed Blueprint builders can reproduce a real template
-/// structure (tasks template). Layout nodes are typed, input/display
+/// structure (tasks template). Layout and input nodes are typed, display
 /// nodes use RawBlueprint as escape hatch.
+library;
+
 import 'package:aj_assistant/features/blueprint/models/blueprint.dart';
 import 'package:aj_assistant/features/blueprint/models/blueprint_action.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,16 @@ const _allFields = [
   'status',
   'due_date',
   'project',
+];
+
+/// Shared form inputs for add/edit screens.
+const _formInputs = <Blueprint>[
+  BpTextInput(fieldKey: 'title'),
+  BpTextInput(fieldKey: 'description', multiline: true),
+  BpEnumSelector(fieldKey: 'priority'),
+  BpEnumSelector(fieldKey: 'status'),
+  BpDatePicker(fieldKey: 'due_date'),
+  BpEnumSelector(fieldKey: 'project'),
 ];
 
 BpSection _prioritySection(String title, String priority) {
@@ -136,7 +148,6 @@ void main() {
       final activeContent = activeTab['content'] as Map;
       expect(activeContent['type'], 'scroll_column');
       final activeChildren = activeContent['children'] as List;
-      // row of stat cards, button, 3 priority sections
       expect(activeChildren.length, 5);
       expect((activeChildren[0] as Map)['type'], 'row');
       expect((activeChildren[1] as Map)['type'], 'button');
@@ -148,23 +159,12 @@ void main() {
       expect(json['fab']['action']['screen'], 'add_entry');
     });
 
-    test('form screen produces valid form_screen JSON', () {
+    test('form screen with typed inputs', () {
       const addEntry = BpFormScreen(
         title: 'New Task',
         submitLabel: 'Save',
         defaults: {'status': 'todo', 'priority': 'medium'},
-        children: [
-          RawBlueprint({'type': 'text_input', 'fieldKey': 'title'}),
-          RawBlueprint({
-            'type': 'text_input',
-            'fieldKey': 'description',
-            'multiline': true,
-          }),
-          RawBlueprint({'type': 'enum_selector', 'fieldKey': 'priority'}),
-          RawBlueprint({'type': 'enum_selector', 'fieldKey': 'status'}),
-          RawBlueprint({'type': 'date_picker', 'fieldKey': 'due_date'}),
-          RawBlueprint({'type': 'enum_selector', 'fieldKey': 'project'}),
-        ],
+        children: _formInputs,
       );
 
       final json = addEntry.toJson();
@@ -172,23 +172,33 @@ void main() {
       expect(json['title'], 'New Task');
       expect(json['submitLabel'], 'Save');
       expect(json['defaults'], {'status': 'todo', 'priority': 'medium'});
-      expect((json['children'] as List).length, 6);
-      expect((json['children'] as List)[0]['type'], 'text_input');
+
+      final children = json['children'] as List;
+      expect(children.length, 6);
+      expect(children[0], {'type': 'text_input', 'fieldKey': 'title'});
+      expect(children[1], {
+        'type': 'text_input',
+        'fieldKey': 'description',
+        'multiline': true,
+      });
+      expect(children[2], {'type': 'enum_selector', 'fieldKey': 'priority'});
+      expect(children[3], {'type': 'enum_selector', 'fieldKey': 'status'});
+      expect(children[4], {'type': 'date_picker', 'fieldKey': 'due_date'});
+      expect(children[5], {'type': 'enum_selector', 'fieldKey': 'project'});
     });
 
-    test('edit form with editLabel', () {
+    test('edit form reuses same inputs', () {
       const editEntry = BpFormScreen(
         title: 'Edit Task',
         editLabel: 'Update',
-        children: [
-          RawBlueprint({'type': 'text_input', 'fieldKey': 'title'}),
-        ],
+        children: _formInputs,
       );
 
       final json = editEntry.toJson();
       expect(json['type'], 'form_screen');
       expect(json['editLabel'], 'Update');
       expect(json.containsKey('defaults'), false);
+      expect((json['children'] as List).length, 6);
     });
 
     test('calendar screen with raw date_calendar node', () {
@@ -226,7 +236,6 @@ void main() {
       expect(entryList['type'], 'entry_list');
       expect((entryList['filter'] as List)[1]['value'], 'high');
 
-      // Verify action types are correctly serialized
       final onTap = entryList['itemLayout']['onTap'] as Map;
       expect(onTap['type'], 'navigate');
       expect(onTap['screen'], 'edit_entry');
