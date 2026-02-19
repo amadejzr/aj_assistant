@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../schema/models/field_constraints.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
@@ -30,7 +31,9 @@ class _RatingInputWidget extends StatelessWidget {
     final colors = context.colors;
     final field = ctx.getFieldDefinition(input.fieldKey);
     final label = field?.label ?? input.fieldKey;
-    final maxStars = (field?.constraints['max'] as num?)?.toInt() ?? 5;
+    final maxStars = field?.constraints is RatingConstraints
+        ? (field!.constraints as RatingConstraints).maxRating
+        : 5;
     final currentValue = (ctx.getFormValue(input.fieldKey) as num?)?.toInt() ?? 0;
 
     return Padding(

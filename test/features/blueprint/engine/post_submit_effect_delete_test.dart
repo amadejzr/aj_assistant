@@ -1,5 +1,6 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/features/blueprint/engine/post_submit_effect.dart';
+import 'package:aj_assistant/features/schema/models/schema_effect.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -30,14 +31,13 @@ void main() {
       test('restores balance when expense entry is deleted', () {
         // Original expense effect was subtract. On delete, it should add back.
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'account',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'subtract',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'account',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'subtract',
+            ),
           ],
           deletedEntryData: {
             'account': 'acc-wallet',
@@ -59,14 +59,13 @@ void main() {
       test('removes deposited amount when income entry is deleted', () {
         // Original income effect was add. On delete, it should subtract.
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'account',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'add',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'account',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'add',
+            ),
           ],
           deletedEntryData: {
             'account': 'acc-savings',
@@ -83,10 +82,10 @@ void main() {
       });
     });
 
-    group('no onDelete defined', () {
+    group('no effects defined', () {
       test('empty effects list returns empty map', () {
         final result = executor.computeDeleteUpdates(
-          effects: [],
+          effects: const [],
           deletedEntryData: {
             'account': 'acc-wallet',
             'amount': 100,
@@ -101,14 +100,13 @@ void main() {
     group('missing referenced entry', () {
       test('skips gracefully when referenced entry does not exist', () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'account',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'subtract',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'account',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'subtract',
+            ),
           ],
           deletedEntryData: {
             'account': 'nonexistent-id',
@@ -120,16 +118,16 @@ void main() {
         expect(result, isEmpty);
       });
 
-      test('skips gracefully when reference field is missing from entry data', () {
+      test('skips gracefully when reference field is missing from entry data',
+          () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'account',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'subtract',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'account',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'subtract',
+            ),
           ],
           deletedEntryData: {
             'amount': 100,
@@ -144,17 +142,13 @@ void main() {
 
     group('set_reference effects pass through unchanged', () {
       test('set_reference is not inverted', () {
-        // set_reference effects have no arithmetic to invert — they pass
-        // through as-is. This means on delete, the set_reference still
-        // applies its value/sourceField logic unchanged.
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'set_reference',
-              'referenceField': 'goal',
-              'targetField': 'status',
-              'value': 'reverted',
-            },
+          effects: const [
+            SetReferenceEffect(
+              referenceField: 'goal',
+              targetField: 'status',
+              value: 'reverted',
+            ),
           ],
           deletedEntryData: {
             'goal': 'goal-1',
@@ -169,13 +163,12 @@ void main() {
 
       test('set_reference with sourceField uses deleted entry data', () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'set_reference',
-              'referenceField': 'goal',
-              'targetField': 'status',
-              'sourceField': 'previousStatus',
-            },
+          effects: const [
+            SetReferenceEffect(
+              referenceField: 'goal',
+              targetField: 'status',
+              sourceField: 'previousStatus',
+            ),
           ],
           deletedEntryData: {
             'goal': 'goal-1',
@@ -191,25 +184,24 @@ void main() {
     });
 
     group('multiple effects applied correctly', () {
-      test('inverts multiple adjust_reference effects on different entries', () {
+      test('inverts multiple adjust_reference effects on different entries',
+          () {
         // Original: transfer from wallet to savings
         // Delete: reverse both — add back to wallet, subtract from savings
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'fromAccount',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'subtract',
-            },
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'toAccount',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'add',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'fromAccount',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'subtract',
+            ),
+            AdjustReferenceEffect(
+              referenceField: 'toAccount',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'add',
+            ),
           ],
           deletedEntryData: {
             'fromAccount': 'acc-wallet',
@@ -229,20 +221,18 @@ void main() {
 
       test('mixes inverted adjust with pass-through set on same entry', () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'goal',
-              'targetField': 'saved',
-              'amountField': 'contribution',
-              'operation': 'add',
-            },
-            {
-              'type': 'set_reference',
-              'referenceField': 'goal',
-              'targetField': 'status',
-              'value': 'active',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'goal',
+              targetField: 'saved',
+              amountField: 'contribution',
+              operation: 'add',
+            ),
+            SetReferenceEffect(
+              referenceField: 'goal',
+              targetField: 'status',
+              value: 'active',
+            ),
           ],
           deletedEntryData: {
             'goal': 'goal-1',
@@ -263,14 +253,13 @@ void main() {
 
       test('handles literal amount with inversion', () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'program',
-              'targetField': 'sessionsCompleted',
-              'amount': 1,
-              'operation': 'add',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'program',
+              targetField: 'sessionsCompleted',
+              amount: 1,
+              operation: 'add',
+            ),
           ],
           deletedEntryData: {
             'program': 'goal-1',
@@ -286,14 +275,13 @@ void main() {
 
       test('handles decimal amounts with inversion', () {
         final result = executor.computeDeleteUpdates(
-          effects: [
-            {
-              'type': 'adjust_reference',
-              'referenceField': 'account',
-              'targetField': 'balance',
-              'amountField': 'amount',
-              'operation': 'subtract',
-            },
+          effects: const [
+            AdjustReferenceEffect(
+              referenceField: 'account',
+              targetField: 'balance',
+              amountField: 'amount',
+              operation: 'subtract',
+            ),
           ],
           deletedEntryData: {
             'account': 'acc-wallet',

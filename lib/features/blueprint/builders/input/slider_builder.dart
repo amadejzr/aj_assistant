@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../schema/models/field_constraints.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 
@@ -28,9 +29,10 @@ class _SliderWidget extends StatelessWidget {
     final colors = context.colors;
     final field = ctx.getFieldDefinition(input.fieldKey);
     final label = field?.label ?? input.fieldKey;
-    final min = (field?.constraints['min'] as num?)?.toDouble() ?? 0.0;
-    final max = (field?.constraints['max'] as num?)?.toDouble() ?? 100.0;
-    final divisions = (field?.constraints['divisions'] as num?)?.toInt();
+    final nc = field?.constraints;
+    final min = (nc is NumberConstraints ? nc.min : null)?.toDouble() ?? 0.0;
+    final max = (nc is NumberConstraints ? nc.max : null)?.toDouble() ?? 100.0;
+    final divisions = nc is NumberConstraints ? nc.divisions : null;
     final currentValue =
         (ctx.getFormValue(input.fieldKey) as num?)?.toDouble() ?? min;
 

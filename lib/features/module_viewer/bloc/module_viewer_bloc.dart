@@ -10,6 +10,7 @@ import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
 import '../../blueprint/engine/post_submit_effect.dart';
+import '../../schema/models/schema_effect.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 
@@ -306,7 +307,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   /// Applies delete effects (auto-inverted) using [PostSubmitEffectExecutor].
   Future<void> _applyDeleteEffects(
     ModuleViewerLoaded current,
-    List<Map<String, dynamic>> effects,
+    List<SchemaEffect> effects,
     Entry deletedEntry,
   ) async {
     const executor = PostSubmitEffectExecutor();
@@ -456,7 +457,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   /// Applies post-submit effects using [PostSubmitEffectExecutor].
   Future<void> _applyPostSubmitEffects(
     ModuleViewerLoaded current,
-    List<dynamic> effects,
+    List<SchemaEffect> effects,
     Map<String, dynamic> formData,
   ) async {
     const executor = PostSubmitEffectExecutor();

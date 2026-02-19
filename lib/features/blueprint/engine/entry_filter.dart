@@ -28,7 +28,9 @@ class EntryFilter {
         if (item is Map<String, dynamic>) {
           final field = item['field'] as String?;
           final op = item['op'] as String? ?? '==';
-          final value = item['value'];
+          final rawValue = item['value'];
+          // Interpolate {{paramName}} placeholders from screenParams
+          final value = _interpolate(rawValue, screenParams);
           if (field != null) {
             if (field.startsWith('_')) {
               meta[field] = value;
@@ -123,6 +125,21 @@ class EntryFilter {
   static String? _toString(dynamic value) {
     if (value == null) return null;
     return value.toString();
+  }
+
+  /// Replace `{{paramName}}` placeholders with values from screenParams.
+  static dynamic _interpolate(
+    dynamic value,
+    Map<String, dynamic> screenParams,
+  ) {
+    if (value is! String) return value;
+    final pattern = RegExp(r'\{\{(\w+)\}\}');
+    if (!pattern.hasMatch(value)) return value;
+    final replaced = value.replaceAllMapped(pattern, (m) {
+      final key = m.group(1)!;
+      return screenParams[key]?.toString() ?? '';
+    });
+    return replaced;
   }
 
   static dynamic _resolveValue(dynamic value) {

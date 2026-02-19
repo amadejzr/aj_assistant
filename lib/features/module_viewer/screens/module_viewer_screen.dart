@@ -123,7 +123,7 @@ class _LoadedView extends StatelessWidget {
           }
           if (screenId == '_settings') {
             context
-                .push('/module/${state.module.id}/settings')
+                .push('/module/${state.module.id}/info')
                 .then((_) => bloc.add(const ModuleViewerModuleRefreshed()));
             return;
           }
