@@ -114,15 +114,24 @@ AppBar buildBlueprintAppBar({
     ];
   }
 
+  // Show back button for deep navigation, hamburger menu for drawer, or nothing.
+  Widget? leading;
+  if (showBackButton) {
+    leading = IconButton(
+      icon: Icon(Icons.arrow_back, color: colors.onBackground),
+      onPressed: () => ctx.onNavigateBack?.call(),
+    );
+  } else if (ctx.onOpenDrawer != null) {
+    leading = IconButton(
+      icon: Icon(Icons.menu, color: colors.onBackground),
+      onPressed: () => ctx.onOpenDrawer!.call(),
+    );
+  }
+
   return AppBar(
     backgroundColor: colors.background,
     elevation: 0,
-    leading: showBackButton
-        ? IconButton(
-            icon: Icon(Icons.arrow_back, color: colors.onBackground),
-            onPressed: () => ctx.onNavigateBack?.call(),
-          )
-        : null,
+    leading: leading,
     title: title != null
         ? Text(
             title,

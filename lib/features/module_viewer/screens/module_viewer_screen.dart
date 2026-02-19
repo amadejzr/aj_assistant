@@ -78,12 +78,21 @@ class _ModuleViewerBody extends StatelessWidget {
   }
 }
 
-class _LoadedView extends StatelessWidget {
+class _LoadedView extends StatefulWidget {
   final ModuleViewerLoaded state;
 
   const _LoadedView({required this.state});
 
-  RenderContext _buildRenderContext(BuildContext context) {
+  @override
+  State<_LoadedView> createState() => _LoadedViewState();
+}
+
+class _LoadedViewState extends State<_LoadedView> {
+  final _drawerKey = GlobalKey<ScaffoldState>();
+
+  ModuleViewerLoaded get state => widget.state;
+
+  RenderContext _buildRenderContext(BuildContext context, {bool hasDrawer = false}) {
     final bloc = context.read<ModuleViewerBloc>();
     final entryRepo = context.read<EntryRepository>();
     final authState = context.read<AuthBloc>().state;
@@ -150,6 +159,9 @@ class _LoadedView extends StatelessWidget {
         );
         await entryRepo.updateEntry(userId, state.module.id, updated);
       },
+      onOpenDrawer: hasDrawer
+          ? () => _drawerKey.currentState?.openDrawer()
+          : null,
     );
   }
 
@@ -160,6 +172,16 @@ class _LoadedView extends StatelessWidget {
     final blueprint = state.module.screens[screenId];
     final nav = state.module.navigation;
 
+    // Wrap with bottom nav / drawer if configured
+    final bottomNavItems = nav?.bottomNav?.items;
+    final hasBottomNav = bottomNavItems != null && bottomNavItems.length >= 2;
+    final drawerNav = nav?.drawer;
+    final hasDrawer = drawerNav != null && drawerNav.items.isNotEmpty;
+
+    // Only show nav chrome on tab screens, not on deep screens (forms, etc.)
+    final isOnTab = hasBottomNav &&
+        bottomNavItems.any((item) => item.screenId == screenId);
+
     final Widget child;
 
     if (blueprint == null) {
@@ -169,7 +191,11 @@ class _LoadedView extends StatelessWidget {
         body: const Center(child: Text('Screen not found')),
       );
     } else {
-      final renderContext = _buildRenderContext(context);
+      // Pass drawer callback only when on a tab screen with a drawer
+      final renderContext = _buildRenderContext(
+        context,
+        hasDrawer: hasDrawer && isOnTab,
+      );
       child = BlueprintRenderer(
         key: ValueKey(screenId),
         blueprintJson: blueprint,
@@ -177,19 +203,9 @@ class _LoadedView extends StatelessWidget {
       );
     }
 
-    // Wrap with bottom nav / drawer if configured
-    final bottomNavItems = nav?.bottomNav?.items;
-    final hasBottomNav = bottomNavItems != null && bottomNavItems.length >= 2;
-    final drawerNav = nav?.drawer;
-    final hasDrawer = drawerNav != null && drawerNav.items.isNotEmpty;
-
     if (!hasBottomNav && !hasDrawer) {
       return _animatedSwitch(child);
     }
-
-    // Only show nav chrome on tab screens, not on deep screens (forms, etc.)
-    final isOnTab = hasBottomNav &&
-        bottomNavItems.any((item) => item.screenId == screenId);
 
     // Build bottom nav bar
     BottomNavigationBar? bottomNavBar;
@@ -227,6 +243,7 @@ class _LoadedView extends StatelessWidget {
     }
 
     return _ModuleNavShell(
+      scaffoldKey: hasDrawer && isOnTab ? _drawerKey : null,
       bottomNavBar: bottomNavBar,
       drawer: drawer,
       child: _animatedSwitch(child),
@@ -265,6 +282,24 @@ class _LoadedView extends StatelessWidget {
                   ),
                 ),
               ),
+            ListTile(
+              leading: Icon(
+                Icons.arrow_back,
+                color: colors.onBackgroundMuted,
+                size: 22,
+              ),
+              title: Text(
+                'Back to Modules',
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  color: colors.onBackground,
+                ),
+              ),
+              onTap: () {
+                Navigator.of(context).pop(); // close drawer
+                context.pop(); // exit module viewer
+              },
+            ),
             const Divider(),
             for (final item in drawerNav.items)
               ListTile(
@@ -291,7 +326,7 @@ class _LoadedView extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).pop(); // close drawer
                   if (item.screenId != screenId) {
-                    bloc.add(ModuleViewerScreenChanged(item.screenId, clearStack: true));
+                    bloc.add(ModuleViewerScreenChanged(item.screenId));
                   }
                 },
               ),
@@ -331,11 +366,13 @@ class _LoadedView extends StatelessWidget {
 /// this uses a [Column] layout to overlay the bottom nav below the inner
 /// scaffold, and wraps everything in an outer Scaffold for the drawer.
 class _ModuleNavShell extends StatelessWidget {
+  final GlobalKey<ScaffoldState>? scaffoldKey;
   final BottomNavigationBar? bottomNavBar;
   final Widget? drawer;
   final Widget child;
 
   const _ModuleNavShell({
+    this.scaffoldKey,
     this.bottomNavBar,
     this.drawer,
     required this.child,
@@ -346,6 +383,7 @@ class _ModuleNavShell extends StatelessWidget {
     if (drawer != null) {
       // Wrap in outer Scaffold for drawer support
       return Scaffold(
+        key: scaffoldKey,
         backgroundColor: Colors.transparent,
         drawer: drawer,
         body: Column(
