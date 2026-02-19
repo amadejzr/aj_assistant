@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../features/schema/models/field_constraints.dart';
 import '../../features/schema/models/module_schema.dart';
 
 class Module extends Equatable {
@@ -120,6 +121,25 @@ class Module extends Equatable {
     );
   }
 
+  /// Computes reverse relations for [schemaKey] by scanning all schemas
+  /// for reference fields that point at it.
+  List<ReverseRelation> reverseRelationsFor(String schemaKey) {
+    final results = <ReverseRelation>[];
+    for (final entry in schemas.entries) {
+      for (final field in entry.value.fields.values) {
+        final c = field.constraints;
+        if (c is ReferenceConstraints && c.targetSchema == schemaKey) {
+          results.add(ReverseRelation(
+            fromSchema: entry.key,
+            fromField: field.key,
+            label: c.inverseLabel ?? entry.value.label,
+          ));
+        }
+      }
+    }
+    return results;
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -134,4 +154,19 @@ class Module extends Equatable {
         guide,
         version,
       ];
+}
+
+class ReverseRelation extends Equatable {
+  final String fromSchema;
+  final String fromField;
+  final String label;
+
+  const ReverseRelation({
+    required this.fromSchema,
+    required this.fromField,
+    required this.label,
+  });
+
+  @override
+  List<Object?> get props => [fromSchema, fromField, label];
 }

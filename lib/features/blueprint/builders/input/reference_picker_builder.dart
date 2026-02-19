@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../schema/models/field_constraints.dart';
 import '../../../schema/models/field_definition.dart';
 import '../../../schema/models/module_schema.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -49,7 +50,8 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
 
   String _resolveSchemaKey(FieldDefinition? field) {
     if (input.schemaKey.isNotEmpty) return input.schemaKey;
-    return field?.constraints['schemaKey'] as String? ?? '';
+    final c = field?.constraints;
+    return c is ReferenceConstraints ? c.targetSchema : '';
   }
 
   ModuleSchema? _getTargetSchema(String schemaKey) {

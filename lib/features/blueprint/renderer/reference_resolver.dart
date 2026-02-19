@@ -1,5 +1,6 @@
 import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
+import '../../schema/models/field_constraints.dart';
 import '../../schema/models/field_type.dart';
 import '../../schema/models/module_schema.dart';
 
@@ -18,9 +19,10 @@ class ReferenceResolver {
       return rawValue.toString();
     }
 
-    final targetSchemaKey = field.constraints['schemaKey'] as String?;
-    if (targetSchemaKey == null) return rawValue.toString();
+    final ref = field.constraints;
+    if (ref is! ReferenceConstraints) return rawValue.toString();
 
+    final targetSchemaKey = ref.targetSchema;
     final targetSchema = module.schemas[targetSchemaKey];
     if (targetSchema == null) return rawValue.toString();
 
@@ -30,7 +32,8 @@ class ReferenceResolver {
         .firstOrNull;
     if (refEntry == null) return rawValue.toString();
 
-    final displayField = _findDisplayField(targetSchema);
+    final displayField =
+        _findDisplayField(targetSchema, refDisplayField: ref.displayField);
     return refEntry.data[displayField]?.toString() ?? rawValue.toString();
   }
 
@@ -46,8 +49,20 @@ class ReferenceResolver {
     return null;
   }
 
-  String _findDisplayField(ModuleSchema schema) {
+  String _findDisplayField(ModuleSchema schema, {String? refDisplayField}) {
+    // 1. Explicit displayField from reference constraint
+    if (refDisplayField != null &&
+        schema.fields.containsKey(refDisplayField)) {
+      return refDisplayField;
+    }
+    // 2. Explicit displayField on the schema itself
+    if (schema.displayField != null &&
+        schema.fields.containsKey(schema.displayField)) {
+      return schema.displayField!;
+    }
+    // 3. Convention: field named 'name'
     if (schema.fields.containsKey('name')) return 'name';
+    // 4. First text field
     for (final e in schema.fields.entries) {
       if (e.value.type == FieldType.text) return e.key;
     }
