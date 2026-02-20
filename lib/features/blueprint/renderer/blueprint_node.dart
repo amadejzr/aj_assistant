@@ -211,13 +211,27 @@ class EntryListNode extends BlueprintNode {
   final Map<String, dynamic> query;
   final dynamic filter;
   final BlueprintNode? itemLayout;
+  final String? title;
+  final String? viewAllScreen;
+  final int? pageSize;
+  final List<Map<String, dynamic>> filters;
 
   const EntryListNode({
     this.query = const {},
     this.filter = const {},
     this.itemLayout,
+    this.title,
+    this.viewAllScreen,
+    this.pageSize,
+    this.filters = const [],
     super.properties,
   }) : super(type: 'entry_list');
+
+  /// Summary mode: has a limit and shows a fixed number of items.
+  bool get isSummary => query.containsKey('limit');
+
+  /// Paginated mode: has a pageSize for infinite scroll.
+  bool get isPaginated => pageSize != null;
 }
 
 class EntryCardNode extends BlueprintNode {

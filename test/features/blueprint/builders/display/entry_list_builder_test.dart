@@ -42,10 +42,14 @@ void main() {
     WidgetRegistry.instance.registerDefaults();
   });
 
+  String? lastNavigatedScreen;
+
   Widget buildWidget({
     EntryListNode? node,
     List<Entry> testEntries = entries,
   }) {
+    lastNavigatedScreen = null;
+
     final listNode = node ??
         const EntryListNode(
           query: {'orderBy': 'amount', 'direction': 'desc'},
@@ -60,7 +64,9 @@ void main() {
       entries: testEntries,
       allEntries: testEntries,
       onFormValueChanged: (_, _) {},
-      onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
+      onNavigateToScreen: (screen, {Map<String, dynamic> params = const {}}) {
+        lastNavigatedScreen = screen;
+      },
     );
 
     return MaterialApp(
@@ -96,7 +102,8 @@ void main() {
     expect(allText.last, 'Coffee');
   });
 
-  testWidgets('limits entries when limit is set', (tester) async {
+  testWidgets('summary mode — limits entries when limit is set',
+      (tester) async {
     await tester.pumpWidget(buildWidget(
       node: const EntryListNode(
         query: {'limit': 2},
@@ -105,7 +112,6 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Should show only 2 of 3 entries
     final noteWidgets = tester.widgetList(find.byType(Text))
         .map((w) => (w as Text).data)
         .where((t) => t != null && ['Coffee', 'Lunch', 'Dinner'].contains(t))
@@ -133,9 +139,8 @@ void main() {
     expect(widget, isNot(isA<SizedBox>()));
   });
 
-  testWidgets('shows "Show more" button when entries exceed display limit',
+  testWidgets('summary mode — shows title and "View all" when entries exceed limit',
       (tester) async {
-    // Create 5 entries but limit display to 2
     const manyEntries = [
       Entry(id: 'e1', data: {'note': 'A', 'amount': 1}),
       Entry(id: 'e2', data: {'note': 'B', 'amount': 2}),
@@ -146,19 +151,21 @@ void main() {
 
     await tester.pumpWidget(buildWidget(
       node: const EntryListNode(
+        title: 'Recent Expenses',
         query: {'limit': 2},
+        viewAllScreen: 'all_expenses',
         itemLayout: EntryCardNode(titleTemplate: '{{note}}'),
       ),
       testEntries: manyEntries,
     ));
     await tester.pumpAndSettle();
 
-    // Should show "Show more" button with remaining count
-    expect(find.textContaining('Show more'), findsOneWidget);
-    expect(find.textContaining('3 remaining'), findsOneWidget);
+    expect(find.text('Recent Expenses'), findsOneWidget);
+    expect(find.text('View all'), findsOneWidget);
   });
 
-  testWidgets('tapping "Show more" reveals more entries', (tester) async {
+  testWidgets('summary mode — tapping "View all" navigates to viewAllScreen',
+      (tester) async {
     const manyEntries = [
       Entry(id: 'e1', data: {'note': 'A', 'amount': 1}),
       Entry(id: 'e2', data: {'note': 'B', 'amount': 2}),
@@ -169,26 +176,40 @@ void main() {
 
     await tester.pumpWidget(buildWidget(
       node: const EntryListNode(
+        title: 'Recent Expenses',
         query: {'limit': 2},
+        viewAllScreen: 'all_expenses',
         itemLayout: EntryCardNode(titleTemplate: '{{note}}'),
       ),
       testEntries: manyEntries,
     ));
     await tester.pumpAndSettle();
 
-    // Initially: 2 visible, 3 hidden
+    // Only 2 items visible
     expect(find.text('A'), findsOneWidget);
     expect(find.text('B'), findsOneWidget);
     expect(find.text('C'), findsNothing);
 
-    // Tap "Show more"
-    await tester.tap(find.textContaining('Show more'));
+    // Tap the title/view all area
+    await tester.tap(find.text('View all'));
     await tester.pumpAndSettle();
 
-    // After tap: all 5 visible (2 + 20 > 5), no "Show more"
-    expect(find.text('A'), findsOneWidget);
-    expect(find.text('C'), findsOneWidget);
-    expect(find.text('E'), findsOneWidget);
-    expect(find.textContaining('Show more'), findsNothing);
+    expect(lastNavigatedScreen, 'all_expenses');
+  });
+
+  testWidgets('summary mode — no "View all" when all entries fit in limit',
+      (tester) async {
+    await tester.pumpWidget(buildWidget(
+      node: const EntryListNode(
+        title: 'Recent Expenses',
+        query: {'limit': 10},
+        viewAllScreen: 'all_expenses',
+        itemLayout: EntryCardNode(titleTemplate: '{{note}}'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recent Expenses'), findsOneWidget);
+    expect(find.text('View all'), findsNothing);
   });
 }

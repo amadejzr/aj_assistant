@@ -71,7 +71,15 @@ class DriftModuleRepository implements ModuleRepository {
 
   @override
   Future<void> deleteModule(String userId, String moduleId) async {
-    await (_db.delete(_db.modules)..where((t) => t.id.equals(moduleId))).go();
+    await _db.transaction(() async {
+      // Delete all entries belonging to this module first
+      await (_db.delete(_db.entries)
+            ..where((t) => t.moduleId.equals(moduleId)))
+          .go();
+      await (_db.delete(_db.modules)
+            ..where((t) => t.id.equals(moduleId)))
+          .go();
+    });
   }
 
   Module _rowToModule(ModuleRow row) {

@@ -238,6 +238,14 @@ class BlueprintParser {
       query: Map<String, dynamic>.from(json['query'] as Map? ?? {}),
       filter: json['filter'] ?? const <String, dynamic>{},
       itemLayout: _parseChild(json['itemLayout']),
+      title: json['title'] as String?,
+      viewAllScreen: json['viewAllScreen'] as String?,
+      pageSize: json['pageSize'] as int?,
+      filters: (json['filters'] as List?)
+              ?.whereType<Map<String, dynamic>>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          const [],
       properties: json,
     );
   }
