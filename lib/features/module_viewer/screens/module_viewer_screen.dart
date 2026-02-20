@@ -124,6 +124,10 @@ class _LoadedViewState extends State<_LoadedView> {
               .then((_) => bloc.add(const ModuleViewerModuleRefreshed()));
           return;
         }
+        if (screenId == '_capabilities') {
+          context.push('/reminders?module=${state.module.id}');
+          return;
+        }
         bloc.add(ModuleViewerScreenChanged(screenId, params: params));
       },
       onNavigateBack: () {

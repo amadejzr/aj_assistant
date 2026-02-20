@@ -1,3 +1,4 @@
+import 'package:aj_assistant/core/repositories/drift_entry_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,11 +10,16 @@ import 'core/logging/console_log_backend.dart';
 import 'core/logging/log.dart';
 import 'core/repositories/entry_repository.dart';
 import 'core/repositories/marketplace_repository.dart';
+import 'core/database/app_database.dart';
+import 'core/repositories/drift_module_repository.dart';
 import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
 import 'features/blueprint/renderer/widget_registry.dart';
+import 'features/capabilities/repositories/capability_repository.dart';
+import 'features/capabilities/repositories/drift_capability_repository.dart';
+import 'features/capabilities/services/notification_scheduler.dart';
 import 'features/chat/repositories/chat_repository.dart';
 import 'firebase_options.dart';
 
@@ -36,25 +42,39 @@ void main() async {
 
   final authService = AuthService();
   final userService = UserService();
-  final moduleRepository = FirestoreModuleRepository();
-  final entryRepository = FirestoreEntryRepository();
+  final db = AppDatabase();
+  final moduleRepository = DriftModuleRepository(db);
+  final entryRepository = DriftEntryRepository(db);
+  final capabilityRepository = DriftCapabilityRepository(db);
   final chatRepository = ChatRepository();
   final marketplaceRepository = FirestoreMarketplaceRepository();
+
+  // Initialize notification scheduler
+  final notificationScheduler = NotificationScheduler(capabilityRepository);
+  await notificationScheduler.initialize();
+  await notificationScheduler.requestPermissions();
+  await notificationScheduler.rescheduleAll();
 
   runApp(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
         RepositoryProvider<EntryRepository>.value(value: entryRepository),
+        RepositoryProvider<CapabilityRepository>.value(
+          value: capabilityRepository,
+        ),
         RepositoryProvider<ChatRepository>.value(value: chatRepository),
         RepositoryProvider<MarketplaceRepository>.value(
-            value: marketplaceRepository),
+          value: marketplaceRepository,
+        ),
+        RepositoryProvider<NotificationScheduler>.value(
+          value: notificationScheduler,
+        ),
       ],
       child: BlocProvider(
-        create: (_) => AuthBloc(
-          authService: authService,
-          userService: userService,
-        )..startListening(),
+        create: (_) =>
+            AuthBloc(authService: authService, userService: userService)
+              ..startListening(),
         child: const AJAssistantApp(),
       ),
     ),

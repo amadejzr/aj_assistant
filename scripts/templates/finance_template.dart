@@ -413,56 +413,52 @@ const financeTemplate = {
               },
             },
             {
-              'type': 'section',
-              'title': 'Recent Spending',
-              'children': [
+              'type': 'conditional',
+              'condition': {
+                'expression': 'count(where(schemaKey, ==, expense))',
+                'op': '>',
+                'value': 0,
+              },
+              'then': [
                 {
-                  'type': 'conditional',
-                  'condition': {
-                    'expression': 'count(where(schemaKey, ==, expense))',
-                    'op': '>',
-                    'value': 0,
+                  'type': 'entry_list',
+                  'title': 'Recent Spending',
+                  'viewAllScreen': 'all_expenses',
+                  'filter': [
+                    {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                  ],
+                  'query': {
+                    'orderBy': 'date',
+                    'direction': 'desc',
+                    'limit': 3,
                   },
-                  'then': [
-                    {
-                      'type': 'entry_list',
-                      'filter': [
-                        {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+                  'itemLayout': {
+                    'type': 'entry_card',
+                    'title': '{{note}}',
+                    'subtitle': '{{category}} · {{account}}',
+                    'trailing': '{{amount}}',
+                    'trailingFormat': 'currency',
+                    'onTap': {
+                      'type': 'navigate',
+                      'screen': 'edit_expense',
+                      'forwardFields': [
+                        'amount',
+                        'category',
+                        'account',
+                        'note',
+                        'date',
                       ],
-                      'query': {
-                        'orderBy': 'date',
-                        'direction': 'desc',
-                        'limit': 3,
-                      },
-                      'itemLayout': {
-                        'type': 'entry_card',
-                        'title': '{{note}}',
-                        'subtitle': '{{category}} · {{account}}',
-                        'trailing': '{{amount}}',
-                        'trailingFormat': 'currency',
-                        'onTap': {
-                          'type': 'navigate',
-                          'screen': 'edit_expense',
-                          'forwardFields': [
-                            'amount',
-                            'category',
-                            'account',
-                            'note',
-                            'date',
-                          ],
-                          'params': {'_schemaKey': 'expense'},
-                        },
-                      },
+                      'params': {'_schemaKey': 'expense'},
                     },
-                  ],
-                  'else': [
-                    {
-                      'type': 'empty_state',
-                      'icon': 'receipt',
-                      'title': 'No expenses yet',
-                      'subtitle': 'Tap + to log your first expense',
-                    },
-                  ],
+                  },
+                },
+              ],
+              'else': [
+                {
+                  'type': 'empty_state',
+                  'icon': 'receipt',
+                  'title': 'No expenses yet',
+                  'subtitle': 'Tap + to log your first expense',
                 },
               ],
             },
@@ -543,91 +539,83 @@ const financeTemplate = {
               ],
             },
             {
-              'type': 'section',
-              'title': 'All Expenses',
-              'children': [
-                {
-                  'type': 'entry_list',
-                  'filter': [
-                    {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+              'type': 'entry_list',
+              'title': 'Expenses',
+              'viewAllScreen': 'all_expenses',
+              'filter': [
+                {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+              ],
+              'query': {
+                'orderBy': 'date',
+                'direction': 'desc',
+                'limit': 5,
+              },
+              'itemLayout': {
+                'type': 'entry_card',
+                'title': '{{note}}',
+                'subtitle': '{{category}} · {{account}}',
+                'trailing': '{{amount}}',
+                'trailingFormat': 'currency',
+                'onTap': {
+                  'type': 'navigate',
+                  'screen': 'edit_expense',
+                  'forwardFields': [
+                    'amount',
+                    'category',
+                    'account',
+                    'note',
+                    'date',
                   ],
-                  'query': {
-                    'orderBy': 'date',
-                    'direction': 'desc',
-                    'limit': 30,
-                  },
-                  'itemLayout': {
-                    'type': 'entry_card',
-                    'title': '{{note}}',
-                    'subtitle': '{{category}} · {{account}}',
-                    'trailing': '{{amount}}',
-                    'trailingFormat': 'currency',
-                    'onTap': {
-                      'type': 'navigate',
-                      'screen': 'edit_expense',
-                      'forwardFields': [
-                        'amount',
-                        'category',
-                        'account',
-                        'note',
-                        'date',
-                      ],
-                      'params': {'_schemaKey': 'expense'},
-                    },
-                    'swipeActions': {
-                      'right': {
-                        'type': 'confirm',
-                        'title': 'Delete Expense',
-                        'message': 'Delete this expense? The account balance will be adjusted.',
-                        'onConfirm': {'type': 'delete_entry'},
-                      },
-                    },
+                  'params': {'_schemaKey': 'expense'},
+                },
+                'swipeActions': {
+                  'right': {
+                    'type': 'confirm',
+                    'title': 'Delete Expense',
+                    'message': 'Delete this expense? The account balance will be adjusted.',
+                    'onConfirm': {'type': 'delete_entry'},
                   },
                 },
-              ],
+              },
             },
             {
-              'type': 'section',
+              'type': 'entry_list',
               'title': 'Income',
-              'children': [
-                {
-                  'type': 'entry_list',
-                  'filter': [
-                    {'field': 'schemaKey', 'op': '==', 'value': 'income'},
+              'viewAllScreen': 'all_income',
+              'filter': [
+                {'field': 'schemaKey', 'op': '==', 'value': 'income'},
+              ],
+              'query': {
+                'orderBy': 'date',
+                'direction': 'desc',
+                'limit': 5,
+              },
+              'itemLayout': {
+                'type': 'entry_card',
+                'title': '{{source}}',
+                'subtitle': '{{date}} · {{account}}',
+                'trailing': '{{amount}}',
+                'trailingFormat': 'currency',
+                'onTap': {
+                  'type': 'navigate',
+                  'screen': 'edit_income',
+                  'forwardFields': [
+                    'amount',
+                    'source',
+                    'account',
+                    'date',
                   ],
-                  'query': {
-                    'orderBy': 'date',
-                    'direction': 'desc',
-                    'limit': 10,
-                  },
-                  'itemLayout': {
-                    'type': 'entry_card',
-                    'title': '{{source}}',
-                    'subtitle': '{{date}} · {{account}}',
-                    'trailing': '{{amount}}',
-                    'trailingFormat': 'currency',
-                    'onTap': {
-                      'type': 'navigate',
-                      'screen': 'edit_income',
-                      'forwardFields': [
-                        'amount',
-                        'source',
-                        'account',
-                        'date',
-                      ],
-                      'params': {'_schemaKey': 'income'},
-                    },
-                    'swipeActions': {
-                      'right': {
-                        'type': 'confirm',
-                        'title': 'Delete Income',
-                        'message': 'Delete this income entry?',
-                        'onConfirm': {'type': 'delete_entry'},
-                      },
-                    },
+                  'params': {'_schemaKey': 'income'},
+                },
+                'swipeActions': {
+                  'right': {
+                    'type': 'confirm',
+                    'title': 'Delete Income',
+                    'message': 'Delete this income entry?',
+                    'onConfirm': {'type': 'delete_entry'},
                   },
                 },
-              ],
+              },
             },
           ],
         },
@@ -788,49 +776,45 @@ const financeTemplate = {
               ],
             },
             {
-              'type': 'section',
+              'type': 'entry_list',
               'title': 'Recent Transfers',
-              'children': [
-                {
-                  'type': 'entry_list',
-                  'filter': [
-                    {'field': 'schemaKey', 'op': '==', 'value': 'transfer'},
+              'viewAllScreen': 'all_transfers',
+              'filter': [
+                {'field': 'schemaKey', 'op': '==', 'value': 'transfer'},
+              ],
+              'query': {
+                'orderBy': 'date',
+                'direction': 'desc',
+                'limit': 5,
+              },
+              'itemLayout': {
+                'type': 'entry_card',
+                'title': '{{fromAccount}} → {{toAccount}}',
+                'subtitle': '{{note}}',
+                'trailing': '{{amount}}',
+                'trailingFormat': 'currency',
+                'onTap': {
+                  'type': 'navigate',
+                  'screen': 'edit_transfer',
+                  'forwardFields': [
+                    'amount',
+                    'fromAccount',
+                    'toAccount',
+                    'note',
+                    'date',
                   ],
-                  'query': {
-                    'orderBy': 'date',
-                    'direction': 'desc',
-                    'limit': 10,
-                  },
-                  'itemLayout': {
-                    'type': 'entry_card',
-                    'title': '{{fromAccount}} → {{toAccount}}',
-                    'subtitle': '{{note}}',
-                    'trailing': '{{amount}}',
-                    'trailingFormat': 'currency',
-                    'onTap': {
-                      'type': 'navigate',
-                      'screen': 'edit_transfer',
-                      'forwardFields': [
-                        'amount',
-                        'fromAccount',
-                        'toAccount',
-                        'note',
-                        'date',
-                      ],
-                      'params': {'_schemaKey': 'transfer'},
-                    },
-                    'swipeActions': {
-                      'right': {
-                        'type': 'confirm',
-                        'title': 'Delete Transfer',
-                        'message':
-                            'Delete this transfer? Balances will be reversed.',
-                        'onConfirm': {'type': 'delete_entry'},
-                      },
-                    },
+                  'params': {'_schemaKey': 'transfer'},
+                },
+                'swipeActions': {
+                  'right': {
+                    'type': 'confirm',
+                    'title': 'Delete Transfer',
+                    'message':
+                        'Delete this transfer? Balances will be reversed.',
+                    'onConfirm': {'type': 'delete_entry'},
                   },
                 },
-              ],
+              },
             },
           ],
         },
@@ -1157,6 +1141,183 @@ const financeTemplate = {
         {'type': 'text_input', 'fieldKey': 'note'},
         {'type': 'date_picker', 'fieldKey': 'date'},
       ],
+    },
+
+    // ═══════════════════════════════════════════
+    //  VIEW ALL — Paginated full lists
+    // ═══════════════════════════════════════════
+    'all_expenses': {
+      'id': 'all_expenses',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'All Expenses',
+      },
+      'children': [
+        {
+          'type': 'entry_list',
+          'filter': [
+            {'field': 'schemaKey', 'op': '==', 'value': 'expense'},
+          ],
+          'query': {'orderBy': 'date', 'direction': 'desc'},
+          'pageSize': 20,
+          'filters': [
+            {'field': 'category', 'type': 'enum', 'label': 'All'},
+            {'field': 'date', 'type': 'period', 'label': 'All Time'},
+          ],
+          'itemLayout': {
+            'type': 'entry_card',
+            'title': '{{note}}',
+            'subtitle': '{{category}} · {{account}}',
+            'trailing': '{{amount}}',
+            'trailingFormat': 'currency',
+            'onTap': {
+              'type': 'navigate',
+              'screen': 'edit_expense',
+              'forwardFields': [
+                'amount',
+                'category',
+                'account',
+                'note',
+                'date',
+              ],
+              'params': {'_schemaKey': 'expense'},
+            },
+            'swipeActions': {
+              'right': {
+                'type': 'confirm',
+                'title': 'Delete Expense',
+                'message':
+                    'Delete this expense? The account balance will be adjusted.',
+                'onConfirm': {'type': 'delete_entry'},
+              },
+            },
+          },
+        },
+      ],
+      'fab': {
+        'type': 'fab',
+        'icon': 'add',
+        'action': {
+          'type': 'navigate',
+          'screen': 'add_expense',
+          'params': {'_schemaKey': 'expense'},
+        },
+      },
+    },
+    'all_income': {
+      'id': 'all_income',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'All Income',
+      },
+      'children': [
+        {
+          'type': 'entry_list',
+          'filter': [
+            {'field': 'schemaKey', 'op': '==', 'value': 'income'},
+          ],
+          'query': {'orderBy': 'date', 'direction': 'desc'},
+          'pageSize': 20,
+          'filters': [
+            {'field': 'date', 'type': 'period', 'label': 'All Time'},
+          ],
+          'itemLayout': {
+            'type': 'entry_card',
+            'title': '{{source}}',
+            'subtitle': '{{date}} · {{account}}',
+            'trailing': '{{amount}}',
+            'trailingFormat': 'currency',
+            'onTap': {
+              'type': 'navigate',
+              'screen': 'edit_income',
+              'forwardFields': [
+                'amount',
+                'source',
+                'account',
+                'date',
+              ],
+              'params': {'_schemaKey': 'income'},
+            },
+            'swipeActions': {
+              'right': {
+                'type': 'confirm',
+                'title': 'Delete Income',
+                'message': 'Delete this income entry?',
+                'onConfirm': {'type': 'delete_entry'},
+              },
+            },
+          },
+        },
+      ],
+      'fab': {
+        'type': 'fab',
+        'icon': 'add',
+        'action': {
+          'type': 'navigate',
+          'screen': 'add_income',
+          'params': {'_schemaKey': 'income'},
+        },
+      },
+    },
+    'all_transfers': {
+      'id': 'all_transfers',
+      'type': 'screen',
+      'appBar': {
+        'type': 'app_bar',
+        'title': 'All Transfers',
+      },
+      'children': [
+        {
+          'type': 'entry_list',
+          'filter': [
+            {'field': 'schemaKey', 'op': '==', 'value': 'transfer'},
+          ],
+          'query': {'orderBy': 'date', 'direction': 'desc'},
+          'pageSize': 20,
+          'filters': [
+            {'field': 'date', 'type': 'period', 'label': 'All Time'},
+          ],
+          'itemLayout': {
+            'type': 'entry_card',
+            'title': '{{fromAccount}} → {{toAccount}}',
+            'subtitle': '{{note}}',
+            'trailing': '{{amount}}',
+            'trailingFormat': 'currency',
+            'onTap': {
+              'type': 'navigate',
+              'screen': 'edit_transfer',
+              'forwardFields': [
+                'amount',
+                'fromAccount',
+                'toAccount',
+                'note',
+                'date',
+              ],
+              'params': {'_schemaKey': 'transfer'},
+            },
+            'swipeActions': {
+              'right': {
+                'type': 'confirm',
+                'title': 'Delete Transfer',
+                'message':
+                    'Delete this transfer? Balances will be reversed.',
+                'onConfirm': {'type': 'delete_entry'},
+              },
+            },
+          },
+        },
+      ],
+      'fab': {
+        'type': 'fab',
+        'icon': 'add',
+        'action': {
+          'type': 'navigate',
+          'screen': 'add_transfer',
+          'params': {'_schemaKey': 'transfer'},
+        },
+      },
     },
   },
 };

@@ -523,6 +523,50 @@ class BpSwipeActions extends Equatable {
   List<Object?> get props => [left, right];
 }
 
+// ─── List Filters ───
+
+/// Filter chip definition for entry_list filter bars.
+sealed class BpListFilter extends Equatable {
+  const BpListFilter();
+  Map<String, dynamic> toJson();
+}
+
+/// Enum field filter — renders a chip per option (from schema).
+class BpEnumFilter extends BpListFilter {
+  final String field;
+  final String? label;
+
+  const BpEnumFilter({required this.field, this.label});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'field': field,
+        'type': 'enum',
+        if (label != null) 'label': label,
+      };
+
+  @override
+  List<Object?> get props => [field, label];
+}
+
+/// Date period filter — renders "All Time", "This Week", "This Month", etc.
+class BpPeriodFilter extends BpListFilter {
+  final String field;
+  final String? label;
+
+  const BpPeriodFilter({required this.field, this.label});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'field': field,
+        'type': 'period',
+        if (label != null) 'label': label,
+      };
+
+  @override
+  List<Object?> get props => [field, label];
+}
+
 // ─── Display ───
 
 class BpStatCard extends Blueprint {
@@ -555,8 +599,20 @@ class BpEntryList extends Blueprint {
   final BpQuery? query;
   final List<BpFilter> filter;
   final BpEntryCard? itemLayout;
+  final String? title;
+  final String? viewAllScreen;
+  final int? pageSize;
+  final List<BpListFilter> filters;
 
-  const BpEntryList({this.query, this.filter = const [], this.itemLayout});
+  const BpEntryList({
+    this.query,
+    this.filter = const [],
+    this.itemLayout,
+    this.title,
+    this.viewAllScreen,
+    this.pageSize,
+    this.filters = const [],
+  });
 
   @override
   Map<String, dynamic> toJson() => {
@@ -564,10 +620,23 @@ class BpEntryList extends Blueprint {
         if (query != null) 'query': query!.toJson(),
         if (filter.isNotEmpty) 'filter': [for (final f in filter) f.toJson()],
         if (itemLayout != null) 'itemLayout': itemLayout!.toJson(),
+        if (title != null) 'title': title,
+        if (viewAllScreen != null) 'viewAllScreen': viewAllScreen,
+        if (pageSize != null) 'pageSize': pageSize,
+        if (filters.isNotEmpty)
+          'filters': [for (final f in filters) f.toJson()],
       };
 
   @override
-  List<Object?> get props => [query, filter, itemLayout];
+  List<Object?> get props => [
+        query,
+        filter,
+        itemLayout,
+        title,
+        viewAllScreen,
+        pageSize,
+        filters,
+      ];
 }
 
 class BpEntryCard extends Blueprint {

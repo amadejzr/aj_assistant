@@ -17,6 +17,7 @@ import '../auth/widgets/paper_background.dart';
 import '../modules/bloc/modules_list_bloc.dart';
 import '../modules/bloc/modules_list_event.dart';
 import '../modules/bloc/modules_list_state.dart';
+import 'widgets/upcoming_reminders_section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -124,6 +125,14 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
                           : SliverMainAxisGroup(
                               slivers: [
                                 _buildModulesSection(context, colors, modules),
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.screenPadding,
+                                    ),
+                                    child: const UpcomingRemindersSection(),
+                                  ),
+                                ),
                                 SliverToBoxAdapter(
                                   child: _buildMarketplaceCard(context, colors),
                                 ),
@@ -362,52 +371,10 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
   }
 
   Future<void> _confirmDeleteModule(Module module) async {
-    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colors.surface,
-        title: Text(
-          'Delete "${module.name}"?',
-          style: TextStyle(
-            fontFamily: 'CormorantGaramond',
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            color: colors.onBackground,
-          ),
-        ),
-        content: Text(
-          'This will permanently remove the module and all its data.',
-          style: TextStyle(
-            fontFamily: 'Karla',
-            fontSize: 14,
-            color: colors.onBackgroundMuted,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'Karla',
-                color: colors.onBackgroundMuted,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              'Delete',
-              style: TextStyle(
-                fontFamily: 'Karla',
-                fontWeight: FontWeight.w700,
-                color: colors.error,
-              ),
-            ),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (_) => _DeleteModuleDialog(module: module),
     );
 
     if (confirmed != true || !mounted) return;
@@ -505,6 +472,263 @@ class _ModuleCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteModuleDialog extends StatefulWidget {
+  final Module module;
+
+  const _DeleteModuleDialog({required this.module});
+
+  @override
+  State<_DeleteModuleDialog> createState() => _DeleteModuleDialogState();
+}
+
+class _DeleteModuleDialogState extends State<_DeleteModuleDialog>
+    with SingleTickerProviderStateMixin {
+  final _controller = TextEditingController();
+  bool _matches = false;
+  late final AnimationController _animController;
+  late final Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final matches =
+          _controller.text.trim().toLowerCase() ==
+          widget.module.name.trim().toLowerCase();
+      if (matches != _matches) setState(() => _matches = matches);
+    });
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _scaleAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutBack,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return ScaleTransition(
+      scale: _scaleAnim,
+      child: Dialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colors.border),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Module icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: colors.error.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  resolveModuleIcon(widget.module.icon),
+                  color: colors.error,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Delete Module',
+                style: TextStyle(
+                  fontFamily: 'CormorantGaramond',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: colors.onBackground,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Warning box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colors.error.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: colors.error.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      PhosphorIcons.warning(PhosphorIconsStyle.fill),
+                      color: colors.error,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'This will permanently delete "${widget.module.name}" '
+                        'and all its entries. This action cannot be undone.',
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 13,
+                          height: 1.4,
+                          color: colors.onBackground,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Instruction
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Type "${widget.module.name}" to confirm',
+                  style: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colors.onBackgroundMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Text field
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 15,
+                  color: colors.onBackground,
+                ),
+                decoration: InputDecoration(
+                  hintText: widget.module.name,
+                  hintStyle: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 15,
+                    color: colors.onBackgroundMuted.withValues(alpha: 0.4),
+                  ),
+                  filled: true,
+                  fillColor: colors.background,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: colors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: colors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: _matches ? colors.error : colors.accent,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(false),
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: colors.border),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontFamily: 'Karla',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colors.onBackgroundMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AnimatedOpacity(
+                      opacity: _matches ? 1.0 : 0.4,
+                      duration: const Duration(milliseconds: 200),
+                      child: GestureDetector(
+                        onTap: _matches
+                            ? () => Navigator.of(context).pop(true)
+                            : null,
+                        child: Container(
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: colors.error,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                PhosphorIcons.trash(PhosphorIconsStyle.bold),
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontFamily: 'Karla',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
