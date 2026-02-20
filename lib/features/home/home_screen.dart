@@ -17,6 +17,7 @@ import '../auth/widgets/paper_background.dart';
 import '../modules/bloc/modules_list_bloc.dart';
 import '../modules/bloc/modules_list_event.dart';
 import '../modules/bloc/modules_list_state.dart';
+import 'widgets/upcoming_reminders_section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -124,6 +125,14 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
                           : SliverMainAxisGroup(
                               slivers: [
                                 _buildModulesSection(context, colors, modules),
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.screenPadding,
+                                    ),
+                                    child: const UpcomingRemindersSection(),
+                                  ),
+                                ),
                                 SliverToBoxAdapter(
                                   child: _buildMarketplaceCard(context, colors),
                                 ),
