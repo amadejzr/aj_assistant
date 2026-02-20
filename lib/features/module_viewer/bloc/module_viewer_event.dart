@@ -22,10 +22,18 @@ class ModuleViewerScreenChanged extends ModuleViewerEvent {
   final String screenId;
   final Map<String, dynamic> params;
 
-  const ModuleViewerScreenChanged(this.screenId, {this.params = const {}});
+  /// When true, clears the navigation stack instead of pushing onto it.
+  /// Use for top-level destinations (bottom nav tabs, drawer items).
+  final bool clearStack;
+
+  const ModuleViewerScreenChanged(
+    this.screenId, {
+    this.params = const {},
+    this.clearStack = false,
+  });
 
   @override
-  List<Object?> get props => [screenId, params];
+  List<Object?> get props => [screenId, params, clearStack];
 }
 
 class ModuleViewerNavigateBack extends ModuleViewerEvent {

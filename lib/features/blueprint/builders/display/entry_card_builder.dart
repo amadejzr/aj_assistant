@@ -69,11 +69,26 @@ class _EntryCardWidget extends StatelessWidget {
         ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
 
     return template.replaceAllMapped(
-      RegExp(r'\{\{(\w+)\}\}'),
+      RegExp(r'\{\{([\w.]+)\}\}'),
       (match) {
-        final key = match.group(1)!;
-        final value = data[key];
-        final resolved = resolver.resolve(key, value, schemaKey: schemaKey);
+        final expr = match.group(1)!;
+        final dotIndex = expr.indexOf('.');
+        if (dotIndex != -1) {
+          // Dot notation: {{field.subField}} — resolve a specific field
+          // from the referenced entry
+          final fieldKey = expr.substring(0, dotIndex);
+          final subField = expr.substring(dotIndex + 1);
+          final value = data[fieldKey];
+          final resolved = resolver.resolveField(
+            fieldKey,
+            subField,
+            value,
+            schemaKey: schemaKey,
+          );
+          return resolved.isNotEmpty ? resolved : _formatValue(value);
+        }
+        final value = data[expr];
+        final resolved = resolver.resolve(expr, value, schemaKey: schemaKey);
         // If resolver returned the raw value, format it (dates, etc.)
         if (resolved == (value?.toString() ?? '')) {
           return _formatValue(value);
@@ -227,21 +242,17 @@ class _EntryCardWidget extends StatelessWidget {
         key: ValueKey('swipe_$entryId'),
         direction: DismissDirection.endToStart,
         confirmDismiss: (_) async {
-          final confirm = rightAction['confirm'] as bool? ?? false;
-          if (!confirm) return true;
-          return _showConfirmDialog(
-            context,
-            rightAction['confirmMessage'] as String? ?? 'Delete this entry?',
-            colors,
-          );
-        },
-        onDismissed: (_) {
+          // Dispatch the action (may show a confirm dialog internally).
+          // Always return false — let the Firestore update remove the
+          // widget from the tree naturally, avoiding "dismissed Dismissible
+          // still part of the tree" errors.
           BlueprintActionDispatcher.dispatch(
             rightAction,
             ctx,
             context,
             entryId: entryId,
           );
+          return false;
         },
         background: Container(
           alignment: Alignment.centerRight,
@@ -260,50 +271,4 @@ class _EntryCardWidget extends StatelessWidget {
     return tappable;
   }
 
-  Future<bool> _showConfirmDialog(
-    BuildContext context,
-    String message,
-    dynamic colors,
-  ) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: colors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Confirm',
-          style: TextStyle(
-            fontFamily: 'Karla',
-            fontWeight: FontWeight.w600,
-            color: colors.onBackground,
-          ),
-        ),
-        content: Text(
-          message,
-          style: TextStyle(fontFamily: 'Karla', color: colors.onBackground),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(fontFamily: 'Karla', color: colors.onBackgroundMuted),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: Text(
-              'Delete',
-              style: TextStyle(
-                fontFamily: 'Karla',
-                color: colors.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
 }

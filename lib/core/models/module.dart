@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../features/blueprint/navigation/module_navigation.dart';
 import '../../features/schema/models/field_constraints.dart';
 import '../../features/schema/models/module_schema.dart';
 
@@ -16,6 +17,7 @@ class Module extends Equatable {
   final Map<String, dynamic> settings;
   final List<Map<String, String>> guide;
   final int version;
+  final ModuleNavigation? navigation;
 
   const Module({
     required this.id,
@@ -29,6 +31,7 @@ class Module extends Equatable {
     this.settings = const {},
     this.guide = const [],
     this.version = 1,
+    this.navigation,
   });
 
   ModuleSchema get schema => schemas['default'] ?? const ModuleSchema();
@@ -45,6 +48,7 @@ class Module extends Equatable {
     Map<String, dynamic>? settings,
     List<Map<String, String>>? guide,
     int? version,
+    ModuleNavigation? navigation,
   }) {
     return Module(
       id: id ?? this.id,
@@ -58,6 +62,7 @@ class Module extends Equatable {
       settings: settings ?? this.settings,
       guide: guide ?? this.guide,
       version: version ?? this.version,
+      navigation: navigation ?? this.navigation,
     );
   }
 
@@ -79,6 +84,10 @@ class Module extends Equatable {
               .toList() ??
           [],
       version: data['version'] as int? ?? 1,
+      navigation: data['navigation'] != null
+          ? ModuleNavigation.fromJson(
+              Map<String, dynamic>.from(data['navigation'] as Map))
+          : null,
     );
   }
 
@@ -96,6 +105,7 @@ class Module extends Equatable {
       'settings': settings,
       'guide': guide,
       'version': version,
+      if (navigation != null) 'navigation': navigation!.toJson(),
     };
   }
 
@@ -153,6 +163,7 @@ class Module extends Equatable {
         settings,
         guide,
         version,
+        navigation,
       ];
 }
 

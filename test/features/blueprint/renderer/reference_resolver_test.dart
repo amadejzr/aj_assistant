@@ -221,6 +221,78 @@ void main() {
       expect(r.resolve('ref', 'acc1', schemaKey: 'default'), 'CHK');
     });
 
+    group('resolveField (dot notation)', () {
+      test('resolves specific subfield from referenced entry', () {
+        final result = resolver.resolveField(
+          'account',
+          'balance',
+          'acc1',
+          schemaKey: 'expense',
+        );
+        expect(result, '1000');
+      });
+
+      test('resolves text subfield from referenced entry', () {
+        final result = resolver.resolveField(
+          'account',
+          'title',
+          'acc1',
+          schemaKey: 'expense',
+        );
+        expect(result, 'Checking');
+      });
+
+      test('resolves name from category reference', () {
+        final result = resolver.resolveField(
+          'category',
+          'name',
+          'cat1',
+          schemaKey: 'expense',
+        );
+        expect(result, 'Food');
+      });
+
+      test('returns empty string for null value', () {
+        final result = resolver.resolveField(
+          'category',
+          'name',
+          null,
+          schemaKey: 'expense',
+        );
+        expect(result, '');
+      });
+
+      test('returns empty string for non-reference field', () {
+        final result = resolver.resolveField(
+          'note',
+          'something',
+          'Lunch',
+          schemaKey: 'expense',
+        );
+        expect(result, '');
+      });
+
+      test('returns empty string when referenced entry not found', () {
+        final result = resolver.resolveField(
+          'category',
+          'name',
+          'nonexistent',
+          schemaKey: 'expense',
+        );
+        expect(result, '');
+      });
+
+      test('returns empty string when subfield not in referenced entry', () {
+        final result = resolver.resolveField(
+          'category',
+          'nonexistent_field',
+          'cat1',
+          schemaKey: 'expense',
+        );
+        expect(result, '');
+      });
+    });
+
     test('uses schema displayField when no ref displayField', () {
       const moduleWithSchemaDisplay = Module(
         id: 'test',

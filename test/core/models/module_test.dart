@@ -1,4 +1,5 @@
 import 'package:aj_assistant/core/models/module.dart';
+import 'package:aj_assistant/features/blueprint/navigation/module_navigation.dart';
 import 'package:aj_assistant/features/schema/models/field_definition.dart';
 import 'package:aj_assistant/features/schema/models/field_type.dart';
 import 'package:aj_assistant/features/schema/models/module_schema.dart';
@@ -132,6 +133,42 @@ void main() {
         schemas: {'other': ModuleSchema(label: 'Other')},
       );
       expect(module.schema, equals(const ModuleSchema()));
+    });
+
+    test('Module with navigation roundtrips through toFirestore', () {
+      const module = Module(
+        id: 'test',
+        name: 'Test',
+        navigation: ModuleNavigation(
+          bottomNav: BottomNav(items: [
+            NavItem(label: 'Home', icon: 'home', screenId: 'main'),
+            NavItem(label: 'Stats', icon: 'chart', screenId: 'stats'),
+          ]),
+        ),
+      );
+      final json = module.toFirestore();
+      expect(json['navigation'], isNotNull);
+      expect(
+          (json['navigation']['bottomNav']['items'] as List).length, 2);
+    });
+
+    test('Module without navigation — backward compat', () {
+      const module = Module(id: 'test', name: 'Test');
+      final json = module.toFirestore();
+      expect(json.containsKey('navigation'), false);
+    });
+
+    test('copyWith navigation', () {
+      const module = Module(id: 'test', name: 'Test');
+      final updated = module.copyWith(
+        navigation: const ModuleNavigation(
+          bottomNav: BottomNav(items: [
+            NavItem(label: 'Home', icon: 'home', screenId: 'main'),
+          ]),
+        ),
+      );
+      expect(updated.navigation, isNotNull);
+      expect(updated.navigation!.bottomNav!.items.length, 1);
     });
   });
 }

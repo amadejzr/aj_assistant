@@ -37,6 +37,33 @@ class ReferenceResolver {
     return refEntry.data[displayField]?.toString() ?? rawValue.toString();
   }
 
+  /// Resolves a dot-notation reference like `category.name`:
+  /// looks up the referenced entry via [fieldKey] and returns [subField] from it.
+  /// Returns empty string if resolution fails at any step.
+  String resolveField(
+    String fieldKey,
+    String subField,
+    dynamic rawValue, {
+    String? schemaKey,
+  }) {
+    if (rawValue == null) return '';
+    final field = _getField(fieldKey, schemaKey);
+    if (field == null || field.type != FieldType.reference) return '';
+
+    final ref = field.constraints;
+    if (ref is! ReferenceConstraints) return '';
+
+    final targetSchemaKey = ref.targetSchema;
+
+    final refEntry = allEntries
+        .where(
+            (e) => e.id == rawValue.toString() && e.schemaKey == targetSchemaKey)
+        .firstOrNull;
+    if (refEntry == null) return '';
+
+    return refEntry.data[subField]?.toString() ?? '';
+  }
+
   dynamic _getField(String fieldKey, String? schemaKey) {
     if (schemaKey != null) {
       return module.schemas[schemaKey]?.fields[fieldKey];
