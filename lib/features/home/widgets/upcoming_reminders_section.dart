@@ -19,8 +19,6 @@ class UpcomingRemindersSection extends StatelessWidget {
       stream: repository.watchEnabledCapabilities(limit: 3),
       builder: (context, snapshot) {
         final reminders = snapshot.data ?? [];
-        if (reminders.isEmpty) return const SizedBox.shrink();
-
         final colors = context.colors;
 
         return Padding(
@@ -33,7 +31,7 @@ class UpcomingRemindersSection extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Upcoming reminders',
+                    'Reminders',
                     style: TextStyle(
                       fontFamily: 'Karla',
                       fontSize: 16,
@@ -41,29 +39,84 @@ class UpcomingRemindersSection extends StatelessWidget {
                       color: colors.onBackground,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => context.push('/reminders'),
-                    child: Text(
-                      'See all',
-                      style: TextStyle(
-                        fontFamily: 'Karla',
-                        fontSize: 13,
-                        color: colors.accent,
+                  if (reminders.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => context.push('/reminders'),
+                      child: Text(
+                        'See all',
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 13,
+                          color: colors.accent,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              // Reminder cards
-              ...List.generate(reminders.length, (index) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    top: index == 0 ? 0 : 8,
+              if (reminders.isEmpty)
+                // Empty state — prompt to create first reminder
+                GestureDetector(
+                  onTap: () => context.push('/reminders'),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      border: Border.all(color: colors.border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          PhosphorIcons.bellRinging(PhosphorIconsStyle.duotone),
+                          color: colors.onBackgroundMuted,
+                          size: 24,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'No reminders yet',
+                                style: TextStyle(
+                                  fontFamily: 'Karla',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.onBackground,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Set up reminders to stay on track',
+                                style: TextStyle(
+                                  fontFamily: 'Karla',
+                                  fontSize: 12,
+                                  color: colors.onBackgroundMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                          color: colors.onBackgroundMuted,
+                          size: 16,
+                        ),
+                      ],
+                    ),
                   ),
-                  child: _ReminderRow(capability: reminders[index]),
-                );
-              }),
+                )
+              else
+                // Reminder cards
+                ...List.generate(reminders.length, (index) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      top: index == 0 ? 0 : 8,
+                    ),
+                    child: _ReminderRow(capability: reminders[index]),
+                  );
+                }),
             ],
           ),
         );
