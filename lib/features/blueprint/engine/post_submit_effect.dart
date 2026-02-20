@@ -1,5 +1,5 @@
 import '../../../core/models/entry.dart';
-import '../../schema/models/schema_effect.dart';
+import '../../modules/models/schema_effect.dart';
 
 /// Computes entry updates from effects declared in schema definitions.
 ///

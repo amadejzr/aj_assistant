@@ -13,7 +13,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../../schema/models/field_definition.dart';
+import '../../modules/models/field_definition.dart';
 import '../bloc/marketplace_bloc.dart';
 import '../bloc/marketplace_event.dart';
 import '../bloc/marketplace_state.dart';

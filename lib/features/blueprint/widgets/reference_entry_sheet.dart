@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../schema/models/field_definition.dart';
-import '../../schema/models/field_type.dart';
-import '../../schema/models/module_schema.dart';
+import '../../modules/models/field_definition.dart';
+import '../../modules/models/field_type.dart';
+import '../../modules/models/module_schema.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 

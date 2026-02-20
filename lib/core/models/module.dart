@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
-import '../../features/schema/models/field_constraints.dart';
-import '../../features/schema/models/module_schema.dart';
+import '../../features/modules/models/field_constraints.dart';
+import '../../features/modules/models/module_schema.dart';
 
 class Module extends Equatable {
   final String id;

@@ -4,7 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../schema/models/field_type.dart';
+import '../../../modules/models/field_type.dart';
 import '../../engine/entry_filter.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';

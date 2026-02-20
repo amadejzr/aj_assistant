@@ -11,7 +11,7 @@ import '../../../core/utils/module_display_utils.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../../schema/models/field_definition.dart';
+import '../models/field_definition.dart';
 
 class ModuleInfoScreen extends StatelessWidget {
   final String moduleId;

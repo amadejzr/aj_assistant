@@ -1,8 +1,8 @@
 import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
-import '../../schema/models/field_constraints.dart';
-import '../../schema/models/field_type.dart';
-import '../../schema/models/module_schema.dart';
+import '../../modules/models/field_constraints.dart';
+import '../../modules/models/field_type.dart';
+import '../../modules/models/module_schema.dart';
 
 class ReferenceResolver {
   final Module module;

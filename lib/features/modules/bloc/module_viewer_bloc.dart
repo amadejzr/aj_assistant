@@ -10,7 +10,7 @@ import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
 import '../../blueprint/engine/post_submit_effect.dart';
-import '../../schema/models/schema_effect.dart';
+import '../models/schema_effect.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 

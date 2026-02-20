@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../schema/models/field_constraints.dart';
+import '../../../modules/models/field_constraints.dart';
 import '../../engine/form_validator.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';

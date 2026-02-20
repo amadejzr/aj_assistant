@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
-import '../../features/schema/models/module_schema.dart';
+import '../../features/modules/models/module_schema.dart';
 
 class SchemasConverter
     extends TypeConverter<Map<String, ModuleSchema>, String> {

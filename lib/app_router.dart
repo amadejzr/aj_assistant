@@ -12,8 +12,8 @@ import 'features/home/home_screen.dart';
 import 'features/marketplace/screens/marketplace_screen.dart';
 import 'features/marketplace/screens/template_detail_screen.dart';
 import 'features/capabilities/screens/reminders_screen.dart';
-import 'features/module_info/screens/module_info_screen.dart';
-import 'features/module_viewer/screens/module_viewer_screen.dart';
+import 'features/modules/screens/module_info_screen.dart';
+import 'features/modules/screens/module_viewer_screen.dart';
 import 'features/shell/shell_screen.dart';
 import 'features/splash/splash_screen.dart';
 
