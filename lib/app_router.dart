@@ -11,6 +11,7 @@ import 'features/auth/screens/signup_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/marketplace/screens/marketplace_screen.dart';
 import 'features/marketplace/screens/template_detail_screen.dart';
+import 'features/capabilities/screens/reminders_screen.dart';
 import 'features/module_info/screens/module_info_screen.dart';
 import 'features/module_viewer/screens/module_viewer_screen.dart';
 import 'features/shell/shell_screen.dart';
@@ -106,6 +107,17 @@ GoRouter createRouter(AuthBloc authBloc) {
             },
           ),
         ],
+      ),
+      // Reminders — full-screen, outside the shell
+      GoRoute(
+        path: '/reminders',
+        pageBuilder: (context, state) {
+          final moduleId = state.uri.queryParameters['module'];
+          return _pageFadeSlide(
+            key: state.pageKey,
+            child: RemindersScreen(moduleId: moduleId),
+          );
+        },
       ),
       // Module viewer — full-screen, outside the shell (no bottom nav / chat FAB)
       GoRoute(
