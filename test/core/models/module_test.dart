@@ -1,8 +1,8 @@
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/features/blueprint/navigation/module_navigation.dart';
-import 'package:aj_assistant/features/schema/models/field_definition.dart';
-import 'package:aj_assistant/features/schema/models/field_type.dart';
-import 'package:aj_assistant/features/schema/models/module_schema.dart';
+import 'package:aj_assistant/features/modules/models/field_definition.dart';
+import 'package:aj_assistant/features/modules/models/field_type.dart';
+import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

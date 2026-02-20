@@ -1,8 +1,9 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/features/schema/models/field_definition.dart';
-import 'package:aj_assistant/features/schema/models/field_type.dart';
-import 'package:aj_assistant/features/schema/models/module_schema.dart';
+import 'package:aj_assistant/features/modules/models/field_constraints.dart';
+import 'package:aj_assistant/features/modules/models/field_definition.dart';
+import 'package:aj_assistant/features/modules/models/field_type.dart';
+import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_parser.dart';
@@ -258,7 +259,7 @@ void main() {
                 key: 'category',
                 type: FieldType.reference,
                 label: 'Category',
-                constraints: {'schemaKey': 'category'},
+                constraints: const ReferenceConstraints(targetSchema: 'category'),
               ),
             },
           ),

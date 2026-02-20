@@ -1,6 +1,6 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/features/blueprint/engine/post_submit_effect.dart';
-import 'package:aj_assistant/features/schema/models/schema_effect.dart';
+import 'package:aj_assistant/features/modules/models/schema_effect.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

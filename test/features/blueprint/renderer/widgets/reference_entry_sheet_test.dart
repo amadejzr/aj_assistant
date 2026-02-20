@@ -1,6 +1,6 @@
-import 'package:aj_assistant/features/schema/models/field_definition.dart';
-import 'package:aj_assistant/features/schema/models/field_type.dart';
-import 'package:aj_assistant/features/schema/models/module_schema.dart';
+import 'package:aj_assistant/features/modules/models/field_definition.dart';
+import 'package:aj_assistant/features/modules/models/field_type.dart';
+import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/widgets/reference_entry_sheet.dart';
 import 'package:flutter/material.dart';
