@@ -1,3 +1,4 @@
+import 'package:aj_assistant/core/repositories/drift_entry_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,8 @@ import 'core/logging/console_log_backend.dart';
 import 'core/logging/log.dart';
 import 'core/repositories/entry_repository.dart';
 import 'core/repositories/marketplace_repository.dart';
+import 'core/database/app_database.dart';
+import 'core/repositories/drift_module_repository.dart';
 import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
@@ -36,8 +39,8 @@ void main() async {
 
   final authService = AuthService();
   final userService = UserService();
-  final moduleRepository = FirestoreModuleRepository();
-  final entryRepository = FirestoreEntryRepository();
+  final moduleRepository = DriftModuleRepository(AppDatabase());
+  final entryRepository = DriftEntryRepository(AppDatabase());
   final chatRepository = ChatRepository();
   final marketplaceRepository = FirestoreMarketplaceRepository();
 
@@ -48,13 +51,13 @@ void main() async {
         RepositoryProvider<EntryRepository>.value(value: entryRepository),
         RepositoryProvider<ChatRepository>.value(value: chatRepository),
         RepositoryProvider<MarketplaceRepository>.value(
-            value: marketplaceRepository),
+          value: marketplaceRepository,
+        ),
       ],
       child: BlocProvider(
-        create: (_) => AuthBloc(
-          authService: authService,
-          userService: userService,
-        )..startListening(),
+        create: (_) =>
+            AuthBloc(authService: authService, userService: userService)
+              ..startListening(),
         child: const AJAssistantApp(),
       ),
     ),
