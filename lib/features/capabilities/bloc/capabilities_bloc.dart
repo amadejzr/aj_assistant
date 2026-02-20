@@ -22,6 +22,7 @@ class CapabilitiesBloc extends Bloc<CapabilitiesEvent, CapabilitiesState> {
     on<CapabilitiesUpdated>(_onUpdated);
     on<CapabilityToggled>(_onToggled);
     on<CapabilityCreated>(_onCreated);
+    on<CapabilityEdited>(_onEdited);
     on<CapabilityDeleted>(_onDeleted);
   }
 
@@ -70,6 +71,18 @@ class CapabilitiesBloc extends Bloc<CapabilitiesEvent, CapabilitiesState> {
   ) async {
     await capabilityRepository.createCapability(event.capability);
     await notificationScheduler.scheduleCapability(event.capability);
+  }
+
+  Future<void> _onEdited(
+    CapabilityEdited event,
+    Emitter<CapabilitiesState> emit,
+  ) async {
+    await capabilityRepository.updateCapability(event.capability);
+    // Re-schedule: cancel old, schedule new
+    await notificationScheduler.cancelCapability(event.capability.id);
+    if (event.capability.enabled) {
+      await notificationScheduler.scheduleCapability(event.capability);
+    }
   }
 
   Future<void> _onDeleted(

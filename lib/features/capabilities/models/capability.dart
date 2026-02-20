@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum ReminderFrequency { daily, weekly, monthly }
+enum ReminderFrequency { once, daily, weekly, monthly }
 
 sealed class Capability extends Equatable {
   final String id;
@@ -64,6 +64,9 @@ sealed class Capability extends Equatable {
         minute: config['minute'] as int? ?? 0,
         dayOfWeek: config['dayOfWeek'] as int?,
         dayOfMonth: config['dayOfMonth'] as int?,
+        scheduledDate: config['scheduledDate'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(config['scheduledDate'] as int)
+            : null,
       ),
       'deadline' => DeadlineReminder(
         id: id, moduleId: moduleId, title: title, message: message,
@@ -93,6 +96,7 @@ class ScheduledReminder extends Capability {
   final int minute;
   final int? dayOfWeek;
   final int? dayOfMonth;
+  final DateTime? scheduledDate; // For one-shot reminders
 
   const ScheduledReminder({
     required super.id, super.moduleId,
@@ -100,7 +104,7 @@ class ScheduledReminder extends Capability {
     required super.enabled, super.lastFiredAt,
     required super.createdAt, required super.updatedAt,
     required this.frequency, required this.hour, required this.minute,
-    this.dayOfWeek, this.dayOfMonth,
+    this.dayOfWeek, this.dayOfMonth, this.scheduledDate,
   });
 
   @override
@@ -113,12 +117,15 @@ class ScheduledReminder extends Capability {
     'minute': minute,
     if (dayOfWeek != null) 'dayOfWeek': dayOfWeek,
     if (dayOfMonth != null) 'dayOfMonth': dayOfMonth,
+    if (scheduledDate != null)
+      'scheduledDate': scheduledDate!.millisecondsSinceEpoch,
   };
 
   @override
   List<Object?> get props => [
     id, moduleId, title, message, enabled, lastFiredAt,
     createdAt, updatedAt, frequency, hour, minute, dayOfWeek, dayOfMonth,
+    scheduledDate,
   ];
 }
 

@@ -82,6 +82,7 @@ class DriftCapabilityRepository implements CapabilityRepository {
           ..where((t) => t.id.equals(capability.id)))
         .write(
       CapabilitiesCompanion(
+        moduleId: Value(capability.moduleId),
         title: Value(capability.title),
         message: Value(capability.message),
         enabled: Value(capability.enabled),

@@ -211,6 +211,16 @@ class _RemindersBody extends StatelessWidget {
                     ),
                     child: CapabilityCard(
                       capability: cap,
+                      onTap: () {
+                        if (cap is ScheduledReminder) {
+                          final bloc = context.read<CapabilitiesBloc>();
+                          showAddReminderSheet(
+                            context,
+                            existing: cap,
+                            bloc: bloc,
+                          );
+                        }
+                      },
                       onToggle: (enabled) {
                         context.read<CapabilitiesBloc>().add(
                               CapabilityToggled(cap.id, enabled: enabled),

@@ -108,6 +108,26 @@ class NotificationScheduler {
     );
 
     switch (cap.frequency) {
+      case ReminderFrequency.once:
+        if (cap.scheduledDate == null) return;
+        final oneShot = tz.TZDateTime(
+          tz.local,
+          cap.scheduledDate!.year,
+          cap.scheduledDate!.month,
+          cap.scheduledDate!.day,
+          cap.hour,
+          cap.minute,
+        );
+        // Don't schedule if the date is in the past
+        if (oneShot.isBefore(now)) return;
+        await _plugin.zonedSchedule(
+          id: notifId,
+          title: cap.title,
+          body: cap.message,
+          scheduledDate: oneShot,
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
       case ReminderFrequency.daily:
         await _plugin.zonedSchedule(
           id: notifId,

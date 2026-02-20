@@ -103,7 +103,11 @@ class CapabilityCard extends StatelessWidget {
   String get _scheduleDescription {
     return switch (capability) {
       ScheduledReminder(:final frequency, :final hour, :final minute,
-          :final dayOfWeek, :final dayOfMonth) => switch (frequency) {
+          :final dayOfWeek, :final dayOfMonth, :final scheduledDate) => switch (frequency) {
+        ReminderFrequency.once =>
+          scheduledDate != null
+              ? '${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year} at ${_formatTime(hour, minute)}'
+              : 'Once at ${_formatTime(hour, minute)}',
         ReminderFrequency.daily =>
           'Every day at ${_formatTime(hour, minute)}',
         ReminderFrequency.weekly =>

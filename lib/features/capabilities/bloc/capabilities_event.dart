@@ -46,6 +46,15 @@ class CapabilityCreated extends CapabilitiesEvent {
   List<Object?> get props => [capability];
 }
 
+class CapabilityEdited extends CapabilitiesEvent {
+  final Capability capability;
+
+  const CapabilityEdited(this.capability);
+
+  @override
+  List<Object?> get props => [capability];
+}
+
 class CapabilityDeleted extends CapabilitiesEvent {
   final String capabilityId;
 

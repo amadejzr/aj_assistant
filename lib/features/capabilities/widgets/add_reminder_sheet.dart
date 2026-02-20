@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/models/module.dart';
 import '../../../core/repositories/module_repository.dart';
@@ -14,6 +15,7 @@ import '../models/capability.dart';
 Future<void> showAddReminderSheet(
   BuildContext context, {
   String? moduleId,
+  ScheduledReminder? existing,
   required CapabilitiesBloc bloc,
 }) {
   return showModalBottomSheet(
@@ -22,15 +24,16 @@ Future<void> showAddReminderSheet(
     backgroundColor: Colors.transparent,
     builder: (_) => BlocProvider.value(
       value: bloc,
-      child: _AddReminderSheet(moduleId: moduleId),
+      child: _AddReminderSheet(moduleId: moduleId, existing: existing),
     ),
   );
 }
 
 class _AddReminderSheet extends StatefulWidget {
   final String? moduleId;
+  final ScheduledReminder? existing;
 
-  const _AddReminderSheet({this.moduleId});
+  const _AddReminderSheet({this.moduleId, this.existing});
 
   @override
   State<_AddReminderSheet> createState() => _AddReminderSheetState();
@@ -42,15 +45,32 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
 
   ReminderFrequency _frequency = ReminderFrequency.daily;
   TimeOfDay _time = TimeOfDay.now();
+  DateTime _date = DateTime.now().add(const Duration(days: 1));
   int _dayOfWeek = 1; // Monday
   int _dayOfMonth = 1;
   String? _selectedModuleId;
   List<Module> _modules = [];
 
+  bool get _isEditing => widget.existing != null;
+
   @override
   void initState() {
     super.initState();
-    _selectedModuleId = widget.moduleId;
+    if (_isEditing) {
+      final r = widget.existing!;
+      _titleController.text = r.title;
+      _messageController.text = r.message;
+      _frequency = r.frequency;
+      _time = TimeOfDay(hour: r.hour, minute: r.minute);
+      _dayOfWeek = r.dayOfWeek ?? 1;
+      _dayOfMonth = r.dayOfMonth ?? 1;
+      _selectedModuleId = r.moduleId;
+      if (r.scheduledDate != null) {
+        _date = r.scheduledDate!;
+      }
+    } else {
+      _selectedModuleId = widget.moduleId;
+    }
     _loadModules();
   }
 
@@ -109,7 +129,7 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
 
             // Title
             Text(
-              'New Reminder',
+              _isEditing ? 'Edit Reminder' : 'New Reminder',
               style: TextStyle(
                 fontFamily: 'CormorantGaramond',
                 fontSize: 20,
@@ -156,7 +176,10 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
             _label('MODULE', colors),
             const SizedBox(height: AppSpacing.xs),
             DropdownButtonFormField<String?>(
-              initialValue: _selectedModuleId,
+              key: ValueKey('module_picker_${_modules.length}'),
+              initialValue: _modules.any((m) => m.id == _selectedModuleId)
+                  ? _selectedModuleId
+                  : null,
               dropdownColor: colors.surface,
               style: TextStyle(
                 fontFamily: 'Karla',
@@ -210,6 +233,10 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
               child: SegmentedButton<ReminderFrequency>(
                 segments: const [
                   ButtonSegment(
+                    value: ReminderFrequency.once,
+                    label: Text('Once'),
+                  ),
+                  ButtonSegment(
                     value: ReminderFrequency.daily,
                     label: Text('Daily'),
                   ),
@@ -238,6 +265,46 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
+
+            // Date picker (once only)
+            if (_frequency == ReminderFrequency.once) ...[
+              _label('DATE', colors),
+              const SizedBox(height: AppSpacing.xs),
+              GestureDetector(
+                onTap: _pickDate,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: colors.onBackgroundMuted,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        DateFormat('EEE, MMM d, yyyy').format(_date),
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 14,
+                          color: colors.onBackground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
 
             // Time picker
             _label('TIME', colors),
@@ -351,7 +418,7 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                child: const Text('Save Reminder'),
+                child: Text(_isEditing ? 'Update Reminder' : 'Save Reminder'),
               ),
             ),
           ],
@@ -383,6 +450,18 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
     }
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
+  }
+
   void _save() {
     final title = _titleController.text.trim();
     final message = _messageController.text.trim();
@@ -390,24 +469,31 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
     if (title.isEmpty || message.isEmpty) return;
 
     final now = DateTime.now();
-    final id = now.millisecondsSinceEpoch.toString();
+    final id = _isEditing
+        ? widget.existing!.id
+        : now.millisecondsSinceEpoch.toString();
 
     final reminder = ScheduledReminder(
       id: id,
       moduleId: _selectedModuleId,
       title: title,
       message: message,
-      enabled: true,
-      createdAt: now,
+      enabled: _isEditing ? widget.existing!.enabled : true,
+      createdAt: _isEditing ? widget.existing!.createdAt : now,
       updatedAt: now,
       frequency: _frequency,
       hour: _time.hour,
       minute: _time.minute,
       dayOfWeek: _frequency == ReminderFrequency.weekly ? _dayOfWeek : null,
       dayOfMonth: _frequency == ReminderFrequency.monthly ? _dayOfMonth : null,
+      scheduledDate: _frequency == ReminderFrequency.once ? _date : null,
     );
 
-    context.read<CapabilitiesBloc>().add(CapabilityCreated(reminder));
+    if (_isEditing) {
+      context.read<CapabilitiesBloc>().add(CapabilityEdited(reminder));
+    } else {
+      context.read<CapabilitiesBloc>().add(CapabilityCreated(reminder));
+    }
     Navigator.of(context).pop();
   }
 }
