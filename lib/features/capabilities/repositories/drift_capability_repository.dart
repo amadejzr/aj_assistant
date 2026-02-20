@@ -18,6 +18,22 @@ class DriftCapabilityRepository implements CapabilityRepository {
   }
 
   @override
+  Stream<List<Capability>> watchAllCapabilities() {
+    final query = _db.select(_db.capabilities)
+      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
+    return query.watch().map((rows) => rows.map(_rowToCapability).toList());
+  }
+
+  @override
+  Stream<List<Capability>> watchEnabledCapabilities({int? limit}) {
+    final query = _db.select(_db.capabilities)
+      ..where((t) => t.enabled.equals(true))
+      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
+    if (limit != null) query.limit(limit);
+    return query.watch().map((rows) => rows.map(_rowToCapability).toList());
+  }
+
+  @override
   Future<List<Capability>> getCapabilities(String moduleId) async {
     final query = _db.select(_db.capabilities)
       ..where((t) => t.moduleId.equals(moduleId))
