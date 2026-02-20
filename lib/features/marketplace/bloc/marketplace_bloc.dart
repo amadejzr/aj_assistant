@@ -108,6 +108,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       final module = template.toModule(event.templateId);
 
       await moduleRepository.createModule(userId, module);
+
       await marketplaceRepository.incrementInstallCount(event.templateId);
 
       Log.i(
