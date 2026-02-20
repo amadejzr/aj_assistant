@@ -23,15 +23,17 @@ import '../../../../scripts/templates/finance_template.dart';
 import '../../../../scripts/templates/fitness_template.dart';
 import '../../../../scripts/templates/hiking_template.dart';
 import '../../../../scripts/templates/meals_template.dart';
+import '../../../../scripts/templates/projects_template.dart';
 import '../../../../scripts/templates/reading_list_template.dart';
 import '../../../../scripts/templates/tasks_template.dart';
 
-/// All templates under test. Add new entries here.
-const _templates = {
+// All templates under test. Add new entries here.
+final _templates = {
   'finance': financeTemplate,
   'fitness': fitnessTemplate,
   'hiking': hikingTemplate,
   'meals': mealsTemplate,
+  'projects': projectsTemplate,
   'reading_list': readingListTemplate,
   'tasks': tasksTemplate,
 };
