@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../auth/bloc/auth_bloc.dart';
-import '../auth/bloc/auth_state.dart';
-import '../../core/repositories/entry_repository.dart';
-import '../chat/repositories/chat_repository.dart';
-import '../chat/widgets/chat_sheet.dart';
-import 'widgets/breathing_fab.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_state.dart';
+import '../../../core/repositories/entry_repository.dart';
+import '../../chat/repositories/chat_repository.dart';
+import '../../chat/widgets/chat_sheet.dart';
+import '../widgets/breathing_fab.dart';
 
 class ShellScreen extends StatelessWidget {
   final Widget child;

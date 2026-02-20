@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../auth/bloc/auth_bloc.dart';
-import '../auth/bloc/auth_state.dart';
-import '../auth/widgets/seal_logo.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_state.dart';
+import '../../auth/widgets/seal_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

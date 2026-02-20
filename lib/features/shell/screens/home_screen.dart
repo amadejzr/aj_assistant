@@ -3,21 +3,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../core/models/module.dart';
-import '../../core/repositories/module_repository.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/module_display_utils.dart';
-import '../../core/widgets/app_toast.dart';
-import '../auth/bloc/auth_bloc.dart';
-import '../auth/bloc/auth_event.dart';
-import '../auth/bloc/auth_state.dart';
-import '../auth/widgets/paper_background.dart';
-import '../modules/bloc/modules_list_bloc.dart';
-import '../modules/bloc/modules_list_event.dart';
-import '../modules/bloc/modules_list_state.dart';
-import 'widgets/upcoming_reminders_section.dart';
+import '../../../core/models/module.dart';
+import '../../../core/repositories/module_repository.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/module_display_utils.dart';
+import '../../../core/widgets/app_toast.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_event.dart';
+import '../../auth/bloc/auth_state.dart';
+import '../../auth/widgets/paper_background.dart';
+import '../../modules/bloc/modules_list_bloc.dart';
+import '../../modules/bloc/modules_list_event.dart';
+import '../../modules/bloc/modules_list_state.dart';
+import '../widgets/upcoming_reminders_section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

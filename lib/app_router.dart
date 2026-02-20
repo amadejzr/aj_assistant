@@ -8,14 +8,14 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
-import 'features/home/home_screen.dart';
+import 'features/shell/screens/home_screen.dart';
 import 'features/marketplace/screens/marketplace_screen.dart';
 import 'features/marketplace/screens/template_detail_screen.dart';
 import 'features/capabilities/screens/reminders_screen.dart';
 import 'features/modules/screens/module_info_screen.dart';
 import 'features/modules/screens/module_viewer_screen.dart';
-import 'features/shell/shell_screen.dart';
-import 'features/splash/splash_screen.dart';
+import 'features/shell/screens/shell_screen.dart';
+import 'features/shell/screens/splash_screen.dart';
 
 const _tag = 'Router';
 
