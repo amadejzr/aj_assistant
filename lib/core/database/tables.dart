@@ -39,3 +39,21 @@ class Entries extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+@DataClassName('CapabilityRow')
+class Capabilities extends Table {
+  TextColumn get id => text()();
+  TextColumn get moduleId => text().nullable()();
+  TextColumn get type => text()();
+  TextColumn get title => text()();
+  TextColumn get message => text()();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  TextColumn get config =>
+      text().withDefault(const Constant('{}')).map(const JsonMapConverter())();
+  IntColumn get lastFiredAt => integer().nullable()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
