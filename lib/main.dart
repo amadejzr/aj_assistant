@@ -17,6 +17,9 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
 import 'features/blueprint/renderer/widget_registry.dart';
+import 'features/capabilities/repositories/capability_repository.dart';
+import 'features/capabilities/repositories/drift_capability_repository.dart';
+import 'features/capabilities/services/notification_scheduler.dart';
 import 'features/chat/repositories/chat_repository.dart';
 import 'firebase_options.dart';
 
@@ -39,19 +42,33 @@ void main() async {
 
   final authService = AuthService();
   final userService = UserService();
-  final moduleRepository = DriftModuleRepository(AppDatabase());
-  final entryRepository = DriftEntryRepository(AppDatabase());
+  final db = AppDatabase();
+  final moduleRepository = DriftModuleRepository(db);
+  final entryRepository = DriftEntryRepository(db);
+  final capabilityRepository = DriftCapabilityRepository(db);
   final chatRepository = ChatRepository();
   final marketplaceRepository = FirestoreMarketplaceRepository();
+
+  // Initialize notification scheduler
+  final notificationScheduler = NotificationScheduler(capabilityRepository);
+  await notificationScheduler.initialize();
+  await notificationScheduler.requestPermissions();
+  await notificationScheduler.rescheduleAll();
 
   runApp(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
         RepositoryProvider<EntryRepository>.value(value: entryRepository),
+        RepositoryProvider<CapabilityRepository>.value(
+          value: capabilityRepository,
+        ),
         RepositoryProvider<ChatRepository>.value(value: chatRepository),
         RepositoryProvider<MarketplaceRepository>.value(
           value: marketplaceRepository,
+        ),
+        RepositoryProvider<NotificationScheduler>.value(
+          value: notificationScheduler,
         ),
       ],
       child: BlocProvider(

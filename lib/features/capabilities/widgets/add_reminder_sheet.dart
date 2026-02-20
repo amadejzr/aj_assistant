@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/models/module.dart';
+import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_state.dart';
 import '../bloc/capabilities_bloc.dart';
 import '../bloc/capabilities_event.dart';
 import '../models/capability.dart';
@@ -40,6 +44,27 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
   TimeOfDay _time = TimeOfDay.now();
   int _dayOfWeek = 1; // Monday
   int _dayOfMonth = 1;
+  String? _selectedModuleId;
+  List<Module> _modules = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedModuleId = widget.moduleId;
+    _loadModules();
+  }
+
+  Future<void> _loadModules() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+    final modules = await context
+        .read<ModuleRepository>()
+        .watchModules(authState.user.uid)
+        .first;
+    if (mounted) {
+      setState(() => _modules = modules);
+    }
+  }
 
   @override
   void dispose() {
@@ -124,6 +149,56 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
               decoration: const InputDecoration(
                 hintText: 'Notification message',
               ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // Module picker
+            _label('MODULE', colors),
+            const SizedBox(height: AppSpacing.xs),
+            DropdownButtonFormField<String?>(
+              initialValue: _selectedModuleId,
+              dropdownColor: colors.surface,
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 14,
+                color: colors.onBackground,
+              ),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: colors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: colors.border),
+                ),
+              ),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(
+                    'General (no module)',
+                    style: TextStyle(
+                      fontFamily: 'Karla',
+                      fontSize: 14,
+                      color: colors.onBackgroundMuted,
+                    ),
+                  ),
+                ),
+                ..._modules.map(
+                  (m) => DropdownMenuItem<String?>(
+                    value: m.id,
+                    child: Text(m.name),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() => _selectedModuleId = value);
+              },
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -319,7 +394,7 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
 
     final reminder = ScheduledReminder(
       id: id,
-      moduleId: widget.moduleId,
+      moduleId: _selectedModuleId,
       title: title,
       message: message,
       enabled: true,
