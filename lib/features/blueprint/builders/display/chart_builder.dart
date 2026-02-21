@@ -53,6 +53,21 @@ class _ChartWidget extends StatelessWidget {
   }
 
   Map<String, num> _groupData() {
+    // SQL source path
+    final source = chart.properties['source'] as String?;
+    if (source != null) {
+      final rows = ctx.queryResults[source] ?? [];
+      final groupKey =
+          chart.properties['groupKey'] as String? ?? chart.groupBy ?? 'key';
+      final valueField =
+          chart.properties['valueField'] as String? ?? 'value';
+      return {
+        for (final row in rows)
+          (row[groupKey]?.toString() ?? 'Unknown'):
+              (row[valueField] as num?) ?? 0,
+      };
+    }
+
     // Filter entries
     final filtered = chart.filter != null
         ? EntryFilter.filter(ctx.entries, chart.filter, ctx.screenParams).entries
