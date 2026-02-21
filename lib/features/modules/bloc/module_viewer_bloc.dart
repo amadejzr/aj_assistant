@@ -54,6 +54,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
     on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
     on<ModuleViewerQueryResultsUpdated>(_onQueryResultsUpdated);
+    on<ModuleViewerFormPrePopulated>(_onFormPrePopulated);
   }
 
   Future<void> _onStarted(
@@ -240,6 +241,36 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       final entryId = current.screenParams['_entryId'] as String?;
 
+      // SQL mutation path
+      if (_mutationExecutor != null && _currentMutations != null) {
+        if (entryId != null && entryId.isNotEmpty) {
+          await _mutationExecutor!.update(
+            _currentMutations!.update!,
+            entryId,
+            data,
+          );
+        } else {
+          await _mutationExecutor!.create(_currentMutations!.create!, data);
+        }
+
+        final stack = List<ScreenEntry>.from(current.screenStack);
+        final previous = stack.isNotEmpty
+            ? stack.removeLast()
+            : const ScreenEntry('main');
+
+        emit(current.copyWith(
+          currentScreenId: previous.screenId,
+          screenParams: previous.params,
+          screenStack: stack,
+          formValues: {},
+          isSubmitting: false,
+        ));
+
+        // Re-subscribe to the previous screen's queries
+        _subscribeToScreen(current.module, previous.screenId, previous.params);
+        return;
+      }
+
       final isCreate = entryId == null || entryId.isEmpty;
 
       if (!isCreate) {
@@ -311,6 +342,29 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     try {
+      // SQL delete path
+      if (_mutationExecutor != null && _currentMutations?.delete != null) {
+        await _mutationExecutor!.delete(
+          _currentMutations!.delete!,
+          event.entryId,
+        );
+
+        // Navigate back if on detail screen for this entry
+        final currentEntryId = current.screenParams['_entryId'] as String?;
+        if (currentEntryId == event.entryId &&
+            current.screenStack.isNotEmpty) {
+          final stack = List<ScreenEntry>.from(current.screenStack);
+          final previous = stack.removeLast();
+          emit(current.copyWith(
+            currentScreenId: previous.screenId,
+            screenParams: previous.params,
+            screenStack: stack,
+            formValues: {},
+          ));
+        }
+        return;
+      }
+
       // Look up the entry being deleted to run delete effects (inverted)
       final deletedEntry = current.entries
           .where((e) => e.id == event.entryId)
@@ -513,12 +567,42 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         ? ScreenMutations.fromJson(mutationsJson)
         : null;
 
-    if (_currentQueries.isEmpty) return;
+    if (_currentQueries.isNotEmpty) {
+      final resolvedParams = resolveQueryParams(_currentQueries, screenParams);
+      _querySub = _queryExecutor!
+          .watchAll(_currentQueries, resolvedParams)
+          .listen((results) => add(ModuleViewerQueryResultsUpdated(results)));
+    }
 
-    final resolvedParams = resolveQueryParams(_currentQueries, screenParams);
-    _querySub = _queryExecutor!
-        .watchAll(_currentQueries, resolvedParams)
-        .listen((results) => add(ModuleViewerQueryResultsUpdated(results)));
+    // Pre-populate form for edit mode
+    _prePopulateForm(module, screenParams);
+  }
+
+  Future<void> _prePopulateForm(
+    Module module,
+    Map<String, dynamic> screenParams,
+  ) async {
+    final entryId = screenParams['_entryId'] as String?;
+    if (entryId == null || _queryExecutor == null) return;
+
+    final schemaKey = screenParams['_schemaKey'] as String? ?? 'default';
+    final tableName = module.database?.tableNames[schemaKey];
+    if (tableName == null) return;
+
+    try {
+      final rows = await _queryExecutor!.execute(
+        ScreenQuery(
+          name: '_lookup',
+          sql: 'SELECT * FROM "$tableName" WHERE id = :id',
+        ),
+        {'id': entryId},
+      );
+      if (rows.isNotEmpty) {
+        add(ModuleViewerFormPrePopulated(rows.first));
+      }
+    } catch (e) {
+      Log.e('Failed to pre-populate form', tag: 'ModuleViewer', error: e);
+    }
   }
 
   void _onQueryResultsUpdated(
@@ -529,6 +613,16 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     emit(current.copyWith(queryResults: event.results));
+  }
+
+  void _onFormPrePopulated(
+    ModuleViewerFormPrePopulated event,
+    Emitter<ModuleViewerState> emit,
+  ) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    emit(current.copyWith(formValues: event.values));
   }
 
   /// Applies post-submit effects using [PostSubmitEffectExecutor].

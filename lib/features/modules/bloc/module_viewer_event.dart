@@ -114,6 +114,15 @@ class ModuleViewerQueryResultsUpdated extends ModuleViewerEvent {
   List<Object?> get props => [results];
 }
 
+class ModuleViewerFormPrePopulated extends ModuleViewerEvent {
+  final Map<String, dynamic> values;
+
+  const ModuleViewerFormPrePopulated(this.values);
+
+  @override
+  List<Object?> get props => [values];
+}
+
 class ModuleViewerQuickEntryUpdated extends ModuleViewerEvent {
   final String entryId;
   final String schemaKey;

@@ -41,10 +41,10 @@ void main() {
     await db.close();
   });
 
-  Module _budgetModule() => const Module(
+  Module _budgetModule({bool withMutations = false}) => Module(
         id: 'budget-001',
         name: 'Budget Tracker',
-        schemas: {
+        schemas: const {
           'expense': ModuleSchema(
             label: 'Expense',
             fields: {
@@ -72,6 +72,20 @@ void main() {
                     'SELECT SUM(amount) as total_amount FROM "m_budget_expenses"',
               },
             },
+            if (withMutations)
+              'mutations': {
+                'create':
+                    'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+                        'VALUES (:id, :amount, :description, :category, :created_at, :updated_at)',
+                'update':
+                    'UPDATE "m_budget_expenses" SET '
+                        'amount = COALESCE(:amount, amount), '
+                        'category = COALESCE(:category, category), '
+                        'description = COALESCE(:description, description), '
+                        'updated_at = :updated_at '
+                        'WHERE id = :id',
+                'delete': 'DELETE FROM "m_budget_expenses" WHERE id = :id',
+              },
           },
           'by_category': {
             'type': 'screen',
@@ -84,8 +98,24 @@ void main() {
               },
             },
           },
+          if (withMutations)
+            'add_expense': {
+              'type': 'form_screen',
+              'mutations': {
+                'create':
+                    'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+                        'VALUES (:id, :amount, :description, :category, :created_at, :updated_at)',
+                'update':
+                    'UPDATE "m_budget_expenses" SET '
+                        'amount = COALESCE(:amount, amount), '
+                        'category = COALESCE(:category, category), '
+                        'description = COALESCE(:description, description), '
+                        'updated_at = :updated_at '
+                        'WHERE id = :id',
+              },
+            },
         },
-        database: ModuleDatabase(
+        database: const ModuleDatabase(
           tableNames: {'expense': 'm_budget_expenses'},
           setup: [
             '''
@@ -273,6 +303,169 @@ void main() {
         expect(state.entries, isEmpty);
         verify(() => entryRepo.watchEntries('user1', 'simple-001', limit: 500))
             .called(1);
+      },
+    );
+  });
+
+  group('SQL mutations', () {
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'create via form submit inserts row, watchAll updates',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Navigate to add_expense form
+        bloc.add(const ModuleViewerScreenChanged('add_expense'));
+        await Future.delayed(const Duration(milliseconds: 50));
+        // Fill form
+        bloc.add(const ModuleViewerFormValueChanged('amount', 42.0));
+        bloc.add(const ModuleViewerFormValueChanged('description', 'Lunch'));
+        bloc.add(const ModuleViewerFormValueChanged('category', 'Food'));
+        await Future.delayed(const Duration(milliseconds: 50));
+        // Submit
+        bloc.add(const ModuleViewerFormSubmitted());
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        // Should navigate back to main and show the new expense
+        expect(state.currentScreenId, 'main');
+        expect(state.queryResults['expenses'], hasLength(1));
+        expect(state.queryResults['expenses']![0]['description'], 'Lunch');
+        expect(state.queryResults['expenses']![0]['amount'], 42.0);
+        expect(state.queryResults['total']![0]['total_amount'], 42.0);
+      },
+    );
+
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'update via form submit modifies row, watchAll updates',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        // Seed existing entry
+        await db.customStatement(
+          'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+          "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
+        );
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Navigate to edit form with _entryId
+        bloc.add(const ModuleViewerScreenChanged(
+          'add_expense',
+          params: {'_entryId': 'e1', '_schemaKey': 'expense'},
+        ));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Change amount
+        bloc.add(const ModuleViewerFormValueChanged('amount', 75.0));
+        await Future.delayed(const Duration(milliseconds: 50));
+        // Submit update
+        bloc.add(const ModuleViewerFormSubmitted());
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        expect(state.currentScreenId, 'main');
+        expect(state.queryResults['expenses']![0]['amount'], 75.0);
+        expect(state.queryResults['total']![0]['total_amount'], 75.0);
+      },
+    );
+
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'delete removes row, watchAll updates',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        await db.customStatement(
+          'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+          "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
+        );
+        await db.customStatement(
+          'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+          "VALUES ('e2', 30.0, 'Bus', 'Transport', 2000, 2000)",
+        );
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Delete first expense
+        bloc.add(const ModuleViewerEntryDeleted('e1'));
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        expect(state.queryResults['expenses'], hasLength(1));
+        expect(state.queryResults['expenses']![0]['description'], 'Bus');
+        expect(state.queryResults['total']![0]['total_amount'], 30.0);
+      },
+    );
+
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'edit form pre-populated with existing row data',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        await db.customStatement(
+          'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
+          "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
+        );
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Navigate to edit form
+        bloc.add(const ModuleViewerScreenChanged(
+          'add_expense',
+          params: {'_entryId': 'e1', '_schemaKey': 'expense'},
+        ));
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        // Form values should be pre-populated from the existing row
+        expect(state.formValues['amount'], 50.0);
+        expect(state.formValues['description'], 'Coffee');
+        expect(state.formValues['category'], 'Food');
       },
     );
   });
