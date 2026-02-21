@@ -46,103 +46,6 @@ const budgetSqlTemplate = {
     },
   },
 
-  // ─── Schemas ───
-  //
-  // Schemas are still needed for form field definitions (labels, types,
-  // validation). The blueprint input builders read from these.
-  'schemas': {
-    'account': {
-      'label': 'Account',
-      'icon': 'wallet',
-      'fields': {
-        'name': {
-          'key': 'name',
-          'type': 'text',
-          'label': 'Account Name',
-          'required': true,
-        },
-        'account_type': {
-          'key': 'account_type',
-          'type': 'enumType',
-          'label': 'Type',
-          'required': true,
-          'options': ['Checking', 'Savings', 'Cash', 'Investment'],
-        },
-        'balance': {
-          'key': 'balance',
-          'type': 'number',
-          'label': 'Starting Balance',
-          'required': true,
-        },
-      },
-    },
-    'expense': {
-      'label': 'Expense',
-      'icon': 'receipt',
-      'fields': {
-        'amount': {
-          'key': 'amount',
-          'type': 'number',
-          'label': 'Amount',
-          'required': true,
-        },
-        'description': {
-          'key': 'description',
-          'type': 'text',
-          'label': 'What was it for?',
-        },
-        'category': {
-          'key': 'category',
-          'type': 'enumType',
-          'label': 'Category',
-          'required': true,
-          'options': ['Food', 'Transport', 'Housing', 'Entertainment', 'Health', 'Other'],
-        },
-        'account_id': {
-          'key': 'account_id',
-          'type': 'reference',
-          'label': 'From Account',
-          'constraints': {'schemaKey': 'account'},
-        },
-        'date': {
-          'key': 'date',
-          'type': 'datetime',
-          'label': 'Date',
-          'required': true,
-        },
-      },
-    },
-    'income': {
-      'label': 'Income',
-      'icon': 'cash',
-      'fields': {
-        'amount': {
-          'key': 'amount',
-          'type': 'number',
-          'label': 'Amount',
-          'required': true,
-        },
-        'source': {
-          'key': 'source',
-          'type': 'text',
-          'label': 'Source',
-        },
-        'account_id': {
-          'key': 'account_id',
-          'type': 'reference',
-          'label': 'Deposit To',
-          'constraints': {'schemaKey': 'account'},
-        },
-        'date': {
-          'key': 'date',
-          'type': 'datetime',
-          'label': 'Date',
-          'required': true,
-        },
-      },
-    },
-  },
-
   // ─── Database ───
   //
   // SQL tables owned by this module. SchemaManager runs setup[] on install.
@@ -345,7 +248,7 @@ const budgetSqlTemplate = {
                   'type': 'navigate',
                   'screen': 'edit_expense',
                   'forwardFields': ['amount', 'description', 'category', 'account_id', 'date'],
-                  'params': {'_schemaKey': 'expense'},
+                  'params': {},
                 },
               },
             },
@@ -358,7 +261,7 @@ const budgetSqlTemplate = {
         'action': {
           'type': 'navigate',
           'screen': 'add_expense',
-          'params': {'_schemaKey': 'expense'},
+          'params': {},
         },
       },
     },
@@ -422,7 +325,7 @@ const budgetSqlTemplate = {
                   'type': 'navigate',
                   'screen': 'edit_expense',
                   'forwardFields': ['amount', 'description', 'category', 'account_id', 'date'],
-                  'params': {'_schemaKey': 'expense'},
+                  'params': {},
                 },
                 'swipeActions': {
                   'right': {
@@ -443,7 +346,7 @@ const budgetSqlTemplate = {
         'action': {
           'type': 'navigate',
           'screen': 'add_expense',
-          'params': {'_schemaKey': 'expense'},
+          'params': {},
         },
       },
     },
@@ -489,7 +392,7 @@ const budgetSqlTemplate = {
               'action': {
                 'type': 'navigate',
                 'screen': 'add_account',
-                'params': {'_schemaKey': 'account'},
+                'params': {},
               },
             },
             {
@@ -507,7 +410,7 @@ const budgetSqlTemplate = {
                   'type': 'navigate',
                   'screen': 'edit_account',
                   'forwardFields': ['name', 'account_type', 'balance'],
-                  'params': {'_schemaKey': 'account'},
+                  'params': {},
                 },
                 'swipeActions': {
                   'right': {
@@ -562,7 +465,7 @@ const budgetSqlTemplate = {
               'type': 'navigate',
               'screen': 'edit_expense',
               'forwardFields': ['amount', 'description', 'category', 'account_id', 'date'],
-              'params': {'_schemaKey': 'expense'},
+              'params': {},
             },
             'swipeActions': {
               'right': {
@@ -591,10 +494,10 @@ const budgetSqlTemplate = {
             'VALUES (:id, :amount, :description, :category, :account_id, :date, :created_at, :updated_at)',
       },
       'children': [
-        {'type': 'number_input', 'fieldKey': 'amount'},
-        {'type': 'text_input', 'fieldKey': 'description'},
-        {'type': 'enum_selector', 'fieldKey': 'category'},
-        {'type': 'date_picker', 'fieldKey': 'date'},
+        {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true},
+        {'type': 'text_input', 'fieldKey': 'description', 'label': 'What was it for?'},
+        {'type': 'enum_selector', 'fieldKey': 'category', 'label': 'Category', 'required': true, 'options': ['Food', 'Transport', 'Housing', 'Entertainment', 'Health', 'Other']},
+        {'type': 'date_picker', 'fieldKey': 'date', 'label': 'Date', 'required': true},
       ],
     },
     'edit_expense': {
@@ -613,10 +516,10 @@ const budgetSqlTemplate = {
             'WHERE id = :id',
       },
       'children': [
-        {'type': 'number_input', 'fieldKey': 'amount'},
-        {'type': 'text_input', 'fieldKey': 'description'},
-        {'type': 'enum_selector', 'fieldKey': 'category'},
-        {'type': 'date_picker', 'fieldKey': 'date'},
+        {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true},
+        {'type': 'text_input', 'fieldKey': 'description', 'label': 'What was it for?'},
+        {'type': 'enum_selector', 'fieldKey': 'category', 'label': 'Category', 'required': true, 'options': ['Food', 'Transport', 'Housing', 'Entertainment', 'Health', 'Other']},
+        {'type': 'date_picker', 'fieldKey': 'date', 'label': 'Date', 'required': true},
       ],
     },
     'add_account': {
@@ -631,9 +534,9 @@ const budgetSqlTemplate = {
       },
       'defaults': {'balance': 0},
       'children': [
-        {'type': 'text_input', 'fieldKey': 'name'},
-        {'type': 'enum_selector', 'fieldKey': 'account_type'},
-        {'type': 'number_input', 'fieldKey': 'balance'},
+        {'type': 'text_input', 'fieldKey': 'name', 'label': 'Account Name', 'required': true},
+        {'type': 'enum_selector', 'fieldKey': 'account_type', 'label': 'Type', 'required': true, 'options': ['Checking', 'Savings', 'Cash', 'Investment']},
+        {'type': 'number_input', 'fieldKey': 'balance', 'label': 'Starting Balance', 'required': true},
       ],
     },
     'edit_account': {
@@ -650,9 +553,9 @@ const budgetSqlTemplate = {
             'WHERE id = :id',
       },
       'children': [
-        {'type': 'text_input', 'fieldKey': 'name'},
-        {'type': 'enum_selector', 'fieldKey': 'account_type'},
-        {'type': 'number_input', 'fieldKey': 'balance'},
+        {'type': 'text_input', 'fieldKey': 'name', 'label': 'Account Name', 'required': true},
+        {'type': 'enum_selector', 'fieldKey': 'account_type', 'label': 'Type', 'required': true, 'options': ['Checking', 'Savings', 'Cash', 'Investment']},
+        {'type': 'number_input', 'fieldKey': 'balance', 'label': 'Starting Balance', 'required': true},
       ],
     },
     'add_income': {
@@ -666,9 +569,9 @@ const budgetSqlTemplate = {
             'VALUES (:id, :amount, :source, :account_id, :date, :created_at, :updated_at)',
       },
       'children': [
-        {'type': 'number_input', 'fieldKey': 'amount'},
-        {'type': 'text_input', 'fieldKey': 'source'},
-        {'type': 'date_picker', 'fieldKey': 'date'},
+        {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true},
+        {'type': 'text_input', 'fieldKey': 'source', 'label': 'Source'},
+        {'type': 'date_picker', 'fieldKey': 'date', 'label': 'Date', 'required': true},
       ],
     },
   },
