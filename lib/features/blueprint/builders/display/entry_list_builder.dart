@@ -89,6 +89,13 @@ class _EntryListWidgetState extends State<_EntryListWidget>
   }
 
   List<dynamic> _filteredAndSorted() {
+    // SQL source path: read from queryResults, skip client-side filtering
+    final source = widget.listNode.properties['source'] as String?;
+    if (source != null) {
+      return widget.ctx.queryResults[source] ?? [];
+    }
+
+    // Existing path: filter from ctx.entries
     final result = EntryFilter.filter(
       widget.ctx.entries,
       widget.listNode.filter,
@@ -169,11 +176,19 @@ class _EntryListWidgetState extends State<_EntryListWidget>
   }
 
   RenderContext _entryContext(dynamic entry) {
+    // SQL row (Map) vs Entry object
+    final Map<String, dynamic> data;
+    if (entry is Map<String, dynamic>) {
+      data = entry;
+    } else {
+      data = (entry as dynamic).data as Map<String, dynamic>;
+    }
+
     return RenderContext(
       module: widget.ctx.module,
-      entries: [entry],
+      entries: entry is Map ? const [] : [entry],
       allEntries: widget.ctx.allEntries,
-      formValues: (entry as dynamic).data as Map<String, dynamic>,
+      formValues: data,
       screenParams: widget.ctx.screenParams,
       canGoBack: widget.ctx.canGoBack,
       onFormValueChanged: widget.ctx.onFormValueChanged,
@@ -184,6 +199,7 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       resolvedExpressions: widget.ctx.resolvedExpressions,
       onCreateEntry: widget.ctx.onCreateEntry,
       onUpdateEntry: widget.ctx.onUpdateEntry,
+      queryResults: widget.ctx.queryResults,
     );
   }
 
