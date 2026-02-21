@@ -2,6 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/database/app_database.dart';
+import '../../../core/database/mutation_executor.dart';
+import '../../../core/database/param_resolver.dart';
+import '../../../core/database/query_executor.dart';
+import '../../../core/database/schema_manager.dart';
+import '../../../core/database/screen_query.dart';
 import '../../../core/logging/log.dart';
 import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
@@ -17,13 +23,22 @@ import 'module_viewer_state.dart';
 class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   final ModuleRepository moduleRepository;
   final EntryRepository entryRepository;
+  final AppDatabase? appDatabase;
   final String userId;
 
   StreamSubscription<List<Entry>>? _entriesSub;
 
+  // SQL-driven screen state
+  QueryExecutor? _queryExecutor;
+  MutationExecutor? _mutationExecutor;
+  StreamSubscription<Map<String, List<Map<String, dynamic>>>>? _querySub;
+  List<ScreenQuery> _currentQueries = [];
+  ScreenMutations? _currentMutations;
+
   ModuleViewerBloc({
     required this.moduleRepository,
     required this.entryRepository,
+    this.appDatabase,
     required this.userId,
   }) : super(const ModuleViewerInitial()) {
     on<ModuleViewerStarted>(_onStarted);
@@ -38,6 +53,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerScreenParamChanged>(_onScreenParamChanged);
     on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
     on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
+    on<ModuleViewerQueryResultsUpdated>(_onQueryResultsUpdated);
   }
 
   Future<void> _onStarted(
@@ -55,14 +71,29 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       emit(ModuleViewerLoaded(module: module));
 
-      // Subscribe to entries (capped at 500 most recent to limit reads)
-      _entriesSub?.cancel();
-      _entriesSub = entryRepository
-          .watchEntries(userId, event.moduleId, limit: 500)
-          .listen(
-            (entries) => add(ModuleViewerEntriesUpdated(entries)),
-            onError: (e) => Log.e('Entries stream error', tag: 'ModuleViewer', error: e),
-          );
+      if (module.database != null && appDatabase != null) {
+        // SQL-driven path
+        await SchemaManager(db: appDatabase!).installModule(module);
+        final tableNames = module.database!.tableNames.values.toSet();
+        _queryExecutor = QueryExecutor(
+          db: appDatabase!,
+          moduleTableNames: tableNames,
+        );
+        _mutationExecutor = MutationExecutor(
+          db: appDatabase!,
+          moduleTableNames: tableNames,
+        );
+        _subscribeToScreen(module, 'main', const {});
+      } else {
+        // EntryRepository path (unchanged)
+        _entriesSub?.cancel();
+        _entriesSub = entryRepository
+            .watchEntries(userId, event.moduleId, limit: 500)
+            .listen(
+              (entries) => add(ModuleViewerEntriesUpdated(entries)),
+              onError: (e) => Log.e('Entries stream error', tag: 'ModuleViewer', error: e),
+            );
+      }
     } catch (e) {
       Log.e('Failed to load module', tag: 'ModuleViewer', error: e);
       emit(ModuleViewerError('Failed to load module: $e'));
@@ -98,6 +129,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       formValues: {},
       resolvedExpressions: resolved,
     ));
+
+    if (_queryExecutor != null) {
+      _subscribeToScreen(current.module, event.screenId, event.params);
+    }
   }
 
   void _onNavigateBack(
@@ -393,6 +428,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     updated[event.key] = event.value;
 
     emit(current.copyWith(screenParams: updated));
+
+    if (_queryExecutor != null) {
+      _subscribeToScreen(current.module, current.currentScreenId, updated);
+    }
   }
 
   Future<void> _onQuickEntryCreated(
@@ -455,6 +494,41 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     } catch (e) {
       Log.e('Failed to update quick entry', tag: 'ModuleViewer', error: e);
     }
+  }
+
+  // ─── SQL-driven screen subscription ───
+
+  void _subscribeToScreen(
+    Module module,
+    String screenId,
+    Map<String, dynamic> screenParams,
+  ) {
+    _querySub?.cancel();
+    final screenJson = module.screens[screenId];
+    if (screenJson == null) return;
+
+    _currentQueries = parseScreenQueries(screenJson);
+    final mutationsJson = screenJson['mutations'] as Map<String, dynamic>?;
+    _currentMutations = mutationsJson != null
+        ? ScreenMutations.fromJson(mutationsJson)
+        : null;
+
+    if (_currentQueries.isEmpty) return;
+
+    final resolvedParams = resolveQueryParams(_currentQueries, screenParams);
+    _querySub = _queryExecutor!
+        .watchAll(_currentQueries, resolvedParams)
+        .listen((results) => add(ModuleViewerQueryResultsUpdated(results)));
+  }
+
+  void _onQueryResultsUpdated(
+    ModuleViewerQueryResultsUpdated event,
+    Emitter<ModuleViewerState> emit,
+  ) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    emit(current.copyWith(queryResults: event.results));
   }
 
   /// Applies post-submit effects using [PostSubmitEffectExecutor].
@@ -531,6 +605,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   @override
   Future<void> close() {
     _entriesSub?.cancel();
+    _querySub?.cancel();
     return super.close();
   }
 }

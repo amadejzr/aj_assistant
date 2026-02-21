@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/models/entry.dart';
 import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
@@ -31,6 +32,7 @@ class ModuleViewerScreen extends StatelessWidget {
       create: (context) => ModuleViewerBloc(
         moduleRepository: context.read<ModuleRepository>(),
         entryRepository: context.read<EntryRepository>(),
+        appDatabase: context.read<AppDatabase>(),
         userId: userId,
       )..add(ModuleViewerStarted(moduleId)),
       child: const _ModuleViewerBody(),
@@ -106,6 +108,7 @@ class _LoadedViewState extends State<_LoadedView> {
       screenParams: state.screenParams,
       canGoBack: state.canGoBack,
       resolvedExpressions: state.resolvedExpressions,
+      queryResults: state.queryResults,
       onFormValueChanged: (fieldKey, value) {
         bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
       },
