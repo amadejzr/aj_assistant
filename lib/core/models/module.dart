@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../features/blueprint/navigation/module_navigation.dart';
 import '../../features/modules/models/field_constraints.dart';
 import '../../features/modules/models/module_schema.dart';
+import '../database/module_database.dart';
 
 class Module extends Equatable {
   final String id;
@@ -18,6 +19,7 @@ class Module extends Equatable {
   final List<Map<String, String>> guide;
   final int version;
   final ModuleNavigation? navigation;
+  final ModuleDatabase? database;
 
   const Module({
     required this.id,
@@ -32,6 +34,7 @@ class Module extends Equatable {
     this.guide = const [],
     this.version = 1,
     this.navigation,
+    this.database,
   });
 
   ModuleSchema get schema => schemas['default'] ?? const ModuleSchema();
@@ -49,6 +52,7 @@ class Module extends Equatable {
     List<Map<String, String>>? guide,
     int? version,
     ModuleNavigation? navigation,
+    ModuleDatabase? database,
   }) {
     return Module(
       id: id ?? this.id,
@@ -63,6 +67,7 @@ class Module extends Equatable {
       guide: guide ?? this.guide,
       version: version ?? this.version,
       navigation: navigation ?? this.navigation,
+      database: database ?? this.database,
     );
   }
 
@@ -88,6 +93,10 @@ class Module extends Equatable {
           ? ModuleNavigation.fromJson(
               Map<String, dynamic>.from(data['navigation'] as Map))
           : null,
+      database: data['database'] != null
+          ? ModuleDatabase.fromJson(
+              Map<String, dynamic>.from(data['database'] as Map))
+          : null,
     );
   }
 
@@ -106,6 +115,7 @@ class Module extends Equatable {
       'guide': guide,
       'version': version,
       if (navigation != null) 'navigation': navigation!.toJson(),
+      if (database != null) 'database': database!.toJson(),
     };
   }
 
@@ -164,6 +174,7 @@ class Module extends Equatable {
         guide,
         version,
         navigation,
+        database,
       ];
 }
 
