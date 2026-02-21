@@ -1,5 +1,6 @@
 import 'package:aj_assistant/core/database/app_database.dart';
 import 'package:aj_assistant/core/database/module_database.dart';
+import 'package:aj_assistant/core/database/mutation_executor.dart';
 import 'package:aj_assistant/core/database/query_executor.dart';
 import 'package:aj_assistant/core/database/schema_manager.dart';
 import 'package:aj_assistant/core/database/screen_query.dart';
@@ -358,6 +359,189 @@ void main() {
       expect(latest['expenses']![3]['description'], 'Taxi');
 
       await sub.cancel();
+    });
+  });
+
+  // ── Integration: full budget scenario ──
+
+  group('integration — full budget scenario', () {
+    late AppDatabase freshDb;
+    late QueryExecutor qe;
+    late MutationExecutor me;
+
+    setUp(() async {
+      freshDb = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      final mgr = SchemaManager(db: freshDb);
+      await mgr.installModule(budgetModule());
+
+      final tableNames = budgetModule().database!.tableNames.values.toSet();
+      qe = QueryExecutor(db: freshDb, moduleTableNames: tableNames);
+      me = MutationExecutor(db: freshDb, moduleTableNames: tableNames);
+    });
+
+    tearDown(() async {
+      await freshDb.close();
+    });
+
+    test('end-to-end: accounts, expenses, filters, triggers, streams',
+        () async {
+      // 1. Parse screen queries from JSON
+      final queries = parseScreenQueries({
+        'queries': {
+          'accounts': {
+            'sql':
+                'SELECT id, name, balance FROM "m_budget_accounts" ORDER BY name',
+          },
+          'recent_expenses': {
+            'sql':
+                'SELECT e.description, e.amount, e.category, a.name as account_name '
+                    'FROM "m_budget_expenses" e '
+                    'JOIN "m_budget_accounts" a ON e.account_id = a.id '
+                    'WHERE (:category = \'all\' OR e.category = :category) '
+                    'ORDER BY e.created_at DESC',
+            'params': {'category': '{{filters.category}}'},
+            'defaults': {'category': 'all'},
+          },
+          'total_balance': {
+            'sql':
+                'SELECT SUM(balance) as total FROM "m_budget_accounts"',
+          },
+        },
+      });
+      expect(queries, hasLength(3));
+
+      // 2. Parse mutations from JSON
+      final mutations = ScreenMutations.fromJson({
+        'create':
+            'INSERT INTO "m_budget_expenses" (id, amount, description, category, account_id, created_at, updated_at) '
+                'VALUES (:id, :amount, :description, :category, :account_id, :created_at, :updated_at)',
+        'update':
+            'UPDATE "m_budget_expenses" SET '
+                'amount = COALESCE(:amount, amount), '
+                'category = COALESCE(:category, category), '
+                'description = COALESCE(:description, description), '
+                'updated_at = :updated_at '
+                'WHERE id = :id',
+        'delete': 'DELETE FROM "m_budget_expenses" WHERE id = :id',
+      });
+
+      // 3. Start watchAll → verify initial empty results
+      final emissions = <Map<String, List<Map<String, dynamic>>>>[];
+      final sub =
+          qe.watchAll(queries, {'category': 'all'}).listen(emissions.add);
+
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+      expect(emissions[0]['accounts'], isEmpty);
+      expect(emissions[0]['recent_expenses'], isEmpty);
+      expect(emissions[0]['total_balance']![0]['total'], isNull); // SUM of 0 rows
+
+      // 4. Create 2 accounts via MutationExecutor
+      final createAccount = ScreenMutation(
+        sql:
+            'INSERT INTO "m_budget_accounts" (id, name, balance, created_at, updated_at) '
+            'VALUES (:id, :name, :balance, :created_at, :updated_at)',
+      );
+      final checkingId = await me.create(createAccount, {
+        'name': 'Checking',
+        'balance': 2000.0,
+      });
+      final savingsId = await me.create(createAccount, {
+        'name': 'Savings',
+        'balance': 5000.0,
+      });
+      await pumpEventQueue();
+
+      // 5. Verify watchAll emits accounts
+      expect(emissions.length, greaterThanOrEqualTo(2));
+      var latest = emissions.last;
+      expect(latest['accounts'], hasLength(2));
+      expect(latest['total_balance']![0]['total'], 7000.0);
+
+      // 6. Create 3 expenses (different categories, different accounts)
+      final expenseIds = <String>[];
+      expenseIds.add(await me.create(mutations.create!, {
+        'amount': 50.0,
+        'description': 'Coffee',
+        'category': 'Food',
+        'account_id': checkingId,
+      }));
+      expenseIds.add(await me.create(mutations.create!, {
+        'amount': 200.0,
+        'description': 'Dinner',
+        'category': 'Food',
+        'account_id': checkingId,
+      }));
+      expenseIds.add(await me.create(mutations.create!, {
+        'amount': 30.0,
+        'description': 'Bus',
+        'category': 'Transport',
+        'account_id': savingsId,
+      }));
+      await pumpEventQueue();
+
+      // 7. Verify triggers: account balances deducted
+      latest = emissions.last;
+      final accounts = latest['accounts']!;
+      final checking =
+          accounts.firstWhere((a) => a['name'] == 'Checking');
+      final savings =
+          accounts.firstWhere((a) => a['name'] == 'Savings');
+      expect(checking['balance'], 1750.0); // 2000 - 50 - 200
+      expect(savings['balance'], 4970.0); // 5000 - 30
+
+      // 8. Verify total_balance query shows correct sum
+      expect(latest['total_balance']![0]['total'], 6720.0); // 1750 + 4970
+
+      // 9. Verify all expenses visible with category = 'all'
+      expect(latest['recent_expenses'], hasLength(3));
+
+      // 10. Cancel and re-watch with category filter
+      await sub.cancel();
+      emissions.clear();
+
+      final filteredSub = qe
+          .watchAll(queries, {'category': 'Food'})
+          .listen(emissions.add);
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(1));
+      expect(emissions[0]['recent_expenses'], hasLength(2));
+      expect(
+        emissions[0]['recent_expenses']!.every((e) => e['category'] == 'Food'),
+        isTrue,
+      );
+
+      // 11. Update expense amount → verify balance adjusts
+      await me.update(mutations.update!, expenseIds[0], {
+        'amount': 100.0, // was 50 → +50 more deducted
+      });
+      await pumpEventQueue();
+
+      latest = emissions.last;
+      final updatedChecking =
+          latest['accounts']!.firstWhere((a) => a['name'] == 'Checking');
+      expect(updatedChecking['balance'], 1700.0); // 1750 - 50
+
+      // 12. Delete expense → verify balance refunds
+      await me.delete(mutations.delete!, expenseIds[1]); // 200 Dinner
+      await pumpEventQueue();
+
+      latest = emissions.last;
+      final refundedChecking =
+          latest['accounts']!.firstWhere((a) => a['name'] == 'Checking');
+      expect(refundedChecking['balance'], 1900.0); // 1700 + 200
+
+      // Only 1 food expense left (the updated Coffee)
+      expect(latest['recent_expenses'], hasLength(1));
+      expect(latest['recent_expenses']![0]['description'], 'Coffee');
+
+      await filteredSub.cancel();
     });
   });
 }
