@@ -18,6 +18,7 @@ import 'templates/hiking_template.dart';
 import 'templates/meals_template.dart';
 import 'templates/projects_template.dart';
 import 'templates/reading_list_template.dart';
+import 'templates/budget_sql_template.dart';
 import 'templates/tasks_template.dart';
 
 Future<void> main() async {
@@ -30,6 +31,7 @@ Future<void> main() async {
   final collection = firestore.collection('marketplace_templates');
 
   final templates = {
+    'tpl_budget_sql': budgetSqlTemplate,
     'tpl_finance': financeTemplate,
     'tpl_fitness': fitnessTemplate,
     'tpl_hiking': hikingTemplate,
