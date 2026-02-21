@@ -55,3 +55,4 @@ ios/firebase_app_id_file.json
 
 
 *.g.dart
+.worktrees/
