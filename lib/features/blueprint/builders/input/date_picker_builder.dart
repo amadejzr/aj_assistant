@@ -29,8 +29,8 @@ class _DatePickerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = field?.label ?? input.fieldKey;
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+    final label = meta.label;
     final currentValue = ctx.getFormValue(input.fieldKey) as String?;
 
     DateTime? parsed;

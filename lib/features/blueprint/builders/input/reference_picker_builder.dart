@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../modules/models/field_constraints.dart';
-import '../../../modules/models/field_definition.dart';
 import '../../../modules/models/module_schema.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
+import '../../renderer/field_meta.dart';
 import '../../renderer/render_context.dart';
 import '../../widgets/reference_entry_sheet.dart';
 
@@ -37,21 +36,13 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
   ReferencePickerNode get input => widget.input;
   RenderContext get ctx => widget.ctx;
 
-  FieldDefinition? _resolveFieldDefinition() {
-    final fromDefault = ctx.getFieldDefinition(input.fieldKey);
-    if (fromDefault != null) return fromDefault;
-
-    for (final schema in ctx.module.schemas.values) {
-      final field = schema.fields[input.fieldKey];
-      if (field != null) return field;
-    }
-    return null;
+  FieldMeta _resolveFieldMeta() {
+    return ctx.resolveFieldMeta(input.fieldKey, input.properties);
   }
 
-  String _resolveSchemaKey(FieldDefinition? field) {
+  String _resolveSchemaKey(FieldMeta meta) {
     if (input.schemaKey.isNotEmpty) return input.schemaKey;
-    final c = field?.constraints;
-    return c is ReferenceConstraints ? c.targetSchema : '';
+    return meta.targetSchema ?? '';
   }
 
   ModuleSchema? _getTargetSchema(String schemaKey) {
@@ -102,9 +93,9 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    final field = _resolveFieldDefinition();
-    final label = field?.label ?? input.fieldKey;
-    final schemaKey = _resolveSchemaKey(field);
+    final meta = _resolveFieldMeta();
+    final label = meta.label;
+    final schemaKey = _resolveSchemaKey(meta);
     final targetSchema = _getTargetSchema(schemaKey);
 
     final matchingEntries = ctx.allEntries

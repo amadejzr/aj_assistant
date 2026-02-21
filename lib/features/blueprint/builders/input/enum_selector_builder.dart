@@ -28,9 +28,9 @@ class _EnumSelectorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = field?.label ?? input.fieldKey;
-    final options = field?.options ?? [];
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+    final label = meta.label;
+    final options = meta.options;
     final currentValue = ctx.getFormValue(input.fieldKey);
 
     // For multi-select, currentValue is a List<String>

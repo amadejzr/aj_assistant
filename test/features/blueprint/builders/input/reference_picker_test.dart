@@ -111,6 +111,7 @@ void main() {
           const ReferencePickerNode(
             fieldKey: 'category',
             schemaKey: 'category',
+            properties: {'label': 'Category'},
           );
 
       final ctx = RenderContext(
@@ -236,7 +237,7 @@ void main() {
       expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('falls back to field constraint schemaKey when node omits it',
+    testWidgets('falls back to targetSchema property when node schemaKey is empty',
         (tester) async {
       const moduleWithConstraint = Module(
         id: 'expenses',
@@ -252,23 +253,13 @@ void main() {
               ),
             },
           ),
-          'expense': ModuleSchema(
-            label: 'Expense',
-            fields: {
-              'category': FieldDefinition(
-                key: 'category',
-                type: FieldType.reference,
-                label: 'Category',
-                constraints: const ReferenceConstraints(targetSchema: 'category'),
-              ),
-            },
-          ),
         },
       );
 
       const node = ReferencePickerNode(
         fieldKey: 'category',
-        schemaKey: '', // empty — should fall back
+        schemaKey: '', // empty — falls back to targetSchema property
+        properties: {'targetSchema': 'category', 'label': 'Category'},
       );
 
       await tester.pumpWidget(buildWidget(

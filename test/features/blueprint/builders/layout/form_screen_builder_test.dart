@@ -47,8 +47,14 @@ void main() {
           title: 'Add Expense',
           submitLabel: 'Save',
           children: [
-            TextInputNode(fieldKey: 'note'),
-            NumberInputNode(fieldKey: 'amount'),
+            TextInputNode(
+              fieldKey: 'note',
+              properties: {'label': 'Note'},
+            ),
+            NumberInputNode(
+              fieldKey: 'amount',
+              properties: {'label': 'Amount'},
+            ),
           ],
         );
 

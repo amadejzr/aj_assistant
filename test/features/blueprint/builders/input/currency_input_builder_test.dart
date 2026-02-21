@@ -68,7 +68,10 @@ void main() {
       void Function(String, dynamic)? onChanged,
     }) {
       final inputNode = node ??
-          const CurrencyInputNode(fieldKey: 'amount');
+          const CurrencyInputNode(
+            fieldKey: 'amount',
+            properties: {'label': 'Amount'},
+          );
 
       final ctx = RenderContext(
         module: testModule,
@@ -85,7 +88,7 @@ void main() {
       );
     }
 
-    testWidgets('renders with label from field definition', (tester) async {
+    testWidgets('renders with label from node properties', (tester) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
 
