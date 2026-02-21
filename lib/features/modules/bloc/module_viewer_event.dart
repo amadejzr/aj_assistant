@@ -105,6 +105,15 @@ class ModuleViewerScreenParamChanged extends ModuleViewerEvent {
   List<Object?> get props => [key, value];
 }
 
+class ModuleViewerQueryResultsUpdated extends ModuleViewerEvent {
+  final Map<String, List<Map<String, dynamic>>> results;
+
+  const ModuleViewerQueryResultsUpdated(this.results);
+
+  @override
+  List<Object?> get props => [results];
+}
+
 class ModuleViewerQuickEntryUpdated extends ModuleViewerEvent {
   final String entryId;
   final String schemaKey;

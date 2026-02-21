@@ -39,6 +39,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
   final String? submitError;
   final ({String fieldKey, String entryId})? pendingAutoSelect;
   final Map<String, dynamic> resolvedExpressions;
+  final Map<String, List<Map<String, dynamic>>> queryResults;
 
   const ModuleViewerLoaded({
     required this.module,
@@ -51,6 +52,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
     this.submitError,
     this.pendingAutoSelect,
     this.resolvedExpressions = const {},
+    this.queryResults = const {},
   });
 
   bool get canGoBack => screenStack.isNotEmpty;
@@ -68,6 +70,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
     ({String fieldKey, String entryId})? pendingAutoSelect,
     bool clearPendingAutoSelect = false,
     Map<String, dynamic>? resolvedExpressions,
+    Map<String, List<Map<String, dynamic>>>? queryResults,
   }) {
     return ModuleViewerLoaded(
       module: module ?? this.module,
@@ -84,6 +87,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
           ? null
           : (pendingAutoSelect ?? this.pendingAutoSelect),
       resolvedExpressions: resolvedExpressions ?? this.resolvedExpressions,
+      queryResults: queryResults ?? this.queryResults,
     );
   }
 
@@ -99,6 +103,7 @@ class ModuleViewerLoaded extends ModuleViewerState {
         submitError,
         pendingAutoSelect,
         resolvedExpressions,
+        queryResults,
       ];
 }
 

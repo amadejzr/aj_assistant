@@ -19,6 +19,7 @@ class RenderContext {
   final Future<void> Function(String entryId, String schemaKey, Map<String, dynamic> data)? onUpdateEntry;
   final void Function(String key, dynamic value)? onScreenParamChanged;
   final VoidFormCallback? onOpenDrawer;
+  final Map<String, List<Map<String, dynamic>>> queryResults;
 
   const RenderContext({
     required this.module,
@@ -37,6 +38,7 @@ class RenderContext {
     this.onUpdateEntry,
     this.onScreenParamChanged,
     this.onOpenDrawer,
+    this.queryResults = const {},
   });
 
   FieldDefinition? getFieldDefinition(String fieldKey, {String? schemaKey}) {
