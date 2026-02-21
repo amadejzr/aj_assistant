@@ -1,14 +1,13 @@
-import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
 
 /// Resolves reference field values to display text.
 ///
 /// With SQL-only modules, references are resolved via JOINs in queries.
-/// This class provides a simple fallback for entry-based modules that
-/// does basic ID-to-display-text resolution using allEntries.
+/// This class provides a simple fallback that does basic ID-to-display-text
+/// resolution using allEntries (as Maps).
 class ReferenceResolver {
   final Module module;
-  final List<Entry> allEntries;
+  final List<Map<String, dynamic>> allEntries;
 
   const ReferenceResolver({required this.module, required this.allEntries});
 
@@ -18,12 +17,12 @@ class ReferenceResolver {
     if (rawValue == null) return '';
 
     final refEntry = allEntries
-        .where((e) => e.id == rawValue.toString())
+        .where((e) => e['id'] == rawValue.toString())
         .firstOrNull;
     if (refEntry == null) return rawValue.toString();
 
     // Convention: use "name" field as display text
-    return refEntry.data['name']?.toString() ?? rawValue.toString();
+    return refEntry['name']?.toString() ?? rawValue.toString();
   }
 
   /// Resolves a dot-notation reference like `category.name`:
@@ -37,10 +36,10 @@ class ReferenceResolver {
     if (rawValue == null) return '';
 
     final refEntry = allEntries
-        .where((e) => e.id == rawValue.toString())
+        .where((e) => e['id'] == rawValue.toString())
         .firstOrNull;
     if (refEntry == null) return '';
 
-    return refEntry.data[subField]?.toString() ?? '';
+    return refEntry[subField]?.toString() ?? '';
   }
 }

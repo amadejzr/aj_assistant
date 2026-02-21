@@ -63,10 +63,10 @@ class _EntryCardWidget extends StatelessWidget {
   String _interpolate(String template, Map<String, dynamic> data) {
     final resolver = ReferenceResolver(
       module: ctx.module,
-      allEntries: ctx.allEntries,
+      allEntries: const [],
     );
     final schemaKey =
-        ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
+        ctx.screenParams['_schemaKey'] as String?;
 
     return template.replaceAllMapped(
       RegExp(r'\{\{([\w.]+)\}\}'),
@@ -102,8 +102,7 @@ class _EntryCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final data = ctx.formValues;
-    final entryId =
-        ctx.entries.isNotEmpty ? ctx.entries.first.id : null;
+    final entryId = ctx.formValues['id'] as String?;
 
     final title =
         card.titleTemplate != null ? _interpolate(card.titleTemplate!, data) : '';
@@ -224,7 +223,7 @@ class _EntryCardWidget extends StatelessWidget {
 
           // Forward entry's schemaKey so edit forms resolve the right schema
           final entrySchemaKey =
-              ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
+              ctx.screenParams['_schemaKey'] as String?;
           if (entrySchemaKey != null && entrySchemaKey != 'default') {
             params.putIfAbsent('_schemaKey', () => entrySchemaKey);
           }

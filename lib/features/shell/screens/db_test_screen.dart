@@ -62,7 +62,7 @@ class _DbTestScreenState extends State<DbTestScreen> {
     ).get();
 
     // ── App Database: built-in Drift tables ──
-    const driftTableNames = {'modules', 'entries', 'capabilities'};
+    const driftTableNames = {'modules', 'capabilities'};
 
     final appTables = allTables
         .where((r) => driftTableNames.contains(r.data['name'] as String))

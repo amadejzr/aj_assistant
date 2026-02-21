@@ -4,7 +4,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../engine/entry_filter.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
@@ -75,105 +74,25 @@ class _EntryListWidgetState extends State<_EntryListWidget>
   }
 
   List<dynamic> _filteredAndSorted() {
-    // SQL source path: read from queryResults, skip client-side filtering
+    // SQL source path: read from queryResults
     final source = widget.listNode.properties['source'] as String?;
     if (source != null) {
       return widget.ctx.queryResults[source] ?? [];
     }
 
-    // Existing path: filter from ctx.entries
-    final result = EntryFilter.filter(
-      widget.ctx.entries,
-      widget.listNode.filter,
-      widget.ctx.screenParams,
-    );
-    List<dynamic> entries = List.of(result.entries);
-
-    // Apply interactive filter bar selections
-    for (final filterDef in widget.listNode.filters) {
-      final field = filterDef['field'] as String?;
-      if (field == null) continue;
-      final activeValue = _activeFilters[field];
-      if (activeValue == null) continue; // "All" selected
-
-      final type = filterDef['type'] as String?;
-      if (type == 'period') {
-        entries = _applyPeriodFilter(entries, field, activeValue);
-      } else {
-        // Enum or other equality filter
-        entries = entries
-            .where((e) => (e as dynamic).data[field]?.toString() == activeValue)
-            .toList();
-      }
-    }
-
-    final orderBy = widget.listNode.query['orderBy'] as String?;
-    final direction =
-        widget.listNode.query['direction'] as String? ?? 'desc';
-    if (orderBy != null) {
-      entries.sort((a, b) {
-        final aVal = a.data[orderBy];
-        final bVal = b.data[orderBy];
-        if (aVal == null && bVal == null) return 0;
-        if (aVal == null) return 1;
-        if (bVal == null) return -1;
-        final cmp =
-            Comparable.compare(aVal as Comparable, bVal as Comparable);
-        return direction == 'desc' ? -cmp : cmp;
-      });
-    }
-
-    return entries;
-  }
-
-  List<dynamic> _applyPeriodFilter(
-      List<dynamic> entries, String field, String period) {
-    final now = DateTime.now();
-    late DateTime start;
-    DateTime? end;
-
-    switch (period) {
-      case 'This Week':
-        start = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-      case 'This Month':
-        start = DateTime(now.year, now.month, 1);
-      case 'Last Month':
-        start = DateTime(now.year, now.month - 1, 1);
-        end = DateTime(now.year, now.month, 1);
-      default:
-        return entries;
-    }
-
-    return entries.where((e) {
-      final dateVal = (e as dynamic).data[field];
-      if (dateVal == null) return false;
-      DateTime date;
-      if (dateVal is String) {
-        date = DateTime.tryParse(dateVal) ?? DateTime(0);
-      } else if (dateVal is int) {
-        date = DateTime.fromMillisecondsSinceEpoch(dateVal);
-      } else {
-        return false;
-      }
-      if (date.isBefore(start)) return false;
-      if (end != null && !date.isBefore(end)) return false;
-      return true;
-    }).toList();
+    return [];
   }
 
   RenderContext _entryContext(dynamic entry) {
-    // SQL row (Map) vs Entry object
     final Map<String, dynamic> data;
     if (entry is Map<String, dynamic>) {
       data = entry;
     } else {
-      data = (entry as dynamic).data as Map<String, dynamic>;
+      data = (entry as dynamic) as Map<String, dynamic>;
     }
 
     return RenderContext(
       module: widget.ctx.module,
-      entries: entry is Map ? const [] : [entry],
-      allEntries: widget.ctx.allEntries,
       formValues: data,
       screenParams: widget.ctx.screenParams,
       canGoBack: widget.ctx.canGoBack,
@@ -183,8 +102,6 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       onNavigateBack: widget.ctx.onNavigateBack,
       onDeleteEntry: widget.ctx.onDeleteEntry,
       resolvedExpressions: widget.ctx.resolvedExpressions,
-      onCreateEntry: widget.ctx.onCreateEntry,
-      onUpdateEntry: widget.ctx.onUpdateEntry,
       queryResults: widget.ctx.queryResults,
     );
   }

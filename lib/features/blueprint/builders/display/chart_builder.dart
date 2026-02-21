@@ -3,13 +3,9 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/logging/log.dart';
-import '../../../../core/models/entry.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
-import '../../engine/entry_filter.dart';
-import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
 /// Renders a chart (pie, donut, or bar) by grouping entries and computing aggregates.
@@ -45,13 +41,6 @@ class _ChartWidget extends StatelessWidget {
     Color(0xFF9E6B6B), // dusty rose
   ];
 
-  static bool _isEmptyFilter(dynamic filter) {
-    if (filter == null) return true;
-    if (filter is Map && filter.isEmpty) return true;
-    if (filter is List && filter.isEmpty) return true;
-    return false;
-  }
-
   Map<String, num> _groupData() {
     // SQL source path
     final source = chart.properties['source'] as String?;
@@ -68,66 +57,18 @@ class _ChartWidget extends StatelessWidget {
       };
     }
 
-    // Filter entries
-    final filtered = chart.filter != null
-        ? EntryFilter.filter(ctx.entries, chart.filter, ctx.screenParams).entries
-        : ctx.entries;
-
-    // If expression is provided (e.g. "group(category, sum(amount))"),
-    // use evaluateGroup() for unified syntax
-    if (chart.expression != null && chart.expression!.isNotEmpty) {
-      // Use cached value when the chart has no filter
-      if (_isEmptyFilter(chart.filter) &&
-          ctx.resolvedExpressions.containsKey(chart.expression)) {
-        Log.d('chart "${chart.chartType}": cache HIT for ${chart.expression}', tag: 'Perf');
-        final cached = ctx.resolvedExpressions[chart.expression];
-        if (cached is Map<String, num>) return cached;
-        if (cached is Map) {
-          return cached.map((k, v) => MapEntry(k.toString(), (v as num?) ?? 0));
-        }
-        return {};
-      }
-
-      Log.d('chart "${chart.chartType}": cache MISS (has filter)', tag: 'Perf');
-      final evaluator = ExpressionEvaluator(
-        entries: filtered,
-        params: {...ctx.module.settings, ...ctx.screenParams},
-      );
-      return evaluator.evaluateGroup(chart.expression!) ?? {};
-    }
-
-    // Fall back to groupBy + aggregate properties
-    final groupBy = chart.groupBy;
-    if (groupBy == null) return {};
-
-    // Group entries by field value
-    final groups = <String, List<Map<String, dynamic>>>{};
-    for (final entry in filtered) {
-      final key = entry.data[groupBy]?.toString() ?? 'Other';
-      groups.putIfAbsent(key, () => []).add(entry.data);
-    }
-
-    // Compute aggregate per group
-    final result = <String, num>{};
-    for (final entry in groups.entries) {
-      final groupEntries = entry.value;
-
-      if (chart.aggregate != null && chart.aggregate!.isNotEmpty) {
-        final syntheticEntries = groupEntries.map((data) {
-          return Entry(id: '', data: data);
-        }).toList();
-
-        final evaluator = ExpressionEvaluator(
-          entries: syntheticEntries,
-          params: {...ctx.module.settings, ...ctx.screenParams},
-        );
-        result[entry.key] = evaluator.evaluate(chart.aggregate!) ?? 0;
-      } else {
-        result[entry.key] = groupEntries.length;
+    // Use cached resolvedExpressions
+    if (chart.expression != null &&
+        chart.expression!.isNotEmpty &&
+        ctx.resolvedExpressions.containsKey(chart.expression)) {
+      final cached = ctx.resolvedExpressions[chart.expression];
+      if (cached is Map<String, num>) return cached;
+      if (cached is Map) {
+        return cached.map((k, v) => MapEntry(k.toString(), (v as num?) ?? 0));
       }
     }
 
-    return result;
+    return {};
   }
 
   @override

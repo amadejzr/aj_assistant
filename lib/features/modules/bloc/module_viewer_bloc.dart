@@ -9,9 +9,7 @@ import '../../../core/database/query_executor.dart';
 import '../../../core/database/schema_manager.dart';
 import '../../../core/database/screen_query.dart';
 import '../../../core/logging/log.dart';
-import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
-import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
@@ -20,11 +18,8 @@ import 'module_viewer_state.dart';
 
 class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   final ModuleRepository moduleRepository;
-  final EntryRepository entryRepository;
   final AppDatabase? appDatabase;
   final String userId;
-
-  StreamSubscription<List<Entry>>? _entriesSub;
 
   // SQL-driven screen state
   QueryExecutor? _queryExecutor;
@@ -35,7 +30,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
   ModuleViewerBloc({
     required this.moduleRepository,
-    required this.entryRepository,
     this.appDatabase,
     required this.userId,
   }) : super(const ModuleViewerInitial()) {
@@ -46,11 +40,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerFormSubmitted>(_onFormSubmitted);
     on<ModuleViewerFormReset>(_onFormReset);
     on<ModuleViewerEntryDeleted>(_onEntryDeleted);
-    on<ModuleViewerEntriesUpdated>(_onEntriesUpdated);
     on<ModuleViewerModuleRefreshed>(_onModuleRefreshed);
     on<ModuleViewerScreenParamChanged>(_onScreenParamChanged);
-    on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
-    on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
     on<ModuleViewerQueryResultsUpdated>(_onQueryResultsUpdated);
     on<ModuleViewerFormPrePopulated>(_onFormPrePopulated);
   }
@@ -83,15 +74,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           moduleTableNames: tableNames,
         );
         _subscribeToScreen(module, 'main', const {});
-      } else {
-        // EntryRepository path (unchanged)
-        _entriesSub?.cancel();
-        _entriesSub = entryRepository
-            .watchEntries(userId, event.moduleId, limit: 500)
-            .listen(
-              (entries) => add(ModuleViewerEntriesUpdated(entries)),
-              onError: (e) => Log.e('Entries stream error', tag: 'ModuleViewer', error: e),
-            );
       }
     } catch (e) {
       Log.e('Failed to load module', tag: 'ModuleViewer', error: e);
@@ -115,11 +97,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
             ScreenEntry(current.currentScreenId, params: current.screenParams),
           ];
 
-    final resolved = _resolveExpressions(
-      current.module,
-      event.screenId,
-      current.entries,
-    );
+    final resolved = _resolveExpressions(current.module, event.screenId);
 
     emit(current.copyWith(
       currentScreenId: event.screenId,
@@ -189,9 +167,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final data = Map<String, dynamic>.from(current.formValues)
         ..removeWhere((key, _) => key.startsWith('_'));
 
-      final schemaKey =
-          current.screenParams['_schemaKey'] as String? ?? 'default';
-
       // Settings mode — update module settings instead of entries
       if (current.screenParams['_settingsMode'] == true) {
         final updatedSettings = {
@@ -249,48 +224,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         return;
       }
 
-      final isCreate = entryId == null || entryId.isEmpty;
-
-      if (!isCreate) {
-        // Update existing entry — merge new form values into existing data
-        final existing = current.entries
-            .where((e) => e.id == entryId)
-            .firstOrNull;
-        final mergedData = {
-          if (existing != null) ...existing.data,
-          ...data,
-        };
-        final updated = Entry(
-          id: entryId,
-          data: mergedData,
-          schemaVersion: 1,
-          schemaKey: existing?.schemaKey ?? schemaKey,
-        );
-        await entryRepository.updateEntry(userId, current.module.id, updated);
-      } else {
-        // Create new entry
-        final entry = Entry(
-          id: '',
-          data: data,
-          schemaVersion: 1,
-          schemaKey: schemaKey,
-        );
-        await entryRepository.createEntry(userId, current.module.id, entry);
-      }
-
-      // Navigate back to previous screen (or main)
-      final stack = List<ScreenEntry>.from(current.screenStack);
-      final previous = stack.isNotEmpty
-          ? stack.removeLast()
-          : const ScreenEntry('main');
-
-      emit(current.copyWith(
-        currentScreenId: previous.screenId,
-        screenParams: previous.params,
-        screenStack: stack,
-        formValues: {},
-        isSubmitting: false,
-      ));
     } catch (e) {
       Log.e('Failed to save entry', tag: 'ModuleViewer', error: e);
       emit(current.copyWith(
@@ -341,45 +274,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         return;
       }
 
-      await entryRepository.deleteEntry(userId, current.module.id, event.entryId);
-
-      // If we're on a detail screen for this entry, navigate back
-      final currentEntryId = current.screenParams['_entryId'] as String?;
-      if (currentEntryId == event.entryId && current.screenStack.isNotEmpty) {
-        final stack = List<ScreenEntry>.from(current.screenStack);
-        final previous = stack.removeLast();
-        emit(current.copyWith(
-          currentScreenId: previous.screenId,
-          screenParams: previous.params,
-          screenStack: stack,
-          formValues: {},
-        ));
-      }
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
       emit(current.copyWith(submitError: e.toString()));
     }
-  }
-
-  void _onEntriesUpdated(
-    ModuleViewerEntriesUpdated event,
-    Emitter<ModuleViewerState> emit,
-  ) {
-    final current = state;
-    if (current is! ModuleViewerLoaded) return;
-
-    Log.d('Entries updated: ${event.entries.length} entries', tag: 'Perf');
-
-    final resolved = _resolveExpressions(
-      current.module,
-      current.currentScreenId,
-      event.entries,
-    );
-
-    emit(current.copyWith(
-      entries: event.entries,
-      resolvedExpressions: resolved,
-    ));
   }
 
   Future<void> _onModuleRefreshed(
@@ -412,66 +310,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
     if (_queryExecutor != null) {
       _subscribeToScreen(current.module, current.currentScreenId, updated);
-    }
-  }
-
-  Future<void> _onQuickEntryCreated(
-    ModuleViewerQuickEntryCreated event,
-    Emitter<ModuleViewerState> emit,
-  ) async {
-    final current = state;
-    if (current is! ModuleViewerLoaded) return;
-
-    try {
-      final entry = Entry(
-        id: '',
-        data: event.data,
-        schemaVersion: 1,
-        schemaKey: event.schemaKey,
-      );
-      final newId = await entryRepository.createEntry(
-        userId,
-        current.module.id,
-        entry,
-      );
-
-      if (event.autoSelectFieldKey != null) {
-        emit(current.copyWith(
-          pendingAutoSelect: (
-            fieldKey: event.autoSelectFieldKey!,
-            entryId: newId,
-          ),
-        ));
-      }
-    } catch (e) {
-      Log.e('Failed to create quick entry', tag: 'ModuleViewer', error: e);
-    }
-  }
-
-  Future<void> _onQuickEntryUpdated(
-    ModuleViewerQuickEntryUpdated event,
-    Emitter<ModuleViewerState> emit,
-  ) async {
-    final current = state;
-    if (current is! ModuleViewerLoaded) return;
-
-    try {
-      final existing = current.entries
-          .where((e) => e.id == event.entryId)
-          .firstOrNull;
-      final mergedData = {
-        if (existing != null) ...existing.data,
-        ...event.data,
-      };
-      final updated = Entry(
-        id: event.entryId,
-        data: mergedData,
-        schemaVersion: 1,
-        schemaKey: event.schemaKey,
-      );
-      await entryRepository.updateEntry(userId, current.module.id, updated);
-    } catch (e) {
-      Log.e('Failed to update quick entry', tag: 'ModuleViewer', error: e);
     }
   }
 
@@ -558,7 +396,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   Map<String, dynamic> _resolveExpressions(
     Module module,
     String screenId,
-    List<Entry> entries,
   ) {
     final blueprint = module.screens[screenId];
     if (blueprint == null) return const {};
@@ -567,7 +404,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (expressions.isEmpty) return const {};
 
     final evaluator = ExpressionEvaluator(
-      entries: entries,
+      entries: const [],
       params: module.settings,
     );
 
@@ -585,7 +422,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
   @override
   Future<void> close() {
-    _entriesSub?.cancel();
     _querySub?.cancel();
     return super.close();
   }

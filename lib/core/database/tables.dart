@@ -27,20 +27,6 @@ class Modules extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DataClassName('EntryRow')
-class Entries extends Table {
-  TextColumn get id => text()();
-  TextColumn get moduleId => text().references(Modules, #id)();
-  TextColumn get schemaKey => text().withDefault(const Constant('default'))();
-  TextColumn get data => text().map(const JsonMapConverter())();
-  IntColumn get schemaVersion => integer().withDefault(const Constant(1))();
-  IntColumn get createdAt => integer()();
-  IntColumn get updatedAt => integer()();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
 @DataClassName('CapabilityRow')
 class Capabilities extends Table {
   TextColumn get id => text()();

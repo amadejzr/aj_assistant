@@ -1,4 +1,3 @@
-import 'package:aj_assistant/core/repositories/drift_entry_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +7,6 @@ import 'app.dart';
 import 'core/logging/app_bloc_observer.dart';
 import 'core/logging/console_log_backend.dart';
 import 'core/logging/log.dart';
-import 'core/repositories/entry_repository.dart';
 import 'core/repositories/marketplace_repository.dart';
 import 'core/database/app_database.dart';
 import 'core/repositories/drift_module_repository.dart';
@@ -44,7 +42,6 @@ void main() async {
   final userService = UserService();
   final db = AppDatabase();
   final moduleRepository = DriftModuleRepository(db);
-  final entryRepository = DriftEntryRepository(db);
   final capabilityRepository = DriftCapabilityRepository(db);
   final chatRepository = ChatRepository();
   final marketplaceRepository = FirestoreMarketplaceRepository();
@@ -60,7 +57,7 @@ void main() async {
       providers: [
         RepositoryProvider<AppDatabase>.value(value: db),
         RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
-        RepositoryProvider<EntryRepository>.value(value: entryRepository),
+
         RepositoryProvider<CapabilityRepository>.value(
           value: capabilityRepository,
         ),

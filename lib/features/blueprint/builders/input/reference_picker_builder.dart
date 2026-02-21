@@ -39,22 +39,17 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
     return ctx.resolveFieldMeta(input.fieldKey, input.properties);
   }
 
-  String _resolveSchemaKey(FieldMeta meta) {
-    if (input.schemaKey.isNotEmpty) return input.schemaKey;
-    return meta.targetSchema ?? '';
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
     final meta = _resolveFieldMeta();
     final label = meta.label;
-    final schemaKey = _resolveSchemaKey(meta);
 
-    final matchingEntries = ctx.allEntries
-        .where((e) => e.schemaKey == schemaKey)
-        .toList();
+    final source = input.properties['source'] as String?;
+    final matchingEntries = source != null
+        ? (ctx.queryResults[source] ?? [])
+        : <Map<String, dynamic>>[];
 
     final currentValue = ctx.getFormValue(input.fieldKey) as String?;
 
@@ -79,13 +74,14 @@ class _ReferencePickerWidgetState extends State<_ReferencePickerWidget> {
             runSpacing: AppSpacing.sm,
             children: [
               ...matchingEntries.map((entry) {
+                final entryId = entry['id']?.toString() ?? '';
                 final displayText =
-                    entry.data[input.displayField]?.toString() ?? entry.id;
-                final isSelected = currentValue == entry.id;
+                    entry[input.displayField]?.toString() ?? entryId;
+                final isSelected = currentValue == entryId;
 
                 return GestureDetector(
                   onTap: () {
-                    ctx.onFormValueChanged(input.fieldKey, entry.id);
+                    ctx.onFormValueChanged(input.fieldKey, entryId);
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),

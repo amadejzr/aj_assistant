@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../core/models/entry.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
-import '../../engine/entry_filter.dart';
 import '../../renderer/render_context.dart';
 
 /// Renders an interactive monthly calendar view that highlights days with entries and shows entry details on tap.
@@ -45,19 +43,19 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
     _displayedMonth = DateTime(now.year, now.month);
   }
 
-  List<Entry> get _filteredEntries {
-    return EntryFilter.filter(
-      widget.ctx.entries,
-      widget.calendar.filter,
-      widget.ctx.screenParams,
-    ).entries;
+  List<Map<String, dynamic>> get _rows {
+    final source = widget.calendar.properties['source'] as String?;
+    if (source != null) {
+      return widget.ctx.queryResults[source] ?? [];
+    }
+    return [];
   }
 
   Set<int> _datesWithEntries() {
     final dateField = widget.calendar.dateField;
     final dates = <int>{};
-    for (final entry in _filteredEntries) {
-      final dateStr = entry.data[dateField] as String?;
+    for (final row in _rows) {
+      final dateStr = row[dateField] as String?;
       if (dateStr == null) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
@@ -69,7 +67,7 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
     return dates;
   }
 
-  List<Entry> _entriesForSelectedDay() {
+  List<Map<String, dynamic>> _entriesForSelectedDay() {
     if (_selectedDay == null) return [];
     final dateField = widget.calendar.dateField;
     final targetDate = DateTime(
@@ -78,8 +76,8 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
       _selectedDay!,
     );
 
-    return _filteredEntries.where((entry) {
-      final dateStr = entry.data[dateField] as String?;
+    return _rows.where((row) {
+      final dateStr = row[dateField] as String?;
       if (dateStr == null) return false;
       final date = DateTime.tryParse(dateStr);
       if (date == null) return false;
@@ -240,21 +238,22 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
               ),
             )
           else
-            ...selectedEntries.map((entry) {
+            ...selectedEntries.map((row) {
               final name = _formatDisplayValue(
-                    entry.data['name']?.toString(),
+                    row['name']?.toString(),
                   ) ??
                   _formatDisplayValue(
-                    entry.data['description']?.toString(),
+                    row['description']?.toString(),
                   ) ??
-                  entry.data['activityType']?.toString() ??
+                  row['activityType']?.toString() ??
                   'Entry';
-              final sub = entry.data['location']?.toString() ??
-                  entry.data['category']?.toString() ??
-                  entry.data['entryType']?.toString() ??
+              final sub = row['location']?.toString() ??
+                  row['category']?.toString() ??
+                  row['entryType']?.toString() ??
                   '';
 
               final onEntryTap = widget.calendar.onEntryTap;
+              final rowId = row['id']?.toString() ?? '';
 
               return GestureDetector(
                 onTap: onEntryTap != null
@@ -262,12 +261,12 @@ class _DateCalendarWidgetState extends State<_DateCalendarWidget> {
                         final screen = onEntryTap['screen'] as String?;
                         if (screen == null) return;
                         final params = <String, dynamic>{};
-                        if (entry.id.isNotEmpty) {
-                          params['_entryId'] = entry.id;
+                        if (rowId.isNotEmpty) {
+                          params['_entryId'] = rowId;
                         }
                         for (final key in widget.calendar.forwardFields) {
-                          if (entry.data.containsKey(key)) {
-                            params[key] = entry.data[key];
+                          if (row.containsKey(key)) {
+                            params[key] = row[key];
                           }
                         }
                         widget.ctx.onNavigateToScreen(screen, params: params);

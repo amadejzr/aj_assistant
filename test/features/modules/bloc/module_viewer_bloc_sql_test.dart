@@ -1,9 +1,7 @@
 import 'package:aj_assistant/core/database/app_database.dart';
 import 'package:aj_assistant/core/database/module_database.dart';
 import 'package:aj_assistant/core/database/schema_manager.dart';
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/repositories/entry_repository.dart';
 import 'package:aj_assistant/core/repositories/module_repository.dart';
 import 'package:aj_assistant/features/modules/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/modules/bloc/module_viewer_event.dart';
@@ -16,12 +14,9 @@ import 'package:mocktail/mocktail.dart';
 
 class MockModuleRepository extends Mock implements ModuleRepository {}
 
-class MockEntryRepository extends Mock implements EntryRepository {}
-
 void main() {
   late AppDatabase db;
   late MockModuleRepository moduleRepo;
-  late MockEntryRepository entryRepo;
 
   setUp(() async {
     db = AppDatabase(
@@ -31,7 +26,6 @@ void main() {
       ),
     );
     moduleRepo = MockModuleRepository();
-    entryRepo = MockEntryRepository();
   });
 
   tearDown(() async {
@@ -115,14 +109,6 @@ void main() {
         ),
       );
 
-  Module nonSqlModule() => const Module(
-        id: 'simple-001',
-        name: 'Simple Module',
-        screens: {
-          'main': {'type': 'screen'},
-        },
-      );
-
   group('SQL data loading', () {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'SQL module emits queryResults after start',
@@ -138,7 +124,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -186,7 +171,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -239,7 +223,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -262,31 +245,6 @@ void main() {
       },
     );
 
-    blocTest<ModuleViewerBloc, ModuleViewerState>(
-      'non-SQL module ignores SQL path entirely',
-      setUp: () {
-        when(() => moduleRepo.getModule('user1', 'simple-001'))
-            .thenAnswer((_) async => nonSqlModule());
-        when(() => entryRepo.watchEntries('user1', 'simple-001', limit: 500))
-            .thenAnswer((_) => Stream.value(const <Entry>[]));
-      },
-      build: () => ModuleViewerBloc(
-        moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
-        appDatabase: db,
-        userId: 'user1',
-      ),
-      act: (bloc) => bloc.add(const ModuleViewerStarted('simple-001')),
-      wait: const Duration(milliseconds: 100),
-      verify: (bloc) {
-        final state = bloc.state as ModuleViewerLoaded;
-        // Uses entry repo path, not SQL
-        expect(state.queryResults, isEmpty);
-        expect(state.entries, isEmpty);
-        verify(() => entryRepo.watchEntries('user1', 'simple-001', limit: 500))
-            .called(1);
-      },
-    );
   });
 
   group('SQL mutations', () {
@@ -300,7 +258,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -346,7 +303,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -393,7 +349,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -427,7 +382,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -463,7 +417,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),
@@ -496,7 +449,6 @@ void main() {
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
-        entryRepository: entryRepo,
         appDatabase: db,
         userId: 'user1',
       ),

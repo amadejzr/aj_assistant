@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
 
 sealed class ModuleViewerState extends Equatable {
@@ -31,7 +30,6 @@ class ScreenEntry extends Equatable {
 class ModuleViewerLoaded extends ModuleViewerState {
   final Module module;
   final String currentScreenId;
-  final List<Entry> entries;
   final Map<String, dynamic> formValues;
   final Map<String, dynamic> screenParams;
   final List<ScreenEntry> screenStack;
@@ -44,7 +42,6 @@ class ModuleViewerLoaded extends ModuleViewerState {
   const ModuleViewerLoaded({
     required this.module,
     this.currentScreenId = 'main',
-    this.entries = const [],
     this.formValues = const {},
     this.screenParams = const {},
     this.screenStack = const [],
@@ -60,7 +57,6 @@ class ModuleViewerLoaded extends ModuleViewerState {
   ModuleViewerLoaded copyWith({
     Module? module,
     String? currentScreenId,
-    List<Entry>? entries,
     Map<String, dynamic>? formValues,
     Map<String, dynamic>? screenParams,
     List<ScreenEntry>? screenStack,
@@ -75,7 +71,6 @@ class ModuleViewerLoaded extends ModuleViewerState {
     return ModuleViewerLoaded(
       module: module ?? this.module,
       currentScreenId: currentScreenId ?? this.currentScreenId,
-      entries: entries ?? this.entries,
       formValues: formValues ?? this.formValues,
       screenParams: screenParams ?? this.screenParams,
       screenStack: screenStack ?? this.screenStack,
@@ -95,7 +90,6 @@ class ModuleViewerLoaded extends ModuleViewerState {
   List<Object?> get props => [
         module,
         currentScreenId,
-        entries,
         formValues,
         screenParams,
         screenStack,

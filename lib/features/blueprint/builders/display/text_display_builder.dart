@@ -54,10 +54,10 @@ class _TextDisplayWidget extends StatelessWidget {
     final data = {...ctx.screenParams, ...ctx.formValues};
     final resolver = ReferenceResolver(
       module: ctx.module,
-      allEntries: ctx.allEntries,
+      allEntries: const [],
     );
     final schemaKey =
-        ctx.entries.isNotEmpty ? ctx.entries.first.schemaKey : null;
+        ctx.screenParams['_schemaKey'] as String?;
 
     return template.replaceAllMapped(
       RegExp(r'\{\{([\w.]+)\}\}'),

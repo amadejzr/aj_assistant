@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
-import '../../../core/models/entry.dart';
-import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -31,7 +29,6 @@ class ModuleViewerScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => ModuleViewerBloc(
         moduleRepository: context.read<ModuleRepository>(),
-        entryRepository: context.read<EntryRepository>(),
         appDatabase: context.read<AppDatabase>(),
         userId: userId,
       )..add(ModuleViewerStarted(moduleId)),
@@ -96,14 +93,9 @@ class _LoadedViewState extends State<_LoadedView> {
 
   RenderContext _buildRenderContext(BuildContext context, {bool hasDrawer = false}) {
     final bloc = context.read<ModuleViewerBloc>();
-    final entryRepo = context.read<EntryRepository>();
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is AuthAuthenticated ? authState.user.uid : '';
 
     return RenderContext(
       module: state.module,
-      entries: state.entries,
-      allEntries: state.entries,
       formValues: state.formValues,
       screenParams: state.screenParams,
       canGoBack: state.canGoBack,
@@ -141,30 +133,6 @@ class _LoadedViewState extends State<_LoadedView> {
       },
       onScreenParamChanged: (key, value) {
         bloc.add(ModuleViewerScreenParamChanged(key, value));
-      },
-      onCreateEntry: (schemaKey, data) async {
-        final entry = Entry(
-          id: '',
-          data: data,
-          schemaVersion: 1,
-          schemaKey: schemaKey,
-        );
-        return entryRepo.createEntry(userId, state.module.id, entry);
-      },
-      onUpdateEntry: (entryId, schemaKey, data) async {
-        final existing =
-            state.entries.where((e) => e.id == entryId).firstOrNull;
-        final mergedData = {
-          if (existing != null) ...existing.data,
-          ...data,
-        };
-        final updated = Entry(
-          id: entryId,
-          data: mergedData,
-          schemaVersion: 1,
-          schemaKey: schemaKey,
-        );
-        await entryRepo.updateEntry(userId, state.module.id, updated);
       },
       onOpenDrawer: hasDrawer
           ? () => _drawerKey.currentState?.openDrawer()

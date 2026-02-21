@@ -103,8 +103,7 @@ void main() {
       expect(find.text('--'), findsOneWidget);
     });
 
-    testWidgets('without source uses expression path (backward compat)',
-        (tester) async {
+    testWidgets('without source or expression shows --', (tester) async {
       await tester.pumpWidget(buildWidget(
         node: const StatCardNode(
           label: 'Count',
@@ -113,9 +112,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // No entries → count = 0
       expect(find.text('COUNT'), findsOneWidget);
-      expect(find.text('0'), findsOneWidget);
+      expect(find.text('--'), findsOneWidget);
     });
   });
 }

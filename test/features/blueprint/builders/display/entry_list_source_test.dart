@@ -92,34 +92,5 @@ void main() {
       expect(find.text('No entries yet'), findsOneWidget);
     });
 
-    testWidgets('without source uses ctx.entries (backward compat)',
-        (tester) async {
-      final ctx = RenderContext(
-        module: testModule,
-        entries: const [],
-        onFormValueChanged: (_, _) {},
-        onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
-      );
-
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.dark(),
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: WidgetRegistry.instance.build(
-              const EntryListNode(
-                itemLayout: EntryCardNode(
-                  titleTemplate: '{{description}}',
-                ),
-              ),
-              ctx,
-            ),
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      // Empty entries → empty state
-      expect(find.text('No entries yet'), findsOneWidget);
-    });
   });
 }

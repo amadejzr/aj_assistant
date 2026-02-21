@@ -1,4 +1,3 @@
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
@@ -46,26 +45,22 @@ void main() {
       name: 'Expenses',
     );
 
-    final testEntries = [
-      const Entry(id: 'e1', data: {'amount': 50, 'date': '2026-02-15'}),
-      const Entry(id: 'e2', data: {'amount': 30, 'date': '2026-02-16'}),
-      const Entry(id: 'e3', data: {'amount': 20, 'date': '2026-02-17'}),
-    ];
-
     setUpAll(() {
       WidgetRegistry.instance.registerDefaults();
     });
 
     Widget buildWidget({
       StatCardNode? node,
-      List<Entry> entries = const [],
+      Map<String, dynamic> resolvedExpressions = const {},
+      Map<String, List<Map<String, dynamic>>> queryResults = const {},
     }) {
       final cardNode = node ??
           const StatCardNode(label: 'Count', stat: 'count');
 
       final ctx = RenderContext(
         module: testModule,
-        entries: entries,
+        resolvedExpressions: resolvedExpressions,
+        queryResults: queryResults,
         onFormValueChanged: (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
       );
@@ -79,34 +74,58 @@ void main() {
     }
 
     testWidgets('renders label text', (tester) async {
-      await tester.pumpWidget(buildWidget(entries: testEntries));
+      await tester.pumpWidget(buildWidget(
+        queryResults: {
+          'count_source': [
+            {'count': 3},
+          ],
+        },
+        node: const StatCardNode(
+          label: 'Count',
+          stat: 'count',
+          properties: {'source': 'count_source', 'valueKey': 'count'},
+        ),
+      ));
       await tester.pumpAndSettle();
 
       expect(find.text('COUNT'), findsOneWidget); // label is uppercased
     });
 
-    testWidgets('computes count stat', (tester) async {
-      await tester.pumpWidget(buildWidget(entries: testEntries));
+    testWidgets('computes stat from SQL source', (tester) async {
+      await tester.pumpWidget(buildWidget(
+        node: const StatCardNode(
+          label: 'Count',
+          stat: 'count',
+          properties: {'source': 'count_source', 'valueKey': 'count'},
+        ),
+        queryResults: {
+          'count_source': [
+            {'count': 3},
+          ],
+        },
+      ));
       await tester.pumpAndSettle();
 
       expect(find.text('3'), findsOneWidget);
     });
 
-    testWidgets('computes expression-based stat', (tester) async {
+    testWidgets('computes expression-based stat from resolvedExpressions',
+        (tester) async {
       await tester.pumpWidget(buildWidget(
         node: const StatCardNode(
           label: 'Total',
           stat: 'count',
           expression: 'sum(amount)',
         ),
-        entries: testEntries,
+        resolvedExpressions: {'sum(amount)': 100},
       ));
       await tester.pumpAndSettle();
 
       expect(find.text('100'), findsOneWidget);
     });
 
-    testWidgets('shows -- for empty entries', (tester) async {
+    testWidgets('shows -- when no source and no resolvedExpressions',
+        (tester) async {
       await tester.pumpWidget(buildWidget(
         node: const StatCardNode(
           label: 'Total',
@@ -124,9 +143,13 @@ void main() {
         node: const StatCardNode(
           label: 'Highlight',
           stat: 'count',
-          properties: {'accent': true},
+          properties: {'accent': true, 'source': 'count_source', 'valueKey': 'count'},
         ),
-        entries: testEntries,
+        queryResults: {
+          'count_source': [
+            {'count': 3},
+          ],
+        },
       ));
       await tester.pumpAndSettle();
 
@@ -145,11 +168,9 @@ void main() {
       expect(widget, isNot(isA<SizedBox>()));
     });
 
-    testWidgets('uses resolvedExpressions from context when filter is empty',
-        (tester) async {
+    testWidgets('uses resolvedExpressions from context', (tester) async {
       final ctx = RenderContext(
         module: testModule,
-        entries: testEntries,
         resolvedExpressions: const {'sum(amount)': 100},
         onFormValueChanged: (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
@@ -170,37 +191,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('100'), findsOneWidget);
-    });
-
-    testWidgets('falls back to evaluator when filter is present',
-        (tester) async {
-      final ctx = RenderContext(
-        module: testModule,
-        entries: testEntries,
-        resolvedExpressions: const {'sum(amount)': 999},
-        onFormValueChanged: (_, _) {},
-        onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
-      );
-
-      const node = StatCardNode(
-        label: 'Filtered Total',
-        stat: 'count',
-        expression: 'sum(amount)',
-        filter: {'someField': 'someValue'},
-      );
-
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.dark(),
-        home: Scaffold(
-          body: WidgetRegistry.instance.build(node, ctx),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      // Should NOT use the cached 999 — should fall back to evaluator
-      // With the filter, no entries match 'someField'='someValue', so sum = 0
-      // The evaluator returns 0 for sum of filtered (empty) set
-      expect(find.text('999'), findsNothing);
     });
   });
 }

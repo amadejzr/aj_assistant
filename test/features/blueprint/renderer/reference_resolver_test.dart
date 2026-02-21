@@ -1,4 +1,3 @@
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/features/blueprint/renderer/reference_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,16 +9,21 @@ void main() {
   );
 
   const allEntries = [
-    Entry(id: 'cat1', data: {'name': 'Food'}, schemaKey: 'category'),
-    Entry(id: 'cat2', data: {'name': 'Transport'}, schemaKey: 'category'),
-    Entry(
-        id: 'acc1',
-        data: {'title': 'Checking', 'balance': 1000},
-        schemaKey: 'account'),
-    Entry(
-        id: 'exp1',
-        data: {'note': 'Lunch', 'category': 'cat1', 'amount': 15},
-        schemaKey: 'expense'),
+    {'id': 'cat1', 'name': 'Food', 'schemaKey': 'category'},
+    {'id': 'cat2', 'name': 'Transport', 'schemaKey': 'category'},
+    {
+      'id': 'acc1',
+      'title': 'Checking',
+      'balance': 1000,
+      'schemaKey': 'account'
+    },
+    {
+      'id': 'exp1',
+      'note': 'Lunch',
+      'category': 'cat1',
+      'amount': 15,
+      'schemaKey': 'expense'
+    },
   ];
 
   late ReferenceResolver resolver;

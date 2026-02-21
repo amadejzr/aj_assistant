@@ -1,4 +1,3 @@
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
@@ -44,7 +43,7 @@ void main() {
     });
   });
 
-  // ─── Widget tests ───
+  // --- Widget tests ---
 
   group('reference_picker builder', () {
     const testModule = Module(
@@ -52,17 +51,11 @@ void main() {
       name: 'Finances',
     );
 
-    const categoryEntries = [
-      Entry(id: 'cat1', data: {'name': 'Food'}, schemaKey: 'category'),
-      Entry(id: 'cat2', data: {'name': 'Transport'}, schemaKey: 'category'),
-      Entry(id: 'cat3', data: {'name': 'Entertainment'}, schemaKey: 'category'),
+    const categoryRows = [
+      {'id': 'cat1', 'name': 'Food'},
+      {'id': 'cat2', 'name': 'Transport'},
+      {'id': 'cat3', 'name': 'Entertainment'},
     ];
-
-    const expenseEntries = [
-      Entry(id: 'exp1', data: {'amount': 50}, schemaKey: 'expense'),
-    ];
-
-    const allEntries = [...categoryEntries, ...expenseEntries];
 
     setUpAll(() {
       WidgetRegistry.instance.registerDefaults();
@@ -71,7 +64,7 @@ void main() {
     Widget buildWidget({
       ReferencePickerNode? node,
       Module module = testModule,
-      List<Entry> entries = allEntries,
+      List<Map<String, dynamic>> sourceRows = categoryRows,
       Map<String, dynamic> formValues = const {},
       void Function(String, dynamic)? onChanged,
     }) {
@@ -80,14 +73,16 @@ void main() {
           const ReferencePickerNode(
             fieldKey: 'category',
             schemaKey: 'category',
-            properties: {'label': 'Category'},
+            properties: {'label': 'Category', 'source': 'category_source'},
           );
+
+      final sourceKey =
+          pickerNode.properties['source'] as String? ?? 'category_source';
 
       final ctx = RenderContext(
         module: module,
-        entries: entries,
-        allEntries: entries,
         formValues: formValues,
+        queryResults: {sourceKey: sourceRows},
         onFormValueChanged: onChanged ?? (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
       );
@@ -98,18 +93,7 @@ void main() {
       );
     }
 
-    testWidgets('renders entries from referenced schema', (tester) async {
-      await tester.pumpWidget(buildWidget());
-      await tester.pumpAndSettle();
-
-      expect(find.text('Food'), findsOneWidget);
-      expect(find.text('Transport'), findsOneWidget);
-      expect(find.text('Entertainment'), findsOneWidget);
-    });
-
-    testWidgets('filters by schemaKey — expense entries not shown', (
-      tester,
-    ) async {
+    testWidgets('renders entries from queryResults source', (tester) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
 
@@ -152,22 +136,19 @@ void main() {
         name: 'Test',
       );
 
-      const entries = [
-        Entry(
-          id: 'i1',
-          data: {'title': 'Alpha', 'name': 'Wrong'},
-          schemaKey: 'item',
-        ),
+      const rows = [
+        {'id': 'i1', 'title': 'Alpha', 'name': 'Wrong'},
       ];
 
       const node = ReferencePickerNode(
         fieldKey: 'ref',
         schemaKey: 'item',
         displayField: 'title',
+        properties: {'source': 'item_source'},
       );
 
       await tester.pumpWidget(
-        buildWidget(node: node, module: moduleWithTitle, entries: entries),
+        buildWidget(node: node, module: moduleWithTitle, sourceRows: rows),
       );
       await tester.pumpAndSettle();
 
@@ -175,13 +156,9 @@ void main() {
       expect(find.text('Wrong'), findsNothing);
     });
 
-    testWidgets('shows no entries when schemaKey has no matches', (tester) async {
+    testWidgets('shows no entries when source has no data', (tester) async {
       await tester.pumpWidget(
-        buildWidget(
-          entries: const [
-            Entry(id: 'exp1', data: {'amount': 50}, schemaKey: 'expense'),
-          ],
-        ),
+        buildWidget(sourceRows: const []),
       );
       await tester.pumpAndSettle();
 
@@ -200,14 +177,17 @@ void main() {
         const node = ReferencePickerNode(
           fieldKey: 'category',
           schemaKey: '', // empty — falls back to targetSchema property
-          properties: {'targetSchema': 'category', 'label': 'Category'},
+          properties: {
+            'targetSchema': 'category',
+            'label': 'Category',
+            'source': 'category_source',
+          },
         );
 
         await tester.pumpWidget(
           buildWidget(
             node: node,
             module: moduleWithConstraint,
-            entries: categoryEntries,
           ),
         );
         await tester.pumpAndSettle();
@@ -222,12 +202,14 @@ void main() {
       const node = ReferencePickerNode(
         fieldKey: 'category',
         schemaKey: 'category',
+        properties: {'source': 'category_source'},
       );
 
       final ctx = RenderContext(
         module: testModule,
-        entries: categoryEntries,
-        allEntries: categoryEntries,
+        queryResults: const {
+          'category_source': categoryRows,
+        },
         onFormValueChanged: (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
       );

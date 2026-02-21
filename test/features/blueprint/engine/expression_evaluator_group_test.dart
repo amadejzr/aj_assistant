@@ -1,13 +1,12 @@
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/features/blueprint/engine/expression_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   // ── Helper entries ──
   const entries = [
-    Entry(id: '1', data: {'category': 'Food', 'amount': 100}),
-    Entry(id: '2', data: {'category': 'Food', 'amount': 200}),
-    Entry(id: '3', data: {'category': 'Transport', 'amount': 50}),
+    {'category': 'Food', 'amount': 100},
+    {'category': 'Food', 'amount': 200},
+    {'category': 'Transport', 'amount': 50},
   ];
 
   group('evaluateGroup', () {
@@ -43,10 +42,10 @@ void main() {
 
     test('missing field values group under "Unknown"', () {
       const entriesWithMissing = [
-        Entry(id: '1', data: {'category': 'Food', 'amount': 100}),
-        Entry(id: '2', data: {'amount': 75}), // no category
-        Entry(id: '3', data: {'category': 'Food', 'amount': 50}),
-        Entry(id: '4', data: {'amount': 25}), // no category
+        {'category': 'Food', 'amount': 100},
+        {'amount': 75}, // no category
+        {'category': 'Food', 'amount': 50},
+        {'amount': 25}, // no category
       ];
       const evaluator = ExpressionEvaluator(entries: entriesWithMissing);
 
@@ -87,9 +86,9 @@ void main() {
 
     test('single group collects all entries', () {
       const sameCategory = [
-        Entry(id: '1', data: {'category': 'Food', 'amount': 10}),
-        Entry(id: '2', data: {'category': 'Food', 'amount': 20}),
-        Entry(id: '3', data: {'category': 'Food', 'amount': 30}),
+        {'category': 'Food', 'amount': 10},
+        {'category': 'Food', 'amount': 20},
+        {'category': 'Food', 'amount': 30},
       ];
       const evaluator = ExpressionEvaluator(entries: sameCategory);
 
@@ -100,10 +99,10 @@ void main() {
 
     test('each unique value gets its own group', () {
       const manyCategories = [
-        Entry(id: '1', data: {'type': 'A', 'value': 1}),
-        Entry(id: '2', data: {'type': 'B', 'value': 2}),
-        Entry(id: '3', data: {'type': 'C', 'value': 3}),
-        Entry(id: '4', data: {'type': 'D', 'value': 4}),
+        {'type': 'A', 'value': 1},
+        {'type': 'B', 'value': 2},
+        {'type': 'C', 'value': 3},
+        {'type': 'D', 'value': 4},
       ];
       const evaluator = ExpressionEvaluator(entries: manyCategories);
 

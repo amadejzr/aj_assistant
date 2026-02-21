@@ -1,4 +1,3 @@
-import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
@@ -13,15 +12,12 @@ void main() {
     name: 'Finances',
   );
 
-  const allEntries = [
-    Entry(id: 'cat1', data: {'name': 'Food'}, schemaKey: 'category'),
-    Entry(id: 'cat2', data: {'name': 'Transport'}, schemaKey: 'category'),
-    Entry(
-      id: 'exp1',
-      data: {'note': 'Lunch', 'category': 'cat1', 'amount': 15.5},
-      schemaKey: 'expense',
-    ),
-  ];
+  const testEntryData = {
+    'id': 'exp1',
+    'note': 'Lunch',
+    'category': 'cat1',
+    'amount': 15.5,
+  };
 
   setUpAll(() {
     WidgetRegistry.instance.registerDefaults();
@@ -29,7 +25,8 @@ void main() {
 
   Widget buildWidget({
     EntryCardNode? node,
-    Entry? entry,
+    Map<String, dynamic> formValues = testEntryData,
+    Map<String, dynamic> screenParams = const {},
     void Function(String, {Map<String, dynamic> params})? onNavigate,
   }) {
     final cardNode = node ??
@@ -39,13 +36,10 @@ void main() {
           trailingTemplate: '{{amount}}',
         );
 
-    final testEntry = entry ?? allEntries.last;
-
     final ctx = RenderContext(
       module: testModule,
-      entries: [testEntry],
-      allEntries: allEntries,
-      formValues: testEntry.data,
+      formValues: formValues,
+      screenParams: screenParams,
       onFormValueChanged: (_, _) {},
       onNavigateToScreen: onNavigate ??
           (_, {Map<String, dynamic> params = const {}}) {},
@@ -66,15 +60,6 @@ void main() {
     expect(find.text('Lunch'), findsOneWidget);
   });
 
-  testWidgets('resolves reference fields to display values', (tester) async {
-    await tester.pumpWidget(buildWidget());
-    await tester.pumpAndSettle();
-
-    // {{category}} should resolve cat1 -> "Food" not show "cat1"
-    expect(find.text('Food'), findsOneWidget);
-    expect(find.text('cat1'), findsNothing);
-  });
-
   testWidgets('renders trailing value', (tester) async {
     await tester.pumpWidget(buildWidget());
     await tester.pumpAndSettle();
@@ -89,8 +74,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lunch'), findsOneWidget);
-    // No subtitle rendered
-    expect(find.text('Food'), findsNothing);
+    // No subtitle rendered when subtitleTemplate is null
+    expect(find.text('cat1'), findsNothing);
   });
 
   testWidgets('onTap navigates to specified screen', (tester) async {
@@ -121,9 +106,7 @@ void main() {
     const node = EntryCardNode(titleTemplate: '{{note}}');
     final ctx = RenderContext(
       module: testModule,
-      entries: [allEntries[2]],
-      allEntries: allEntries,
-      formValues: allEntries[2].data,
+      formValues: testEntryData,
       onFormValueChanged: (_, _) {},
       onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
     );

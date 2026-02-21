@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/logging/log.dart';
-import '../../../core/models/entry.dart';
-import '../../../core/repositories/entry_repository.dart';
 import '../models/message.dart';
 import '../repositories/chat_repository.dart';
 import 'chat_event.dart';
@@ -14,17 +12,14 @@ const _tag = 'ChatBloc';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository _chatRepository;
-  final EntryRepository _entryRepository;
   final String _userId;
 
   StreamSubscription<List<Message>>? _messagesSub;
 
   ChatBloc({
     required ChatRepository chatRepository,
-    required EntryRepository entryRepository,
     required String userId,
   })  : _chatRepository = chatRepository,
-        _entryRepository = entryRepository,
         _userId = userId,
         super(const ChatInitial()) {
     on<ChatStarted>(_onStarted);
@@ -155,79 +150,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       try {
         switch (action.name) {
           case 'createEntry':
-            final moduleId = action.input['moduleId'] as String;
-            final schemaKey = action.input['schemaKey'] as String? ?? 'default';
-            final data = Map<String, dynamic>.from(
-              action.input['data'] as Map? ?? {},
-            );
-            final entry = Entry(
-              id: '',
-              data: data,
-              schemaKey: schemaKey,
-            );
-            final id = await _entryRepository.createEntry(
-              _userId, moduleId, entry,
-            );
-            Log.i('Created entry $id in $moduleId', tag: _tag);
-            results.add('Created entry in $schemaKey');
-
           case 'updateEntry':
-            final moduleId = action.input['moduleId'] as String;
-            final entryId = action.input['entryId'] as String;
-            final data = Map<String, dynamic>.from(
-              action.input['data'] as Map? ?? {},
-            );
-            final entry = Entry(id: entryId, data: data);
-            await _entryRepository.updateEntry(_userId, moduleId, entry);
-            Log.i('Updated entry $entryId in $moduleId', tag: _tag);
-            results.add('Updated entry');
-
           case 'createEntries':
-            final moduleId = action.input['moduleId'] as String;
-            final schemaKey =
-                action.input['schemaKey'] as String? ?? 'default';
-            final entriesList =
-                (action.input['entries'] as List?) ?? [];
-            var created = 0;
-            for (final raw in entriesList) {
-              final entryMap = raw as Map;
-              final data = Map<String, dynamic>.from(
-                entryMap['data'] as Map? ?? {},
-              );
-              final entry = Entry(
-                id: '',
-                data: data,
-                schemaKey: schemaKey,
-              );
-              await _entryRepository.createEntry(
-                _userId, moduleId, entry,
-              );
-              created++;
-            }
-            Log.i('Batch created $created entries in $moduleId',
-                tag: _tag);
-            results.add('Created $created entries');
-
           case 'updateEntries':
-            final moduleId = action.input['moduleId'] as String;
-            final entriesList =
-                (action.input['entries'] as List?) ?? [];
-            var updated = 0;
-            for (final raw in entriesList) {
-              final entryMap = raw as Map;
-              final entryId = entryMap['entryId'] as String;
-              final data = Map<String, dynamic>.from(
-                entryMap['data'] as Map? ?? {},
-              );
-              final entry = Entry(id: entryId, data: data);
-              await _entryRepository.updateEntry(
-                _userId, moduleId, entry,
-              );
-              updated++;
-            }
-            Log.i('Batch updated $updated entries in $moduleId',
-                tag: _tag);
-            results.add('Updated $updated entries');
+            // TODO: Implement SQL-based mutations via MutationExecutor
+            results.add('Entry actions not yet migrated to SQL');
 
           default:
             Log.e('Unhandled action: ${action.name}', tag: _tag);

@@ -56,8 +56,6 @@ RenderContext _buildEffectiveContext(FormScreenNode form, RenderContext ctx) {
 
   return RenderContext(
     module: ctx.module,
-    entries: ctx.entries,
-    allEntries: ctx.allEntries,
     formValues: seeded,
     screenParams: ctx.screenParams,
     canGoBack: ctx.canGoBack,
@@ -69,8 +67,6 @@ RenderContext _buildEffectiveContext(FormScreenNode form, RenderContext ctx) {
     onNavigateBack: ctx.onNavigateBack,
     onDeleteEntry: ctx.onDeleteEntry,
     resolvedExpressions: ctx.resolvedExpressions,
-    onCreateEntry: ctx.onCreateEntry,
-    onUpdateEntry: ctx.onUpdateEntry,
     onScreenParamChanged: ctx.onScreenParamChanged,
   );
 }

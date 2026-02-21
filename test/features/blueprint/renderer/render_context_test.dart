@@ -28,8 +28,8 @@ void main() {
       expect(ctx.formValues, isEmpty);
     });
 
-    test('entries defaults to empty', () {
-      expect(ctx.entries, isEmpty);
+    test('queryResults defaults to empty', () {
+      expect(ctx.queryResults, isEmpty);
     });
   });
 }

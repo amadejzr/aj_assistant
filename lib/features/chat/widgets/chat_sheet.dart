@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/repositories/entry_repository.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../bloc/chat_bloc.dart';
@@ -18,7 +17,6 @@ void showChatSheet(
   BuildContext context, {
   required String userId,
   required ChatRepository chatRepository,
-  required EntryRepository entryRepository,
 }) {
   showModalBottomSheet(
     context: context,
@@ -29,7 +27,6 @@ void showChatSheet(
     builder: (_) => BlocProvider(
       create: (_) => ChatBloc(
         chatRepository: chatRepository,
-        entryRepository: entryRepository,
         userId: userId,
       )..add(const ChatStarted()),
       child: const _ChatSheetBody(),

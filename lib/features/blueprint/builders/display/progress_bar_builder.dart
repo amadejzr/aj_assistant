@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/logging/log.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../renderer/blueprint_node.dart';
-import '../../engine/entry_filter.dart';
-import '../../engine/expression_evaluator.dart';
 import '../../renderer/render_context.dart';
 
 /// Renders a labeled linear progress bar with a value computed from an expression.
@@ -28,33 +25,14 @@ class _ProgressBarWidget extends StatelessWidget {
 
   const _ProgressBarWidget({required this.bar, required this.ctx});
 
-  static bool _isEmptyFilter(dynamic filter) {
-    if (filter == null) return true;
-    if (filter is Map && filter.isEmpty) return true;
-    if (filter is List && filter.isEmpty) return true;
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
 
     num? value;
-    if (bar.expression != null) {
-      // Use cached value when the bar has no filter
-      if (_isEmptyFilter(bar.filter) &&
-          ctx.resolvedExpressions.containsKey(bar.expression)) {
-        Log.d('progress_bar "${bar.label}": cache HIT for ${bar.expression}', tag: 'Perf');
-        value = ctx.resolvedExpressions[bar.expression] as num?;
-      } else {
-        Log.d('progress_bar "${bar.label}": cache MISS (has filter)', tag: 'Perf');
-        final result = EntryFilter.filter(ctx.entries, bar.filter, ctx.screenParams);
-        final evaluator = ExpressionEvaluator(
-          entries: result.entries,
-          params: {...ctx.module.settings, ...ctx.screenParams, ...result.meta},
-        );
-        value = evaluator.evaluate(bar.expression!);
-      }
+    if (bar.expression != null &&
+        ctx.resolvedExpressions.containsKey(bar.expression)) {
+      value = ctx.resolvedExpressions[bar.expression] as num?;
     }
 
     final percent = (value ?? 0).toDouble().clamp(0.0, 100.0);

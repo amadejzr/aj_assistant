@@ -71,15 +71,22 @@ class DriftModuleRepository implements ModuleRepository {
 
   @override
   Future<void> deleteModule(String userId, String moduleId) async {
+    // Look up the module first so we can drop its tables.
+    final module = await getModule(userId, moduleId);
+
     await _db.transaction(() async {
+      // Drop module-owned tables
+      if (module?.database != null) {
+        for (final tableName in module!.database!.tableNames.values) {
+          await _db.customStatement('DROP TABLE IF EXISTS "$tableName"');
+        }
+      }
+
       // Delete capabilities
       await (_db.delete(_db.capabilities)
             ..where((t) => t.moduleId.equals(moduleId)))
           .go();
-      // Delete all entries belonging to this module
-      await (_db.delete(_db.entries)
-            ..where((t) => t.moduleId.equals(moduleId)))
-          .go();
+
       await (_db.delete(_db.modules)
             ..where((t) => t.id.equals(moduleId)))
           .go();

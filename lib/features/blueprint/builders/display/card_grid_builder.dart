@@ -51,8 +51,12 @@ class _CardGridWidget extends StatelessWidget {
       itemCount: options.length,
       itemBuilder: (context, index) {
         final option = options[index];
-        final count = ctx.entries
-            .where((e) => e.data[grid.fieldKey]?.toString() == option)
+        final source = grid.properties['source'] as String?;
+        final rows = source != null
+            ? (ctx.queryResults[source] ?? [])
+            : <Map<String, dynamic>>[];
+        final count = rows
+            .where((e) => e[grid.fieldKey]?.toString() == option)
             .length;
 
         return _ActivityCard(

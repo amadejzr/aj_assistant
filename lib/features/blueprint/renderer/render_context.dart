@@ -1,11 +1,8 @@
-import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
 import 'field_meta.dart';
 
 class RenderContext {
   final Module module;
-  final List<Entry> entries;
-  final List<Entry> allEntries;
   final Map<String, dynamic> formValues;
   final Map<String, dynamic> screenParams;
   final bool canGoBack;
@@ -15,16 +12,12 @@ class RenderContext {
   final VoidFormCallback? onNavigateBack;
   final void Function(String entryId)? onDeleteEntry;
   final Map<String, dynamic> resolvedExpressions;
-  final Future<String?> Function(String schemaKey, Map<String, dynamic> data)? onCreateEntry;
-  final Future<void> Function(String entryId, String schemaKey, Map<String, dynamic> data)? onUpdateEntry;
   final void Function(String key, dynamic value)? onScreenParamChanged;
   final VoidFormCallback? onOpenDrawer;
   final Map<String, List<Map<String, dynamic>>> queryResults;
 
   const RenderContext({
     required this.module,
-    this.entries = const [],
-    this.allEntries = const [],
     this.formValues = const {},
     this.screenParams = const {},
     this.canGoBack = false,
@@ -34,8 +27,6 @@ class RenderContext {
     this.onNavigateBack,
     this.onDeleteEntry,
     this.resolvedExpressions = const {},
-    this.onCreateEntry,
-    this.onUpdateEntry,
     this.onScreenParamChanged,
     this.onOpenDrawer,
     this.queryResults = const {},
