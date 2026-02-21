@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide QueryExecutor;
 
 import 'app_database.dart';
@@ -36,6 +38,48 @@ class QueryExecutor {
         .customSelect(sql, variables: variables, readsFrom: tableRefs)
         .watch()
         .map((rows) => rows.map(_rowToMap).toList());
+  }
+
+  /// Executes all queries for a screen, returns named results.
+  Future<Map<String, List<Map<String, dynamic>>>> executeAll(
+    List<ScreenQuery> queries,
+    Map<String, Object> resolvedParams,
+  ) async {
+    final results = await Future.wait(
+      queries.map((q) => execute(q, resolvedParams)),
+    );
+    return {
+      for (var i = 0; i < queries.length; i++) queries[i].name: results[i],
+    };
+  }
+
+  /// Watches all queries for a screen, emits whenever any result changes.
+  Stream<Map<String, List<Map<String, dynamic>>>> watchAll(
+    List<ScreenQuery> queries,
+    Map<String, Object> resolvedParams,
+  ) {
+    final controller =
+        StreamController<Map<String, List<Map<String, dynamic>>>>();
+    final latest = <String, List<Map<String, dynamic>>>{};
+    final subscriptions = <StreamSubscription>[];
+
+    for (final query in queries) {
+      final sub = watch(query, resolvedParams).listen((rows) {
+        latest[query.name] = rows;
+        if (latest.length == queries.length) {
+          controller.add(Map.of(latest));
+        }
+      });
+      subscriptions.add(sub);
+    }
+
+    controller.onCancel = () {
+      for (final sub in subscriptions) {
+        sub.cancel();
+      }
+    };
+
+    return controller.stream;
   }
 
   /// Binds :paramName placeholders in SQL to positional ? variables.

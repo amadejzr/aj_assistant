@@ -280,6 +280,86 @@ void main() {
       await sub.cancel();
     });
   });
+
+  group('executeAll', () {
+    test('returns map with results for each query', () async {
+      final queries = [
+        const ScreenQuery(
+          name: 'accounts',
+          sql: 'SELECT name FROM "m_budget_accounts" ORDER BY name',
+        ),
+        const ScreenQuery(
+          name: 'expense_count',
+          sql: 'SELECT COUNT(*) as cnt FROM "m_budget_expenses"',
+        ),
+      ];
+
+      final results = await queryExecutor.executeAll(queries, {});
+
+      expect(results.keys, containsAll(['accounts', 'expense_count']));
+      expect(results['accounts'], hasLength(2));
+      expect(results['expense_count']![0]['cnt'], 3);
+    });
+  });
+
+  group('watchAll', () {
+    test('emits initial map with all query results', () async {
+      final queries = [
+        const ScreenQuery(
+          name: 'accounts',
+          sql: 'SELECT name FROM "m_budget_accounts" ORDER BY name',
+        ),
+        const ScreenQuery(
+          name: 'total_balance',
+          sql: 'SELECT SUM(balance) as total FROM "m_budget_accounts"',
+        ),
+      ];
+
+      final stream = queryExecutor.watchAll(queries, {});
+      final first = await stream.first;
+
+      expect(first.keys, containsAll(['accounts', 'total_balance']));
+      expect(first['accounts'], hasLength(2));
+      expect(first['total_balance']![0]['total'], isNotNull);
+    });
+
+    test('re-emits when insert affects a query', () async {
+      final queries = [
+        const ScreenQuery(
+          name: 'expenses',
+          sql:
+              'SELECT description FROM "m_budget_expenses" ORDER BY created_at',
+        ),
+        const ScreenQuery(
+          name: 'total_balance',
+          sql: 'SELECT SUM(balance) as total FROM "m_budget_accounts"',
+        ),
+      ];
+
+      final emissions = <Map<String, List<Map<String, dynamic>>>>[];
+      final sub = queryExecutor.watchAll(queries, {}).listen(emissions.add);
+
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+      expect(emissions[0]['expenses'], hasLength(3));
+
+      // Insert expense — affects both queries (expense list + balance via trigger)
+      await db.customInsert(
+        'INSERT INTO "m_budget_expenses" (id, amount, description, category, account_id, date, created_at, updated_at) '
+        "VALUES ('e4', 75.0, 'Taxi', 'Transport', 'a1', 1708790400000, 4000, 4000)",
+        updates: queryExecutor.tableRefs,
+      );
+      await pumpEventQueue();
+
+      // Should have at least one more emission with updated data
+      expect(emissions.length, greaterThanOrEqualTo(2));
+      final latest = emissions.last;
+      expect(latest['expenses'], hasLength(4));
+      expect(latest['expenses']![3]['description'], 'Taxi');
+
+      await sub.cancel();
+    });
+  });
 }
 
 // ── Shared budget module definition ──
