@@ -5,9 +5,6 @@ import 'package:aj_assistant/core/database/query_executor.dart';
 import 'package:aj_assistant/core/database/schema_manager.dart';
 import 'package:aj_assistant/core/database/screen_query.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull, QueryExecutor;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -551,34 +548,6 @@ void main() {
 Module budgetModule() => const Module(
       id: 'budget-001',
       name: 'Budget Tracker',
-      schemas: {
-        'account': ModuleSchema(
-          label: 'Account',
-          fields: {
-            'name': FieldDefinition(
-                key: 'name', type: FieldType.text, label: 'Name'),
-            'balance': FieldDefinition(
-                key: 'balance', type: FieldType.currency, label: 'Balance'),
-          },
-        ),
-        'expense': ModuleSchema(
-          label: 'Expense',
-          fields: {
-            'amount': FieldDefinition(
-                key: 'amount', type: FieldType.currency, label: 'Amount'),
-            'description': FieldDefinition(
-                key: 'description', type: FieldType.text, label: 'Description'),
-            'category': FieldDefinition(
-                key: 'category', type: FieldType.text, label: 'Category'),
-            'account_id': FieldDefinition(
-                key: 'account_id',
-                type: FieldType.reference,
-                label: 'Account'),
-            'date': FieldDefinition(
-                key: 'date', type: FieldType.datetime, label: 'Date'),
-          },
-        ),
-      },
       database: ModuleDatabase(
         tableNames: {
           'account': 'm_budget_accounts',

@@ -8,9 +8,6 @@ import 'package:aj_assistant/core/repositories/module_repository.dart';
 import 'package:aj_assistant/features/modules/bloc/module_viewer_bloc.dart';
 import 'package:aj_assistant/features/modules/bloc/module_viewer_event.dart';
 import 'package:aj_assistant/features/modules/bloc/module_viewer_state.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
@@ -41,24 +38,9 @@ void main() {
     await db.close();
   });
 
-  Module _budgetModule({bool withMutations = false}) => Module(
+  Module budgetModule({bool withMutations = false}) => Module(
         id: 'budget-001',
         name: 'Budget Tracker',
-        schemas: const {
-          'expense': ModuleSchema(
-            label: 'Expense',
-            fields: {
-              'amount': FieldDefinition(
-                  key: 'amount', type: FieldType.currency, label: 'Amount'),
-              'description': FieldDefinition(
-                  key: 'description',
-                  type: FieldType.text,
-                  label: 'Description'),
-              'category': FieldDefinition(
-                  key: 'category', type: FieldType.text, label: 'Category'),
-            },
-          ),
-        },
         screens: {
           'main': {
             'type': 'screen',
@@ -133,7 +115,7 @@ void main() {
         ),
       );
 
-  Module _nonSqlModule() => const Module(
+  Module nonSqlModule() => const Module(
         id: 'simple-001',
         name: 'Simple Module',
         screens: {
@@ -145,14 +127,14 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'SQL module emits queryResults after start',
       setUp: () async {
-        await SchemaManager(db: db).installModule(_budgetModule());
+        await SchemaManager(db: db).installModule(budgetModule());
         // Seed data
         await db.customStatement(
           'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
           "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
         );
         when(() => moduleRepo.getModule('user1', 'budget-001'))
-            .thenAnswer((_) async => _budgetModule());
+            .thenAnswer((_) async => budgetModule());
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
@@ -190,7 +172,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'screen change re-subscribes with new screen queries',
       setUp: () async {
-        await SchemaManager(db: db).installModule(_budgetModule());
+        await SchemaManager(db: db).installModule(budgetModule());
         await db.customStatement(
           'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
           "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
@@ -200,7 +182,7 @@ void main() {
           "VALUES ('e2', 30.0, 'Bus', 'Transport', 2000, 2000)",
         );
         when(() => moduleRepo.getModule('user1', 'budget-001'))
-            .thenAnswer((_) async => _budgetModule());
+            .thenAnswer((_) async => budgetModule());
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
@@ -243,7 +225,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'screen param change re-subscribes with new filter params',
       setUp: () async {
-        await SchemaManager(db: db).installModule(_budgetModule());
+        await SchemaManager(db: db).installModule(budgetModule());
         await db.customStatement(
           'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
           "VALUES ('e1', 50.0, 'Coffee', 'Food', 1000, 1000)",
@@ -253,7 +235,7 @@ void main() {
           "VALUES ('e2', 30.0, 'Bus', 'Transport', 2000, 2000)",
         );
         when(() => moduleRepo.getModule('user1', 'budget-001'))
-            .thenAnswer((_) async => _budgetModule());
+            .thenAnswer((_) async => budgetModule());
       },
       build: () => ModuleViewerBloc(
         moduleRepository: moduleRepo,
@@ -284,7 +266,7 @@ void main() {
       'non-SQL module ignores SQL path entirely',
       setUp: () {
         when(() => moduleRepo.getModule('user1', 'simple-001'))
-            .thenAnswer((_) async => _nonSqlModule());
+            .thenAnswer((_) async => nonSqlModule());
         when(() => entryRepo.watchEntries('user1', 'simple-001', limit: 500))
             .thenAnswer((_) => Stream.value(const <Entry>[]));
       },
@@ -311,7 +293,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'create via form submit inserts row, watchAll updates',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         when(() => moduleRepo.getModule('user1', 'budget-001'))
             .thenAnswer((_) async => module);
@@ -352,7 +334,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'update via form submit modifies row, watchAll updates',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         // Seed existing entry
         await db.customStatement(
@@ -396,7 +378,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'delete removes row, watchAll updates',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         await db.customStatement(
           'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
@@ -434,7 +416,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'edit form pre-populated with existing row data',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         await db.customStatement(
           'INSERT INTO "m_budget_expenses" (id, amount, description, category, created_at, updated_at) '
@@ -474,7 +456,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'form submit sets submitError on SQL failure',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         when(() => moduleRepo.getModule('user1', 'budget-001'))
             .thenAnswer((_) async => module);
@@ -507,7 +489,7 @@ void main() {
     blocTest<ModuleViewerBloc, ModuleViewerState>(
       'delete sets submitError on SQL failure',
       setUp: () async {
-        final module = _budgetModule(withMutations: true);
+        final module = budgetModule(withMutations: true);
         await SchemaManager(db: db).installModule(module);
         when(() => moduleRepo.getModule('user1', 'budget-001'))
             .thenAnswer((_) async => module);
@@ -521,11 +503,6 @@ void main() {
       act: (bloc) async {
         bloc.add(const ModuleViewerStarted('budget-001'));
         await Future.delayed(const Duration(milliseconds: 100));
-        // Delete a non-existent entry — this won't throw by default,
-        // so let's navigate to main screen with delete mutation
-        // and delete with a bogus ID. Actually SQL DELETE WHERE id=:id
-        // won't error for missing rows. Instead, let's drop the table
-        // to force an error.
         await db.customStatement('DROP TABLE "m_budget_expenses"');
         bloc.add(const ModuleViewerEntryDeleted('e-nonexistent'));
         await Future.delayed(const Duration(milliseconds: 200));

@@ -1,5 +1,4 @@
 import '../../../core/models/entry.dart';
-import '../../modules/models/field_definition.dart';
 import '../../../core/models/module.dart';
 import 'field_meta.dart';
 
@@ -41,20 +40,6 @@ class RenderContext {
     this.onOpenDrawer,
     this.queryResults = const {},
   });
-
-  FieldDefinition? getFieldDefinition(String fieldKey, {String? schemaKey}) {
-    if (schemaKey != null) return module.schemas[schemaKey]?.fields[fieldKey];
-    // Fall back to _schemaKey from screenParams for multi-schema modules
-    final contextSchemaKey = screenParams['_schemaKey'] as String?;
-    if (contextSchemaKey != null) {
-      return module.schemas[contextSchemaKey]?.fields[fieldKey];
-    }
-    return module.schema.fields[fieldKey];
-  }
-
-  Map<String, FieldDefinition> getSchemaFields(String schemaKey) {
-    return module.schemas[schemaKey]?.fields ?? {};
-  }
 
   dynamic getFormValue(String fieldKey) {
     return formValues[fieldKey];

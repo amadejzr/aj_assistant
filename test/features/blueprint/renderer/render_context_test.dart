@@ -1,7 +1,4 @@
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,33 +6,6 @@ void main() {
   const testModule = Module(
     id: 'mod1',
     name: 'Test',
-    schemas: {
-      'default': ModuleSchema(
-        label: 'Default',
-        fields: {
-          'name': FieldDefinition(
-            key: 'name',
-            type: FieldType.text,
-            label: 'Name',
-          ),
-        },
-      ),
-      'category': ModuleSchema(
-        label: 'Category',
-        fields: {
-          'title': FieldDefinition(
-            key: 'title',
-            type: FieldType.text,
-            label: 'Title',
-          ),
-          'color': FieldDefinition(
-            key: 'color',
-            type: FieldType.text,
-            label: 'Color',
-          ),
-        },
-      ),
-    },
   );
 
   late RenderContext ctx;
@@ -48,43 +18,18 @@ void main() {
     );
   });
 
-  group('getFieldDefinition', () {
-    test('returns field from default schema when no schemaKey param', () {
-      final field = ctx.getFieldDefinition('name');
-      expect(field, isNotNull);
-      expect(field!.label, 'Name');
+  group('RenderContext basics', () {
+    test('exposes module', () {
+      expect(ctx.module.id, 'mod1');
+      expect(ctx.module.name, 'Test');
     });
 
-    test('returns field from named schema with schemaKey param', () {
-      final field = ctx.getFieldDefinition('title', schemaKey: 'category');
-      expect(field, isNotNull);
-      expect(field!.label, 'Title');
+    test('formValues defaults to empty', () {
+      expect(ctx.formValues, isEmpty);
     });
 
-    test('returns null for nonexistent field', () {
-      expect(ctx.getFieldDefinition('nonexistent'), isNull);
-      expect(
-        ctx.getFieldDefinition('nonexistent', schemaKey: 'category'),
-        isNull,
-      );
-    });
-
-    test('returns null for nonexistent schema', () {
-      expect(ctx.getFieldDefinition('name', schemaKey: 'ghost'), isNull);
-    });
-  });
-
-  group('getSchemaFields', () {
-    test('returns fields map for valid schema', () {
-      final fields = ctx.getSchemaFields('category');
-      expect(fields, hasLength(2));
-      expect(fields.containsKey('title'), true);
-      expect(fields.containsKey('color'), true);
-    });
-
-    test('returns empty map for nonexistent schema', () {
-      final fields = ctx.getSchemaFields('nonexistent');
-      expect(fields, isEmpty);
+    test('entries defaults to empty', () {
+      expect(ctx.entries, isEmpty);
     });
   });
 }

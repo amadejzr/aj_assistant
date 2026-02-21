@@ -15,8 +15,6 @@ import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
-import '../../blueprint/engine/post_submit_effect.dart';
-import '../models/schema_effect.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 
@@ -191,28 +189,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final data = Map<String, dynamic>.from(current.formValues)
         ..removeWhere((key, _) => key.startsWith('_'));
 
-      // Look up effects from the schema (not the screen)
       final schemaKey =
           current.screenParams['_schemaKey'] as String? ?? 'default';
-      final schemaEffects =
-          current.module.schemas[schemaKey]?.effects ?? const [];
-
-      // Validate effect guards (e.g. min: 0) before creating entry
-      if (schemaEffects.isNotEmpty) {
-        const executor = PostSubmitEffectExecutor();
-        final error = executor.validateEffects(
-          effects: schemaEffects,
-          formData: data,
-          entries: current.entries,
-        );
-        if (error != null) {
-          emit(current.copyWith(
-            isSubmitting: false,
-            submitError: error,
-          ));
-          return;
-        }
-      }
 
       // Settings mode — update module settings instead of entries
       if (current.screenParams['_settingsMode'] == true) {
@@ -285,7 +263,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         final updated = Entry(
           id: entryId,
           data: mergedData,
-          schemaVersion: current.module.schema.version,
+          schemaVersion: 1,
           schemaKey: existing?.schemaKey ?? schemaKey,
         );
         await entryRepository.updateEntry(userId, current.module.id, updated);
@@ -294,15 +272,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         final entry = Entry(
           id: '',
           data: data,
-          schemaVersion: current.module.schema.version,
+          schemaVersion: 1,
           schemaKey: schemaKey,
         );
         await entryRepository.createEntry(userId, current.module.id, entry);
-      }
-
-      // Execute effects from schema (only on create, not edit)
-      if (isCreate && schemaEffects.isNotEmpty) {
-        await _applyPostSubmitEffects(current, schemaEffects, data);
       }
 
       // Navigate back to previous screen (or main)
@@ -368,18 +341,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         return;
       }
 
-      // Look up the entry being deleted to run delete effects (inverted)
-      final deletedEntry = current.entries
-          .where((e) => e.id == event.entryId)
-          .firstOrNull;
-
-      if (deletedEntry != null) {
-        final schema = current.module.schemas[deletedEntry.schemaKey];
-        if (schema != null && schema.effects.isNotEmpty) {
-          await _applyDeleteEffects(current, schema.effects, deletedEntry);
-        }
-      }
-
       await entryRepository.deleteEntry(userId, current.module.id, event.entryId);
 
       // If we're on a detail screen for this entry, navigate back
@@ -397,44 +358,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
       emit(current.copyWith(submitError: e.toString()));
-    }
-  }
-
-  /// Applies delete effects (auto-inverted) using [PostSubmitEffectExecutor].
-  Future<void> _applyDeleteEffects(
-    ModuleViewerLoaded current,
-    List<SchemaEffect> effects,
-    Entry deletedEntry,
-  ) async {
-    const executor = PostSubmitEffectExecutor();
-    final updates = executor.computeDeleteUpdates(
-      effects: effects,
-      deletedEntryData: deletedEntry.data,
-      entries: current.entries,
-    );
-
-    for (final update in updates.entries) {
-      final existing = current.entries
-          .where((e) => e.id == update.key)
-          .firstOrNull;
-      if (existing == null) continue;
-
-      final updatedEntry = Entry(
-        id: existing.id,
-        data: {...existing.data, ...update.value},
-        schemaVersion: existing.schemaVersion,
-        schemaKey: existing.schemaKey,
-      );
-
-      try {
-        await entryRepository.updateEntry(
-          userId,
-          current.module.id,
-          updatedEntry,
-        );
-      } catch (e) {
-        Log.e('Delete effect failed', tag: 'ModuleViewer', error: e);
-      }
     }
   }
 
@@ -503,8 +426,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final entry = Entry(
         id: '',
         data: event.data,
-        schemaVersion:
-            current.module.schemas[event.schemaKey]?.version ?? 1,
+        schemaVersion: 1,
         schemaKey: event.schemaKey,
       );
       final newId = await entryRepository.createEntry(
@@ -544,8 +466,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final updated = Entry(
         id: event.entryId,
         data: mergedData,
-        schemaVersion:
-            current.module.schemas[event.schemaKey]?.version ?? 1,
+        schemaVersion: 1,
         schemaKey: event.schemaKey,
       );
       await entryRepository.updateEntry(userId, current.module.id, updated);
@@ -627,44 +548,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     emit(current.copyWith(formValues: event.values));
-  }
-
-  /// Applies post-submit effects using [PostSubmitEffectExecutor].
-  Future<void> _applyPostSubmitEffects(
-    ModuleViewerLoaded current,
-    List<SchemaEffect> effects,
-    Map<String, dynamic> formData,
-  ) async {
-    const executor = PostSubmitEffectExecutor();
-    final updates = executor.computeUpdates(
-      effects: effects,
-      formData: formData,
-      entries: current.entries,
-    );
-
-    for (final update in updates.entries) {
-      final existing = current.entries
-          .where((e) => e.id == update.key)
-          .firstOrNull;
-      if (existing == null) continue;
-
-      final updatedEntry = Entry(
-        id: existing.id,
-        data: {...existing.data, ...update.value},
-        schemaVersion: existing.schemaVersion,
-        schemaKey: existing.schemaKey,
-      );
-
-      try {
-        await entryRepository.updateEntry(
-          userId,
-          current.module.id,
-          updatedEntry,
-        );
-      } catch (e) {
-        Log.e('Post-submit effect failed', tag: 'ModuleViewer', error: e);
-      }
-    }
   }
 
   static const _expressionCollector = ExpressionCollector();

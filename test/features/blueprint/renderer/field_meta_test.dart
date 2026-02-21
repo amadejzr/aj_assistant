@@ -35,7 +35,7 @@ void main() {
 
     setUp(() {
       ctx = RenderContext(
-        module: const Module(id: 'mod1', name: 'Test', schemas: {}),
+        module: const Module(id: 'mod1', name: 'Test'),
         onFormValueChanged: (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
       );

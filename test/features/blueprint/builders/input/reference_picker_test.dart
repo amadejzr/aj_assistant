@@ -1,9 +1,5 @@
 import 'package:aj_assistant/core/models/entry.dart';
 import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/features/modules/models/field_constraints.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_parser.dart';
@@ -54,37 +50,12 @@ void main() {
     const testModule = Module(
       id: 'expenses',
       name: 'Finances',
-      schemas: {
-        'category': ModuleSchema(
-          label: 'Category',
-          fields: {
-            'name': FieldDefinition(
-              key: 'name',
-              type: FieldType.text,
-              label: 'Category Name',
-            ),
-          },
-        ),
-        'expense': ModuleSchema(
-          label: 'Expense',
-          fields: {
-            'category': FieldDefinition(
-              key: 'category',
-              type: FieldType.reference,
-              label: 'Category',
-            ),
-          },
-        ),
-      },
     );
 
     const categoryEntries = [
       Entry(id: 'cat1', data: {'name': 'Food'}, schemaKey: 'category'),
       Entry(id: 'cat2', data: {'name': 'Transport'}, schemaKey: 'category'),
-      Entry(
-          id: 'cat3',
-          data: {'name': 'Entertainment'},
-          schemaKey: 'category'),
+      Entry(id: 'cat3', data: {'name': 'Entertainment'}, schemaKey: 'category'),
     ];
 
     const expenseEntries = [
@@ -103,11 +74,9 @@ void main() {
       List<Entry> entries = allEntries,
       Map<String, dynamic> formValues = const {},
       void Function(String, dynamic)? onChanged,
-      Future<String?> Function(String, Map<String, dynamic>)? onCreateEntry,
-      Future<void> Function(String, String, Map<String, dynamic>)?
-          onUpdateEntry,
     }) {
-      final pickerNode = node ??
+      final pickerNode =
+          node ??
           const ReferencePickerNode(
             fieldKey: 'category',
             schemaKey: 'category',
@@ -121,15 +90,11 @@ void main() {
         formValues: formValues,
         onFormValueChanged: onChanged ?? (_, _) {},
         onNavigateToScreen: (_, {Map<String, dynamic> params = const {}}) {},
-        onCreateEntry: onCreateEntry,
-        onUpdateEntry: onUpdateEntry,
       );
 
       return MaterialApp(
         theme: AppTheme.dark(),
-        home: Scaffold(
-          body: WidgetRegistry.instance.build(pickerNode, ctx),
-        ),
+        home: Scaffold(body: WidgetRegistry.instance.build(pickerNode, ctx)),
       );
     }
 
@@ -142,8 +107,9 @@ void main() {
       expect(find.text('Entertainment'), findsOneWidget);
     });
 
-    testWidgets('filters by schemaKey — expense entries not shown',
-        (tester) async {
+    testWidgets('filters by schemaKey — expense entries not shown', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
 
@@ -152,17 +118,20 @@ void main() {
       expect(find.text('Entertainment'), findsOneWidget);
     });
 
-    testWidgets('tap selects entry — calls onFormValueChanged with entry ID',
-        (tester) async {
+    testWidgets('tap selects entry — calls onFormValueChanged with entry ID', (
+      tester,
+    ) async {
       String? changedKey;
       dynamic changedValue;
 
-      await tester.pumpWidget(buildWidget(
-        onChanged: (key, value) {
-          changedKey = key;
-          changedValue = value;
-        },
-      ));
+      await tester.pumpWidget(
+        buildWidget(
+          onChanged: (key, value) {
+            changedKey = key;
+            changedValue = value;
+          },
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Food'));
@@ -171,9 +140,7 @@ void main() {
     });
 
     testWidgets('shows current selection as highlighted', (tester) async {
-      await tester.pumpWidget(buildWidget(
-        formValues: {'category': 'cat2'},
-      ));
+      await tester.pumpWidget(buildWidget(formValues: {'category': 'cat2'}));
       await tester.pumpAndSettle();
 
       expect(find.text('Transport'), findsOneWidget);
@@ -183,18 +150,6 @@ void main() {
       const moduleWithTitle = Module(
         id: 'test',
         name: 'Test',
-        schemas: {
-          'item': ModuleSchema(
-            label: 'Item',
-            fields: {
-              'title': FieldDefinition(
-                key: 'title',
-                type: FieldType.text,
-                label: 'Title',
-              ),
-            },
-          ),
-        },
       );
 
       const entries = [
@@ -211,68 +166,57 @@ void main() {
         displayField: 'title',
       );
 
-      await tester.pumpWidget(buildWidget(
-        node: node,
-        module: moduleWithTitle,
-        entries: entries,
-      ));
+      await tester.pumpWidget(
+        buildWidget(node: node, module: moduleWithTitle, entries: entries),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Wrong'), findsNothing);
     });
 
-    testWidgets('empty state shows "+" add chip', (tester) async {
-      await tester.pumpWidget(buildWidget(
-        entries: const [
-          Entry(id: 'exp1', data: {'amount': 50}, schemaKey: 'expense'),
-        ],
-      ));
+    testWidgets('shows no entries when schemaKey has no matches', (tester) async {
+      await tester.pumpWidget(
+        buildWidget(
+          entries: const [
+            Entry(id: 'exp1', data: {'amount': 50}, schemaKey: 'expense'),
+          ],
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Food'), findsNothing);
       expect(find.text('Transport'), findsNothing);
-      // "+" chip still present
-      expect(find.text('New'), findsOneWidget);
-      expect(find.byIcon(Icons.add), findsOneWidget);
     });
 
-    testWidgets('falls back to targetSchema property when node schemaKey is empty',
-        (tester) async {
-      const moduleWithConstraint = Module(
-        id: 'expenses',
-        name: 'Finances',
-        schemas: {
-          'category': ModuleSchema(
-            label: 'Category',
-            fields: {
-              'name': FieldDefinition(
-                key: 'name',
-                type: FieldType.text,
-                label: 'Category Name',
-              ),
-            },
+    testWidgets(
+      'falls back to targetSchema property when node schemaKey is empty',
+      (tester) async {
+        const moduleWithConstraint = Module(
+          id: 'expenses',
+          name: 'Finances',
+        );
+
+        const node = ReferencePickerNode(
+          fieldKey: 'category',
+          schemaKey: '', // empty — falls back to targetSchema property
+          properties: {'targetSchema': 'category', 'label': 'Category'},
+        );
+
+        await tester.pumpWidget(
+          buildWidget(
+            node: node,
+            module: moduleWithConstraint,
+            entries: categoryEntries,
           ),
-        },
-      );
+        );
+        await tester.pumpAndSettle();
 
-      const node = ReferencePickerNode(
-        fieldKey: 'category',
-        schemaKey: '', // empty — falls back to targetSchema property
-        properties: {'targetSchema': 'category', 'label': 'Category'},
-      );
-
-      await tester.pumpWidget(buildWidget(
-        node: node,
-        module: moduleWithConstraint,
-        entries: categoryEntries,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Food'), findsOneWidget);
-      expect(find.text('Transport'), findsOneWidget);
-      expect(find.text('Entertainment'), findsOneWidget);
-    });
+        expect(find.text('Food'), findsOneWidget);
+        expect(find.text('Transport'), findsOneWidget);
+        expect(find.text('Entertainment'), findsOneWidget);
+      },
+    );
 
     testWidgets('registry resolves reference_picker', (tester) async {
       const node = ReferencePickerNode(
@@ -292,54 +236,5 @@ void main() {
       expect(widget, isNot(isA<SizedBox>()));
     });
 
-    // ─── New tests for inline create/edit ───
-
-    testWidgets('renders "+" add chip after entries', (tester) async {
-      await tester.pumpWidget(buildWidget());
-      await tester.pumpAndSettle();
-
-      expect(find.text('New'), findsOneWidget);
-      expect(find.byIcon(Icons.add), findsOneWidget);
-    });
-
-    testWidgets('"+" chip opens bottom sheet on tap', (tester) async {
-      await tester.pumpWidget(buildWidget(
-        onCreateEntry: (schemaKey, data) async => 'new-id',
-      ));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('New'));
-      await tester.pumpAndSettle();
-
-      // Bottom sheet should show "Create Category"
-      expect(find.text('Create Category'), findsOneWidget);
-    });
-
-    testWidgets('long-press chip opens edit sheet', (tester) async {
-      await tester.pumpWidget(buildWidget(
-        onUpdateEntry: (entryId, schemaKey, data) async {},
-      ));
-      await tester.pumpAndSettle();
-
-      await tester.longPress(find.text('Food'));
-      await tester.pumpAndSettle();
-
-      // Bottom sheet should show "Edit Category"
-      expect(find.text('Edit Category'), findsOneWidget);
-      // Should pre-fill the name field
-      expect(find.widgetWithText(TextFormField, 'Food'), findsOneWidget);
-    });
-
-    testWidgets('empty state shows "+" chip for inline create',
-        (tester) async {
-      await tester.pumpWidget(buildWidget(
-        entries: const [], // no entries at all
-      ));
-      await tester.pumpAndSettle();
-
-      // Even with no entries, "+" chip should be there
-      expect(find.text('New'), findsOneWidget);
-      expect(find.byIcon(Icons.add), findsOneWidget);
-    });
   });
 }

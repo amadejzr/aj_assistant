@@ -58,6 +58,7 @@ void main() async {
   runApp(
     MultiRepositoryProvider(
       providers: [
+        RepositoryProvider<AppDatabase>.value(value: db),
         RepositoryProvider<ModuleRepository>.value(value: moduleRepository),
         RepositoryProvider<EntryRepository>.value(value: entryRepository),
         RepositoryProvider<CapabilityRepository>.value(

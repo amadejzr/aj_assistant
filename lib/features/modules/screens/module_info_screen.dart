@@ -11,7 +11,6 @@ import '../../../core/utils/module_display_utils.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/widgets/paper_background.dart';
-import '../models/field_definition.dart';
 
 class ModuleInfoScreen extends StatelessWidget {
   final String moduleId;
@@ -116,7 +115,7 @@ class _InfoScaffoldState extends State<_InfoScaffold>
           ),
           tabs: const [
             Tab(text: 'Overview'),
-            Tab(text: 'Schema'),
+            Tab(text: 'Database'),
           ],
         ),
       ),
@@ -127,7 +126,7 @@ class _InfoScaffoldState extends State<_InfoScaffold>
             controller: _tabController,
             children: [
               _OverviewTab(module: widget.module, moduleColor: moduleColor),
-              _SchemaTab(module: widget.module),
+              _DatabaseTab(module: widget.module),
             ],
           ),
         ],
@@ -216,8 +215,7 @@ class _OverviewTab extends StatelessWidget {
   }
 
   Widget _buildStatsRow(AppColors colors) {
-    final totalFields =
-        module.schemas.values.fold<int>(0, (sum, s) => sum + s.fields.length);
+    final tableCount = module.database?.tableNames.length ?? 0;
 
     return Row(
       children: [
@@ -228,8 +226,8 @@ class _OverviewTab extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.sm),
         _StatChip(
-          icon: PhosphorIcons.stack(PhosphorIconsStyle.bold),
-          label: '$totalFields fields',
+          icon: PhosphorIcons.table(PhosphorIconsStyle.bold),
+          label: '$tableCount tables',
           colors: colors,
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -312,12 +310,12 @@ class _OverviewTab extends StatelessWidget {
   }
 }
 
-// ─── Schema Tab ───
+// ─── Database Tab ───
 
-class _SchemaTab extends StatelessWidget {
+class _DatabaseTab extends StatelessWidget {
   final Module module;
 
-  const _SchemaTab({required this.module});
+  const _DatabaseTab({required this.module});
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +329,7 @@ class _SchemaTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFieldsSection(colors),
+          _buildTablesSection(colors),
           const SizedBox(height: AppSpacing.xl),
           _buildScreensSection(colors),
           const SizedBox(height: AppSpacing.xxl),
@@ -340,16 +338,14 @@ class _SchemaTab extends StatelessWidget {
     );
   }
 
-  Widget _buildFieldsSection(AppColors colors) {
-    final schemas = module.schemas;
-    final hasMultipleSchemas = schemas.length > 1;
-    final hasAnyFields = schemas.values.any((s) => s.fields.isNotEmpty);
+  Widget _buildTablesSection(AppColors colors) {
+    final tableNames = module.database?.tableNames ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Fields',
+          'Tables',
           style: TextStyle(
             fontFamily: 'CormorantGaramond',
             fontSize: 20,
@@ -358,9 +354,9 @@ class _SchemaTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (!hasAnyFields)
+        if (tableNames.isEmpty)
           Text(
-            'No fields defined',
+            'No tables defined',
             style: TextStyle(
               fontFamily: 'Karla',
               fontSize: 14,
@@ -368,27 +364,47 @@ class _SchemaTab extends StatelessWidget {
             ),
           )
         else
-          ...schemas.entries.expand((schemaEntry) {
-            final schema = schemaEntry.value;
-            if (schema.fields.isEmpty) return <Widget>[];
-            return [
-              if (hasMultipleSchemas) ...[
-                _SchemaGroupHeader(
-                  label: schema.label.isNotEmpty
-                      ? schema.label
-                      : schemaEntry.key,
-                  colors: colors,
+          ...tableNames.entries.map((entry) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.border),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-              ],
-              ...schema.fields.values.map((field) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _FieldRow(field: field, colors: colors),
-                );
-              }),
-              if (hasMultipleSchemas) const SizedBox(height: AppSpacing.sm),
-            ];
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.key,
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 15,
+                          color: colors.onBackground,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        entry.value,
+                        style: TextStyle(
+                          fontFamily: 'Karla',
+                          fontSize: 13,
+                          color: colors.onBackgroundMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }),
       ],
     );
@@ -486,97 +502,6 @@ class _StatChip extends StatelessWidget {
               color: colors.onBackground,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SchemaGroupHeader extends StatelessWidget {
-  final String label;
-  final AppColors colors;
-
-  const _SchemaGroupHeader({required this.label, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Karla',
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-          color: colors.onBackgroundMuted,
-        ),
-      ),
-    );
-  }
-}
-
-class _FieldRow extends StatelessWidget {
-  final FieldDefinition field;
-  final AppColors colors;
-
-  const _FieldRow({required this.field, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.border),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              field.label,
-              style: TextStyle(
-                fontFamily: 'Karla',
-                fontSize: 15,
-                color: colors.onBackground,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: colors.surfaceVariant,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              field.type.name,
-              style: TextStyle(
-                fontFamily: 'Karla',
-                fontSize: 13,
-                color: colors.onBackgroundMuted,
-              ),
-            ),
-          ),
-          if (field.required) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: colors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'required',
-                style: TextStyle(
-                  fontFamily: 'Karla',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: colors.accent,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

@@ -4,7 +4,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../modules/models/field_type.dart';
 import '../../engine/entry_filter.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
@@ -73,19 +72,6 @@ class _EntryListWidgetState extends State<_EntryListWidget>
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  /// Extract the schemaKey from the entry_list's static filter definition.
-  String? _getSchemaKey() {
-    final filter = widget.listNode.filter;
-    if (filter is List) {
-      for (final f in filter) {
-        if (f is Map && f['field'] == 'schemaKey') {
-          return f['value'] as String?;
-        }
-      }
-    }
-    return null;
   }
 
   List<dynamic> _filteredAndSorted() {
@@ -226,7 +212,6 @@ class _EntryListWidgetState extends State<_EntryListWidget>
   // ─── Filter Bar ───
 
   List<_FilterChipData> _resolveFilterChips() {
-    final schemaKey = _getSchemaKey();
     final chips = <_FilterChipData>[];
 
     for (final filterDef in widget.listNode.filters) {
@@ -238,13 +223,10 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       if (type == 'period') {
         options = const ['This Week', 'This Month', 'Last Month'];
       } else {
-        final fieldDef = schemaKey != null
-            ? widget.ctx.module.schemas[schemaKey]?.fields[field]
-            : widget.ctx.module.schema.fields[field];
-        if (fieldDef != null &&
-            (fieldDef.type == FieldType.enumType ||
-                fieldDef.type == FieldType.multiEnum)) {
-          options = fieldDef.options;
+        // Enum options come from the filter definition itself
+        final inlineOptions = filterDef['options'];
+        if (inlineOptions is List) {
+          options = inlineOptions.cast<String>();
         } else {
           continue;
         }

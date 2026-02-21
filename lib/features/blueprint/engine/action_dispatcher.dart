@@ -6,7 +6,6 @@ import '../builders/layout/form_screen_builder.dart';
 import '../renderer/blueprint_node.dart';
 import '../renderer/blueprint_parser.dart';
 import '../renderer/render_context.dart';
-import 'post_submit_effect.dart';
 
 /// Centralized action handler for blueprint actions.
 ///
@@ -291,55 +290,10 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
     final schemaKey = widget.sheetParams['_schemaKey'] as String? ?? 'default';
     final entryId = widget.sheetParams['_entryId'] as String?;
 
-    // Read effects from schema (not screen)
-    final schemaEffects =
-        widget.ctx.module.schemas[schemaKey]?.effects ?? const [];
-
-    // Validate effect guards (e.g. min: 0) before creating entry
-    if (schemaEffects.isNotEmpty) {
-      const executor = PostSubmitEffectExecutor();
-      final error = executor.validateEffects(
-        effects: schemaEffects,
-        formData: data,
-        entries: widget.ctx.allEntries,
-      );
-      if (error != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        }
-        return;
-      }
-    }
-
     if (entryId != null && entryId.isNotEmpty) {
       await widget.ctx.onUpdateEntry?.call(entryId, schemaKey, data);
     } else {
       await widget.ctx.onCreateEntry?.call(schemaKey, data);
-    }
-
-    // Apply post-submit effects from schema
-    if (schemaEffects.isNotEmpty && widget.ctx.onUpdateEntry != null) {
-      const executor = PostSubmitEffectExecutor();
-      final updates = executor.computeUpdates(
-        effects: schemaEffects,
-        formData: data,
-        entries: widget.ctx.allEntries,
-      );
-
-      for (final update in updates.entries) {
-        final existing = widget.ctx.allEntries
-            .where((e) => e.id == update.key)
-            .firstOrNull;
-        if (existing == null) continue;
-
-        await widget.ctx.onUpdateEntry!(
-          existing.id,
-          existing.schemaKey,
-          {...existing.data, ...update.value},
-        );
-      }
     }
 
     if (mounted) {

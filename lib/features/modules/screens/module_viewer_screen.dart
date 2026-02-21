@@ -146,7 +146,7 @@ class _LoadedViewState extends State<_LoadedView> {
         final entry = Entry(
           id: '',
           data: data,
-          schemaVersion: state.module.schemas[schemaKey]?.version ?? 1,
+          schemaVersion: 1,
           schemaKey: schemaKey,
         );
         return entryRepo.createEntry(userId, state.module.id, entry);
@@ -161,7 +161,7 @@ class _LoadedViewState extends State<_LoadedView> {
         final updated = Entry(
           id: entryId,
           data: mergedData,
-          schemaVersion: state.module.schemas[schemaKey]?.version ?? 1,
+          schemaVersion: 1,
           schemaKey: schemaKey,
         );
         await entryRepo.updateEntry(userId, state.module.id, updated);

@@ -29,13 +29,11 @@ class _CardGridWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.module.schema.fields[grid.fieldKey];
+    final options = (grid.properties['options'] as List?)?.cast<String>() ?? [];
 
-    if (field == null || field.options.isEmpty) {
+    if (options.isEmpty) {
       return const SizedBox.shrink();
     }
-
-    final options = field.options;
 
     return GridView.builder(
       shrinkWrap: true,

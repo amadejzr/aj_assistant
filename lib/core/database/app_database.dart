@@ -2,8 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
-import '../../features/modules/models/module_schema.dart';
 import 'converters.dart';
+import 'module_database.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -17,7 +17,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,6 +31,19 @@ class AppDatabase extends _$AppDatabase {
         // so we recreate the capabilities table.
         await m.deleteTable('capabilities');
         await m.createTable(capabilities);
+      }
+      if (from < 4) {
+        // Recreate modules table: remove schemas column, add database column.
+        await customStatement('ALTER TABLE modules RENAME TO modules_old');
+        await m.createTable(modules);
+        await customStatement('''
+          INSERT INTO modules (id, name, description, icon, color, sort_order,
+            screens, settings, guide, navigation, version, created_at, updated_at)
+          SELECT id, name, description, icon, color, sort_order,
+            screens, settings, guide, navigation, version, created_at, updated_at
+          FROM modules_old
+        ''');
+        await customStatement('DROP TABLE modules_old');
       }
     },
   );

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../../features/modules/models/field_type.dart';
+import 'field_type.dart';
 
 /// Maps [FieldType] values to SQLite column types and handles
 /// Dart ↔ SQL value conversions.
