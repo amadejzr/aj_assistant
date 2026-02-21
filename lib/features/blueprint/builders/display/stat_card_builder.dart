@@ -31,6 +31,21 @@ class _StatCardWidget extends StatelessWidget {
   const _StatCardWidget({required this.card, required this.ctx});
 
   String _computeStat() {
+    // SQL source path
+    final source = card.properties['source'] as String?;
+    final valueKey = card.properties['valueKey'] as String?;
+    if (source != null && valueKey != null) {
+      final rows = ctx.queryResults[source];
+      if (rows == null || rows.isEmpty) return '--';
+      final value = rows[0][valueKey];
+      if (value == null) return '--';
+      if (value is num) {
+        if (value == value.truncateToDouble()) return '${value.round()}';
+        return value.toStringAsFixed(1);
+      }
+      return value.toString();
+    }
+
     // Use EntryFilter for unified filtering
     final result = EntryFilter.filter(ctx.entries, card.filter, ctx.screenParams);
     final entries = result.entries;
