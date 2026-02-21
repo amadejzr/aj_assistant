@@ -469,4 +469,72 @@ void main() {
       },
     );
   });
+
+  group('Mutation error toasts', () {
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'form submit sets submitError on SQL failure',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        bloc.add(const ModuleViewerScreenChanged('add_expense'));
+        await Future.delayed(const Duration(milliseconds: 50));
+        // Submit with missing required 'amount' — triggers NOT NULL constraint
+        bloc.add(const ModuleViewerFormValueChanged('description', 'Lunch'));
+        await Future.delayed(const Duration(milliseconds: 50));
+        bloc.add(const ModuleViewerFormSubmitted());
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        expect(state.submitError, isNotNull);
+        expect(state.isSubmitting, false);
+      },
+    );
+
+    blocTest<ModuleViewerBloc, ModuleViewerState>(
+      'delete sets submitError on SQL failure',
+      setUp: () async {
+        final module = _budgetModule(withMutations: true);
+        await SchemaManager(db: db).installModule(module);
+        when(() => moduleRepo.getModule('user1', 'budget-001'))
+            .thenAnswer((_) async => module);
+      },
+      build: () => ModuleViewerBloc(
+        moduleRepository: moduleRepo,
+        entryRepository: entryRepo,
+        appDatabase: db,
+        userId: 'user1',
+      ),
+      act: (bloc) async {
+        bloc.add(const ModuleViewerStarted('budget-001'));
+        await Future.delayed(const Duration(milliseconds: 100));
+        // Delete a non-existent entry — this won't throw by default,
+        // so let's navigate to main screen with delete mutation
+        // and delete with a bogus ID. Actually SQL DELETE WHERE id=:id
+        // won't error for missing rows. Instead, let's drop the table
+        // to force an error.
+        await db.customStatement('DROP TABLE "m_budget_expenses"');
+        bloc.add(const ModuleViewerEntryDeleted('e-nonexistent'));
+        await Future.delayed(const Duration(milliseconds: 200));
+      },
+      wait: const Duration(milliseconds: 100),
+      verify: (bloc) {
+        final state = bloc.state as ModuleViewerLoaded;
+        expect(state.submitError, isNotNull);
+      },
+    );
+  });
 }

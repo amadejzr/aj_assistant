@@ -320,7 +320,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       ));
     } catch (e) {
       Log.e('Failed to save entry', tag: 'ModuleViewer', error: e);
-      emit(current.copyWith(isSubmitting: false));
+      emit(current.copyWith(
+        isSubmitting: false,
+        submitError: e.toString(),
+      ));
     }
   }
 
@@ -393,6 +396,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       }
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
+      emit(current.copyWith(submitError: e.toString()));
     }
   }
 
