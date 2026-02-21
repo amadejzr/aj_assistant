@@ -12,14 +12,6 @@ import 'dart:io';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 
-import 'templates/finance_template.dart';
-import 'templates/fitness_template.dart';
-import 'templates/hiking_template.dart';
-import 'templates/meals_template.dart';
-import 'templates/projects_template.dart';
-import 'templates/reading_list_template.dart';
-import 'templates/budget_sql_template.dart';
-import 'templates/tasks_template.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -31,14 +23,6 @@ Future<void> main() async {
   final collection = firestore.collection('marketplace_templates');
 
   final templates = {
-    'tpl_budget_sql': budgetSqlTemplate,
-    'tpl_finance': financeTemplate,
-    'tpl_fitness': fitnessTemplate,
-    'tpl_hiking': hikingTemplate,
-    'tpl_meals': mealsTemplate,
-    'tpl_projects': projectsTemplate,
-    'tpl_reading_list': readingListTemplate,
-    'tpl_tasks': tasksTemplate,
   };
 
   for (final entry in templates.entries) {
