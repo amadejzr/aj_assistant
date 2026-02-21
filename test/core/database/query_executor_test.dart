@@ -148,6 +148,138 @@ void main() {
       expect(results[2]['amount'], 200.0);
     });
   });
+
+  group('watch', () {
+    test('emits initial result set', () async {
+      final query = ScreenQuery(
+        name: 'all_expenses',
+        sql:
+            'SELECT description FROM "m_budget_expenses" ORDER BY created_at',
+      );
+
+      final stream = queryExecutor.watch(query, {});
+      final first = await stream.first;
+
+      expect(first, hasLength(3));
+      expect(first[0]['description'], 'Coffee');
+      expect(first[1]['description'], 'Dinner');
+      expect(first[2]['description'], 'Bus');
+    });
+
+    test('re-emits after INSERT into table', () async {
+      final query = ScreenQuery(
+        name: 'all_expenses',
+        sql:
+            'SELECT description FROM "m_budget_expenses" ORDER BY created_at',
+      );
+
+      final emissions = <List<Map<String, dynamic>>>[];
+      final sub = queryExecutor.watch(query, {}).listen(emissions.add);
+
+      // Wait for initial emission
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+      expect(emissions[0], hasLength(3));
+
+      // Insert and notify
+      await db.customInsert(
+        'INSERT INTO "m_budget_expenses" (id, amount, description, category, account_id, date, created_at, updated_at) '
+        "VALUES ('e4', 15.0, 'Snack', 'Food', 'a1', 1708790400000, 4000, 4000)",
+        updates: queryExecutor.tableRefs,
+      );
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(2));
+      expect(emissions[1], hasLength(4));
+      expect(emissions[1][3]['description'], 'Snack');
+
+      await sub.cancel();
+    });
+
+    test('re-emits after DELETE from table', () async {
+      final query = ScreenQuery(
+        name: 'all_expenses',
+        sql:
+            'SELECT description FROM "m_budget_expenses" ORDER BY created_at',
+      );
+
+      final emissions = <List<Map<String, dynamic>>>[];
+      final sub = queryExecutor.watch(query, {}).listen(emissions.add);
+
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+
+      // Delete and notify
+      await db.customUpdate(
+        'DELETE FROM "m_budget_expenses" WHERE id = \'e3\'',
+        updates: queryExecutor.tableRefs,
+        updateKind: UpdateKind.delete,
+      );
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(2));
+      expect(emissions[1], hasLength(2));
+
+      await sub.cancel();
+    });
+
+    test('re-emits after UPDATE on table', () async {
+      final query = ScreenQuery(
+        name: 'all_expenses',
+        sql:
+            'SELECT description, amount FROM "m_budget_expenses" ORDER BY created_at',
+      );
+
+      final emissions = <List<Map<String, dynamic>>>[];
+      final sub = queryExecutor.watch(query, {}).listen(emissions.add);
+
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+      expect(emissions[0][0]['amount'], 50.0);
+
+      // Update and notify
+      await db.customUpdate(
+        'UPDATE "m_budget_expenses" SET amount = 99.0 WHERE id = \'e1\'',
+        updates: queryExecutor.tableRefs,
+        updateKind: UpdateKind.update,
+      );
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(2));
+      expect(emissions[1][0]['amount'], 99.0);
+
+      await sub.cancel();
+    });
+
+    test('trigger side-effects reflected in watched query', () async {
+      // Watch accounts balance — trigger updates balance when expense is inserted
+      final query = ScreenQuery(
+        name: 'account_balance',
+        sql: 'SELECT balance FROM "m_budget_accounts" WHERE id = \'a1\'',
+      );
+
+      final emissions = <List<Map<String, dynamic>>>[];
+      final sub = queryExecutor.watch(query, {}).listen(emissions.add);
+
+      await pumpEventQueue();
+      expect(emissions, hasLength(1));
+      expect(emissions[0][0]['balance'], 1720.0); // after seed expenses
+
+      // Insert expense — trigger deducts from balance
+      // Notify both tables since trigger affects accounts too
+      await db.customInsert(
+        'INSERT INTO "m_budget_expenses" (id, amount, description, category, account_id, date, created_at, updated_at) '
+        "VALUES ('e4', 100.0, 'Gym', 'Health', 'a1', 1708790400000, 4000, 4000)",
+        updates: queryExecutor.tableRefs,
+      );
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(2));
+      expect(emissions[1][0]['balance'], 1620.0); // 1720 - 100
+
+      await sub.cancel();
+    });
+  });
 }
 
 // ── Shared budget module definition ──
