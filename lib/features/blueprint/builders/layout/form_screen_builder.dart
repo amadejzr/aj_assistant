@@ -68,6 +68,7 @@ RenderContext _buildEffectiveContext(FormScreenNode form, RenderContext ctx) {
     onDeleteEntry: ctx.onDeleteEntry,
     resolvedExpressions: ctx.resolvedExpressions,
     onScreenParamChanged: ctx.onScreenParamChanged,
+    queryResults: ctx.queryResults,
   );
 }
 

@@ -40,6 +40,30 @@ class QueryExecutor {
         .map((rows) => rows.map(_rowToMap).toList());
   }
 
+  /// Executes a paginated query with LIMIT/OFFSET appended.
+  Future<List<Map<String, dynamic>>> executePaginated(
+    ScreenQuery query,
+    Map<String, Object> resolvedParams, {
+    required int limit,
+    required int offset,
+  }) async {
+    // Append LIMIT/OFFSET if not already in the SQL
+    var sql = query.sql;
+    final upperSql = sql.toUpperCase();
+    if (!upperSql.contains('LIMIT')) {
+      sql = '$sql LIMIT $limit OFFSET $offset';
+    }
+
+    final paginatedQuery = ScreenQuery(
+      name: query.name,
+      sql: sql,
+      params: query.params,
+      defaults: query.defaults,
+    );
+
+    return execute(paginatedQuery, resolvedParams);
+  }
+
   /// Executes all queries for a screen, returns named results.
   Future<Map<String, List<Map<String, dynamic>>>> executeAll(
     List<ScreenQuery> queries,
@@ -54,22 +78,39 @@ class QueryExecutor {
   }
 
   /// Watches all queries for a screen, emits whenever any result changes.
-  Stream<Map<String, List<Map<String, dynamic>>>> watchAll(
+  ///
+  /// Query errors are captured per-query in [errors] instead of propagating.
+  Stream<QueryWatchResult> watchAll(
     List<ScreenQuery> queries,
     Map<String, Object> resolvedParams,
   ) {
-    final controller =
-        StreamController<Map<String, List<Map<String, dynamic>>>>();
+    final controller = StreamController<QueryWatchResult>();
     final latest = <String, List<Map<String, dynamic>>>{};
+    final errors = <String, String>{};
     final subscriptions = <StreamSubscription>[];
 
     for (final query in queries) {
-      final sub = watch(query, resolvedParams).listen((rows) {
-        latest[query.name] = rows;
-        if (latest.length == queries.length) {
-          controller.add(Map.of(latest));
-        }
-      });
+      final sub = watch(query, resolvedParams).listen(
+        (rows) {
+          latest[query.name] = rows;
+          errors.remove(query.name);
+          if (latest.length + errors.length == queries.length) {
+            controller.add(QueryWatchResult(
+              results: Map.of(latest),
+              errors: Map.of(errors),
+            ));
+          }
+        },
+        onError: (Object e) {
+          errors[query.name] = e.toString();
+          if (latest.length + errors.length == queries.length) {
+            controller.add(QueryWatchResult(
+              results: Map.of(latest),
+              errors: Map.of(errors),
+            ));
+          }
+        },
+      );
       subscriptions.add(sub);
     }
 
@@ -103,6 +144,17 @@ class QueryExecutor {
   Map<String, dynamic> _rowToMap(QueryRow row) {
     return row.data;
   }
+}
+
+/// Result of watching all queries for a screen.
+class QueryWatchResult {
+  final Map<String, List<Map<String, dynamic>>> results;
+  final Map<String, String> errors;
+
+  const QueryWatchResult({
+    this.results = const {},
+    this.errors = const {},
+  });
 }
 
 /// Lightweight Drift table reference for dynamic (non-Drift-managed) tables.

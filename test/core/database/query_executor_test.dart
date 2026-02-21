@@ -316,9 +316,9 @@ void main() {
       final stream = queryExecutor.watchAll(queries, {});
       final first = await stream.first;
 
-      expect(first.keys, containsAll(['accounts', 'total_balance']));
-      expect(first['accounts'], hasLength(2));
-      expect(first['total_balance']![0]['total'], isNotNull);
+      expect(first.results.keys, containsAll(['accounts', 'total_balance']));
+      expect(first.results['accounts'], hasLength(2));
+      expect(first.results['total_balance']![0]['total'], isNotNull);
     });
 
     test('re-emits when insert affects a query', () async {
@@ -334,12 +334,12 @@ void main() {
         ),
       ];
 
-      final emissions = <Map<String, List<Map<String, dynamic>>>>[];
+      final emissions = <QueryWatchResult>[];
       final sub = queryExecutor.watchAll(queries, {}).listen(emissions.add);
 
       await pumpEventQueue();
       expect(emissions, hasLength(1));
-      expect(emissions[0]['expenses'], hasLength(3));
+      expect(emissions[0].results['expenses'], hasLength(3));
 
       // Insert expense — affects both queries (expense list + balance via trigger)
       await db.customInsert(
@@ -352,8 +352,8 @@ void main() {
       // Should have at least one more emission with updated data
       expect(emissions.length, greaterThanOrEqualTo(2));
       final latest = emissions.last;
-      expect(latest['expenses'], hasLength(4));
-      expect(latest['expenses']![3]['description'], 'Taxi');
+      expect(latest.results['expenses'], hasLength(4));
+      expect(latest.results['expenses']![3]['description'], 'Taxi');
 
       await sub.cancel();
     });
@@ -428,15 +428,15 @@ void main() {
       });
 
       // 3. Start watchAll → verify initial empty results
-      final emissions = <Map<String, List<Map<String, dynamic>>>>[];
+      final emissions = <QueryWatchResult>[];
       final sub =
           qe.watchAll(queries, {'category': 'all'}).listen(emissions.add);
 
       await pumpEventQueue();
       expect(emissions, hasLength(1));
-      expect(emissions[0]['accounts'], isEmpty);
-      expect(emissions[0]['recent_expenses'], isEmpty);
-      expect(emissions[0]['total_balance']![0]['total'], isNull); // SUM of 0 rows
+      expect(emissions[0].results['accounts'], isEmpty);
+      expect(emissions[0].results['recent_expenses'], isEmpty);
+      expect(emissions[0].results['total_balance']![0]['total'], isNull); // SUM of 0 rows
 
       // 4. Create 2 accounts via MutationExecutor
       final createAccount = ScreenMutation(
@@ -456,7 +456,7 @@ void main() {
 
       // 5. Verify watchAll emits accounts
       expect(emissions.length, greaterThanOrEqualTo(2));
-      var latest = emissions.last;
+      var latest = emissions.last.results;
       expect(latest['accounts'], hasLength(2));
       expect(latest['total_balance']![0]['total'], 7000.0);
 
@@ -483,7 +483,7 @@ void main() {
       await pumpEventQueue();
 
       // 7. Verify triggers: account balances deducted
-      latest = emissions.last;
+      latest = emissions.last.results;
       final accounts = latest['accounts']!;
       final checking =
           accounts.firstWhere((a) => a['name'] == 'Checking');
@@ -508,9 +508,9 @@ void main() {
       await pumpEventQueue();
 
       expect(emissions, hasLength(1));
-      expect(emissions[0]['recent_expenses'], hasLength(2));
+      expect(emissions[0].results['recent_expenses'], hasLength(2));
       expect(
-        emissions[0]['recent_expenses']!.every((e) => e['category'] == 'Food'),
+        emissions[0].results['recent_expenses']!.every((e) => e['category'] == 'Food'),
         isTrue,
       );
 
@@ -520,7 +520,7 @@ void main() {
       });
       await pumpEventQueue();
 
-      latest = emissions.last;
+      latest = emissions.last.results;
       final updatedChecking =
           latest['accounts']!.firstWhere((a) => a['name'] == 'Checking');
       expect(updatedChecking['balance'], 1700.0); // 1750 - 50
@@ -529,7 +529,7 @@ void main() {
       await me.delete(mutations.delete!, expenseIds[1]); // 200 Dinner
       await pumpEventQueue();
 
-      latest = emissions.last;
+      latest = emissions.last.results;
       final refundedChecking =
           latest['accounts']!.firstWhere((a) => a['name'] == 'Checking');
       expect(refundedChecking['balance'], 1900.0); // 1700 + 200

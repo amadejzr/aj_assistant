@@ -42,23 +42,45 @@ class _ModuleViewerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ModuleViewerBloc, ModuleViewerState>(
-      listenWhen: (prev, curr) {
-        final prevError =
-            prev is ModuleViewerLoaded ? prev.submitError : null;
-        final currError =
-            curr is ModuleViewerLoaded ? curr.submitError : null;
-        return currError != null && currError != prevError;
-      },
-      listener: (context, state) {
-        if (state is ModuleViewerLoaded && state.submitError != null) {
-          AppToast.show(
-            context,
-            message: state.submitError!,
-            type: AppToastType.error,
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ModuleViewerBloc, ModuleViewerState>(
+          listenWhen: (prev, curr) {
+            final prevError =
+                prev is ModuleViewerLoaded ? prev.submitError : null;
+            final currError =
+                curr is ModuleViewerLoaded ? curr.submitError : null;
+            return currError != null && currError != prevError;
+          },
+          listener: (context, state) {
+            if (state is ModuleViewerLoaded && state.submitError != null) {
+              AppToast.show(
+                context,
+                message: state.submitError!,
+                type: AppToastType.error,
+              );
+            }
+          },
+        ),
+        BlocListener<ModuleViewerBloc, ModuleViewerState>(
+          listenWhen: (prev, curr) {
+            final prevSuccess =
+                prev is ModuleViewerLoaded ? prev.submitSuccess : null;
+            final currSuccess =
+                curr is ModuleViewerLoaded ? curr.submitSuccess : null;
+            return currSuccess != null && currSuccess != prevSuccess;
+          },
+          listener: (context, state) {
+            if (state is ModuleViewerLoaded && state.submitSuccess != null) {
+              AppToast.show(
+                context,
+                message: state.submitSuccess!,
+                type: AppToastType.success,
+              );
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
         builder: (context, state) {
           return switch (state) {
@@ -101,6 +123,10 @@ class _LoadedViewState extends State<_LoadedView> {
       canGoBack: state.canGoBack,
       resolvedExpressions: state.resolvedExpressions,
       queryResults: state.queryResults,
+      queryErrors: state.queryErrors,
+      onLoadNextPage: (queryName) {
+        bloc.add(ModuleViewerLoadNextPage(queryName));
+      },
       onFormValueChanged: (fieldKey, value) {
         bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
       },

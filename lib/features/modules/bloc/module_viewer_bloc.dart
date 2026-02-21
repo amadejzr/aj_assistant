@@ -24,7 +24,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   // SQL-driven screen state
   QueryExecutor? _queryExecutor;
   MutationExecutor? _mutationExecutor;
-  StreamSubscription<Map<String, List<Map<String, dynamic>>>>? _querySub;
+  StreamSubscription<QueryWatchResult>? _querySub;
   List<ScreenQuery> _currentQueries = [];
   ScreenMutations? _currentMutations;
 
@@ -44,6 +44,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerScreenParamChanged>(_onScreenParamChanged);
     on<ModuleViewerQueryResultsUpdated>(_onQueryResultsUpdated);
     on<ModuleViewerFormPrePopulated>(_onFormPrePopulated);
+    on<ModuleViewerLoadNextPage>(_onLoadNextPage);
   }
 
   Future<void> _onStarted(
@@ -151,6 +152,9 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       clearPendingAutoSelect: shouldClear,
       clearSubmitError: current.submitError != null,
     ));
+
+    // Re-run queries that depend on this field
+    _rerunDependentQueries(event.fieldKey, updated, current.screenParams);
   }
 
   Future<void> _onFormSubmitted(
@@ -196,15 +200,16 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       // SQL mutation path
       if (_mutationExecutor != null && _currentMutations != null) {
+        final ScreenMutation mutation;
         if (entryId != null && entryId.isNotEmpty) {
-          await _mutationExecutor!.update(
-            _currentMutations!.update!,
-            entryId,
-            data,
-          );
+          mutation = _currentMutations!.update!;
+          await _mutationExecutor!.update(mutation, entryId, data);
         } else {
-          await _mutationExecutor!.create(_currentMutations!.create!, data);
+          mutation = _currentMutations!.create!;
+          await _mutationExecutor!.create(mutation, data);
         }
+
+        final successMessage = mutation.onSuccess?['message'] as String?;
 
         final stack = List<ScreenEntry>.from(current.screenStack);
         final previous = stack.isNotEmpty
@@ -217,6 +222,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           screenStack: stack,
           formValues: {},
           isSubmitting: false,
+          submitSuccess: successMessage,
         ));
 
         // Re-subscribe to the previous screen's queries
@@ -226,9 +232,12 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
     } catch (e) {
       Log.e('Failed to save entry', tag: 'ModuleViewer', error: e);
+
+      // Use mutation-specific error message if available
+      final errorMessage = _getMutationErrorMessage(e, current);
       emit(current.copyWith(
         isSubmitting: false,
-        submitError: e.toString(),
+        submitError: errorMessage,
       ));
     }
   }
@@ -253,10 +262,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     try {
       // SQL delete path
       if (_mutationExecutor != null && _currentMutations?.delete != null) {
-        await _mutationExecutor!.delete(
-          _currentMutations!.delete!,
-          event.entryId,
-        );
+        final mutation = _currentMutations!.delete!;
+        await _mutationExecutor!.delete(mutation, event.entryId);
+
+        final successMessage = mutation.onSuccess?['message'] as String?;
 
         // Navigate back if on detail screen for this entry
         final currentEntryId = current.screenParams['_entryId'] as String?;
@@ -269,14 +278,20 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
             screenParams: previous.params,
             screenStack: stack,
             formValues: {},
+            submitSuccess: successMessage,
           ));
+        } else if (successMessage != null) {
+          emit(current.copyWith(submitSuccess: successMessage));
         }
         return;
       }
 
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
-      emit(current.copyWith(submitError: e.toString()));
+      final errorMessage =
+          _currentMutations?.delete?.onError?['message'] as String? ??
+              e.toString();
+      emit(current.copyWith(submitError: errorMessage));
     }
   }
 
@@ -334,7 +349,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       final resolvedParams = resolveQueryParams(_currentQueries, screenParams);
       _querySub = _queryExecutor!
           .watchAll(_currentQueries, resolvedParams)
-          .listen((results) => add(ModuleViewerQueryResultsUpdated(results)));
+          .listen((result) => add(ModuleViewerQueryResultsUpdated(
+                result.results,
+                errors: result.errors,
+              )));
     }
 
     // Pre-populate form for edit mode
@@ -375,7 +393,78 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
 
-    emit(current.copyWith(queryResults: event.results));
+    emit(current.copyWith(
+      queryResults: event.results,
+      queryErrors: event.errors,
+    ));
+  }
+
+  Future<void> _onLoadNextPage(
+    ModuleViewerLoadNextPage event,
+    Emitter<ModuleViewerState> emit,
+  ) async {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+    if (_queryExecutor == null) return;
+
+    final query = _currentQueries.cast<ScreenQuery?>().firstWhere(
+          (q) => q!.name == event.queryName,
+          orElse: () => null,
+        );
+    if (query == null) return;
+
+    // Get the page size from the screen JSON
+    final screenJson = current.module.screens[current.currentScreenId];
+    final pageSize = _findPageSizeForQuery(screenJson, event.queryName) ?? 20;
+
+    final offsets = Map<String, int>.from(current.paginationOffsets);
+    final currentOffset = offsets[event.queryName] ?? pageSize;
+    final newOffset = currentOffset + pageSize;
+    offsets[event.queryName] = newOffset;
+
+    try {
+      final resolvedParams = resolveQueryParams(
+        [query],
+        current.screenParams,
+        formValues: current.formValues,
+      );
+      final newRows = await _queryExecutor!.executePaginated(
+        query,
+        resolvedParams,
+        limit: pageSize,
+        offset: currentOffset,
+      );
+
+      final updatedResults = Map<String, List<Map<String, dynamic>>>.from(
+        current.queryResults,
+      );
+      final existing = updatedResults[event.queryName] ?? [];
+      updatedResults[event.queryName] = [...existing, ...newRows];
+
+      emit(current.copyWith(
+        queryResults: updatedResults,
+        paginationOffsets: offsets,
+      ));
+    } catch (e) {
+      Log.e('Failed to load next page', tag: 'ModuleViewer', error: e);
+    }
+  }
+
+  int? _findPageSizeForQuery(Map<String, dynamic>? screenJson, String queryName) {
+    if (screenJson == null) return null;
+    final children = screenJson['children'] as List?;
+    if (children == null) return null;
+    for (final child in children) {
+      if (child is Map<String, dynamic>) {
+        if (child['type'] == 'entry_list' && child['source'] == queryName) {
+          return child['pageSize'] as int?;
+        }
+        // Recurse into children
+        final nested = _findPageSizeForQuery(child, queryName);
+        if (nested != null) return nested;
+      }
+    }
+    return null;
   }
 
   void _onFormPrePopulated(
@@ -386,6 +475,50 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     emit(current.copyWith(formValues: event.values));
+  }
+
+  /// Re-runs queries whose `dependsOn` list contains the changed field.
+  void _rerunDependentQueries(
+    String changedField,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+  ) {
+    if (_queryExecutor == null) return;
+
+    final dependentQueries = _currentQueries
+        .where((q) => q.dependsOn.contains(changedField))
+        .toList();
+
+    if (dependentQueries.isEmpty) return;
+
+    final resolvedParams = resolveQueryParams(
+      dependentQueries,
+      screenParams,
+      formValues: formValues,
+    );
+
+    for (final query in dependentQueries) {
+      _queryExecutor!.execute(query, resolvedParams).then((rows) {
+        final current = state;
+        if (current is! ModuleViewerLoaded) return;
+        final updated = Map<String, List<Map<String, dynamic>>>.from(
+          current.queryResults,
+        );
+        updated[query.name] = rows;
+        add(ModuleViewerQueryResultsUpdated(updated));
+      });
+    }
+  }
+
+  String _getMutationErrorMessage(Object error, ModuleViewerLoaded current) {
+    final entryId = current.screenParams['_entryId'] as String?;
+    final ScreenMutation? mutation;
+    if (entryId != null && entryId.isNotEmpty) {
+      mutation = _currentMutations?.update;
+    } else {
+      mutation = _currentMutations?.create;
+    }
+    return mutation?.onError?['message'] as String? ?? error.toString();
   }
 
   static const _expressionCollector = ExpressionCollector();

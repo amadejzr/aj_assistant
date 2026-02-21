@@ -101,7 +101,7 @@ class BlueprintActionDispatcher {
     final screenDef = ctx.module.screens[screenId];
     if (screenDef == null) return;
 
-    final parser = const BlueprintParser();
+    final parser = BlueprintParser(fieldSets: ctx.module.fieldSets);
     final node = parser.parse(screenDef);
     if (node is! FormScreenNode) return;
 

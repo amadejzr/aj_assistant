@@ -219,8 +219,11 @@ Future<void> main() async {
                   'type': 'entry_list',
                   'title': 'Active Goals',
                   'source': 'active_goals',
-                  'properties': {'source': 'active_goals'},
-                  'query': {},
+                  'emptyState': {
+                    'message': 'No goals yet',
+                    'icon': 'target',
+                    'action': {'label': 'Create your first goal', 'type': 'navigate', 'screen': 'add_goal'},
+                  },
                   'itemLayout': {
                     'type': 'entry_card',
                     'title': '{{name}}',
@@ -276,8 +279,11 @@ Future<void> main() async {
             {
               'type': 'entry_list',
               'source': 'goals',
-              'properties': {'source': 'goals'},
-              'query': {},
+              'emptyState': {
+                'message': 'No goals yet',
+                'icon': 'target',
+                'action': {'label': 'Create a goal', 'type': 'navigate', 'screen': 'add_goal'},
+              },
               'itemLayout': {
                 'type': 'entry_card',
                 'title': '{{name}}',
@@ -359,8 +365,6 @@ Future<void> main() async {
                 {
                   'type': 'entry_list',
                   'source': 'deposits',
-                  'properties': {'source': 'deposits'},
-                  'query': {},
                   'itemLayout': {
                     'type': 'entry_card',
                     'title': '{{goal_name}}',
@@ -478,8 +482,6 @@ Future<void> main() async {
                   'type': 'entry_list',
                   'title': 'Deposits',
                   'source': 'goal_deposits',
-                  'properties': {'source': 'goal_deposits'},
-                  'query': {},
                   'itemLayout': {
                     'type': 'entry_card',
                     'title': '{{note}}',
@@ -496,7 +498,7 @@ Future<void> main() async {
             'action': {
               'type': 'navigate',
               'screen': 'add_deposit',
-              'params': {},
+              'params': {'goal_id': '{{_entryId}}'},
             },
           },
           'appBarActions': [
@@ -541,9 +543,12 @@ Future<void> main() async {
                 'VALUES (:id, :name, :target_amount, 0, :deadline, :category, :status, :notes, :created_at, :updated_at)',
           },
           'children': [
-            {'type': 'text_input', 'fieldKey': 'name', 'label': 'Goal Name', 'required': true},
-            {'type': 'number_input', 'fieldKey': 'target_amount', 'label': 'Target Amount', 'required': true},
-            {'type': 'date_picker', 'fieldKey': 'deadline', 'label': 'Target Date'},
+            {'type': 'text_input', 'fieldKey': 'name', 'label': 'Goal Name', 'required': true,
+             'validation': {'required': true, 'minLength': 1, 'message': 'Give your goal a name'}},
+            {'type': 'number_input', 'fieldKey': 'target_amount', 'label': 'Target Amount', 'required': true,
+             'validation': {'required': true, 'min': 0.01, 'message': 'Enter a valid amount'}},
+            {'type': 'date_picker', 'fieldKey': 'deadline', 'label': 'Target Date',
+             'validation': {'minDate': 'today', 'message': 'Deadline must be in the future'}},
             {
               'type': 'enum_selector',
               'fieldKey': 'category',
@@ -576,8 +581,10 @@ Future<void> main() async {
                 'WHERE id = :id',
           },
           'children': [
-            {'type': 'text_input', 'fieldKey': 'name', 'label': 'Goal Name', 'required': true},
-            {'type': 'number_input', 'fieldKey': 'target_amount', 'label': 'Target Amount', 'required': true},
+            {'type': 'text_input', 'fieldKey': 'name', 'label': 'Goal Name', 'required': true,
+             'validation': {'required': true, 'minLength': 1, 'message': 'Give your goal a name'}},
+            {'type': 'number_input', 'fieldKey': 'target_amount', 'label': 'Target Amount', 'required': true,
+             'validation': {'required': true, 'min': 0.01, 'message': 'Enter a valid amount'}},
             {'type': 'date_picker', 'fieldKey': 'deadline', 'label': 'Target Date'},
             {
               'type': 'enum_selector',
@@ -598,6 +605,12 @@ Future<void> main() async {
           'type': 'form_screen',
           'title': 'New Deposit',
           'submitLabel': 'Save Deposit',
+          'queries': {
+            'available_goals': {
+              'sql':
+                  'SELECT id, name FROM "m_savings_goals" WHERE status = \'Active\' ORDER BY name',
+            },
+          },
           'mutations': {
             'create':
                 'INSERT INTO "m_savings_deposits" '
@@ -605,7 +618,23 @@ Future<void> main() async {
                 'VALUES (:id, :amount, :goal_id, :date, :note, :created_at, :updated_at)',
           },
           'children': [
-            {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true},
+            {
+              'type': 'reference_picker',
+              'fieldKey': 'goal_id',
+              'schemaKey': 'goal',
+              'displayField': 'name',
+              'source': 'available_goals',
+              'label': 'Goal',
+              'required': true,
+              'emptyLabel': 'No goals yet',
+              'emptyAction': {
+                'type': 'navigate',
+                'screen': 'add_goal',
+                'params': {},
+              },
+            },
+            {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true,
+             'validation': {'required': true, 'min': 0.01, 'message': 'Enter a valid amount'}},
             {'type': 'date_picker', 'fieldKey': 'date', 'label': 'Date', 'required': true},
             {'type': 'text_input', 'fieldKey': 'note', 'label': 'Note'},
           ],
@@ -614,6 +643,12 @@ Future<void> main() async {
           'type': 'form_screen',
           'title': 'Edit Deposit',
           'editLabel': 'Update',
+          'queries': {
+            'available_goals': {
+              'sql':
+                  'SELECT id, name FROM "m_savings_goals" WHERE status = \'Active\' ORDER BY name',
+            },
+          },
           'mutations': {
             'update':
                 'UPDATE "m_savings_deposits" SET '
@@ -625,6 +660,21 @@ Future<void> main() async {
                 'WHERE id = :id',
           },
           'children': [
+            {
+              'type': 'reference_picker',
+              'fieldKey': 'goal_id',
+              'schemaKey': 'goal',
+              'displayField': 'name',
+              'source': 'available_goals',
+              'label': 'Goal',
+              'required': true,
+              'emptyLabel': 'No goals yet',
+              'emptyAction': {
+                'type': 'navigate',
+                'screen': 'add_goal',
+                'params': {},
+              },
+            },
             {'type': 'number_input', 'fieldKey': 'amount', 'label': 'Amount', 'required': true},
             {'type': 'date_picker', 'fieldKey': 'date', 'label': 'Date', 'required': true},
             {'type': 'text_input', 'fieldKey': 'note', 'label': 'Note'},

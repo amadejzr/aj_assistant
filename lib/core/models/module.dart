@@ -17,6 +17,7 @@ class Module extends Equatable {
   final int version;
   final ModuleNavigation? navigation;
   final ModuleDatabase? database;
+  final Map<String, List<Map<String, dynamic>>> fieldSets;
 
   const Module({
     required this.id,
@@ -31,6 +32,7 @@ class Module extends Equatable {
     this.version = 1,
     this.navigation,
     this.database,
+    this.fieldSets = const {},
   });
 
   Module copyWith({
@@ -46,6 +48,7 @@ class Module extends Equatable {
     int? version,
     ModuleNavigation? navigation,
     ModuleDatabase? database,
+    Map<String, List<Map<String, dynamic>>>? fieldSets,
   }) {
     return Module(
       id: id ?? this.id,
@@ -60,6 +63,7 @@ class Module extends Equatable {
       version: version ?? this.version,
       navigation: navigation ?? this.navigation,
       database: database ?? this.database,
+      fieldSets: fieldSets ?? this.fieldSets,
     );
   }
 
@@ -88,6 +92,7 @@ class Module extends Equatable {
           ? ModuleDatabase.fromJson(
               Map<String, dynamic>.from(data['database'] as Map))
           : null,
+      fieldSets: _parseFieldSets(data['fieldSets']),
     );
   }
 
@@ -104,7 +109,20 @@ class Module extends Equatable {
       'version': version,
       if (navigation != null) 'navigation': navigation!.toJson(),
       if (database != null) 'database': database!.toJson(),
+      if (fieldSets.isNotEmpty) 'fieldSets': fieldSets,
     };
+  }
+
+  static Map<String, List<Map<String, dynamic>>> _parseFieldSets(dynamic raw) {
+    if (raw == null) return const {};
+    final map = Map<String, dynamic>.from(raw as Map);
+    return map.map((key, value) {
+      final list = (value as List)
+          .cast<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+      return MapEntry(key, list);
+    });
   }
 
   static Map<String, Map<String, dynamic>> _parseScreens(dynamic raw) {
@@ -132,5 +150,6 @@ class Module extends Equatable {
         version,
         navigation,
         database,
+        fieldSets,
       ];
 }

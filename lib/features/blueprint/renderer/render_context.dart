@@ -15,6 +15,8 @@ class RenderContext {
   final void Function(String key, dynamic value)? onScreenParamChanged;
   final VoidFormCallback? onOpenDrawer;
   final Map<String, List<Map<String, dynamic>>> queryResults;
+  final Map<String, String> queryErrors;
+  final void Function(String queryName)? onLoadNextPage;
 
   const RenderContext({
     required this.module,
@@ -30,6 +32,8 @@ class RenderContext {
     this.onScreenParamChanged,
     this.onOpenDrawer,
     this.queryResults = const {},
+    this.queryErrors = const {},
+    this.onLoadNextPage,
   });
 
   dynamic getFormValue(String fieldKey) {

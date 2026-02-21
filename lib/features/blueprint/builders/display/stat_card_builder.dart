@@ -32,6 +32,8 @@ class _StatCardWidget extends StatelessWidget {
     final source = card.properties['source'] as String?;
     final valueKey = card.properties['valueKey'] as String?;
     if (source != null && valueKey != null) {
+      // Check for query error
+      if (ctx.queryErrors.containsKey(source)) return '--';
       final rows = ctx.queryResults[source];
       if (rows == null || rows.isEmpty) return '--';
       final value = rows[0][valueKey];

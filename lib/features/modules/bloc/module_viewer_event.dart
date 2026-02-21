@@ -81,11 +81,21 @@ class ModuleViewerScreenParamChanged extends ModuleViewerEvent {
 
 class ModuleViewerQueryResultsUpdated extends ModuleViewerEvent {
   final Map<String, List<Map<String, dynamic>>> results;
+  final Map<String, String> errors;
 
-  const ModuleViewerQueryResultsUpdated(this.results);
+  const ModuleViewerQueryResultsUpdated(this.results, {this.errors = const {}});
 
   @override
-  List<Object?> get props => [results];
+  List<Object?> get props => [results, errors];
+}
+
+class ModuleViewerLoadNextPage extends ModuleViewerEvent {
+  final String queryName;
+
+  const ModuleViewerLoadNextPage(this.queryName);
+
+  @override
+  List<Object?> get props => [queryName];
 }
 
 class ModuleViewerFormPrePopulated extends ModuleViewerEvent {

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -73,6 +75,12 @@ class _EntryListWidgetState extends State<_EntryListWidget>
     super.dispose();
   }
 
+  String? _queryError() {
+    final source = widget.listNode.properties['source'] as String?;
+    if (source == null) return null;
+    return widget.ctx.queryErrors[source];
+  }
+
   List<dynamic> _filteredAndSorted() {
     // SQL source path: read from queryResults
     final source = widget.listNode.properties['source'] as String?;
@@ -103,6 +111,8 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       onDeleteEntry: widget.ctx.onDeleteEntry,
       resolvedExpressions: widget.ctx.resolvedExpressions,
       queryResults: widget.ctx.queryResults,
+      queryErrors: widget.ctx.queryErrors,
+      onLoadNextPage: widget.ctx.onLoadNextPage,
     );
   }
 
@@ -271,14 +281,146 @@ class _EntryListWidgetState extends State<_EntryListWidget>
     );
   }
 
+  // ─── Loading State ───
+
+  bool _isLoading() {
+    final source = widget.listNode.properties['source'] as String?;
+    if (source == null) return false;
+    // Loading when some queries have returned but this source hasn't yet.
+    // If queryResults is completely empty, we haven't received any data yet —
+    // but we show empty state rather than skeleton to avoid infinite animations.
+    if (widget.ctx.queryResults.isEmpty) return false;
+    return !widget.ctx.queryResults.containsKey(source) &&
+        !widget.ctx.queryErrors.containsKey(source);
+  }
+
+  Widget _buildSkeletonLoading(BuildContext context) {
+    final colors = context.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: _SkeletonCard(colors: colors, delay: index * 150),
+        );
+      }),
+    );
+  }
+
+  // ─── Custom Empty State ───
+
+  Widget _buildCustomEmptyState(BuildContext context) {
+    final emptyState =
+        widget.listNode.properties['emptyState'] as Map<String, dynamic>?;
+    if (emptyState == null) return const SizedBox.shrink();
+
+    final colors = context.colors;
+    final message = emptyState['message'] as String? ?? 'No entries yet';
+    final iconName = emptyState['icon'] as String?;
+    final action = emptyState['action'] as Map<String, dynamic>?;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (iconName != null)
+              Icon(
+                PhosphorIcons.target(PhosphorIconsStyle.regular),
+                size: 40,
+                color: colors.onBackgroundMuted.withValues(alpha: 0.3),
+              ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              message,
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 15,
+                color: colors.onBackgroundMuted,
+              ),
+            ),
+            if (action != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              TextButton(
+                onPressed: () {
+                  final screen = action['screen'] as String?;
+                  if (screen != null) {
+                    widget.ctx.onNavigateToScreen(screen);
+                  }
+                },
+                child: Text(
+                  action['label'] as String? ?? 'Get started',
+                  style: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Error State ───
+
+  Widget _buildErrorState(BuildContext context, String error) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              PhosphorIcons.warningCircle(PhosphorIconsStyle.regular),
+              size: 32,
+              color: colors.accent.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Failed to load data',
+              style: TextStyle(
+                fontFamily: 'Karla',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: colors.onBackgroundMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ─── Build ───
 
   @override
   Widget build(BuildContext context) {
+    final queryError = _queryError();
+    if (queryError != null) {
+      return _buildErrorState(context, queryError);
+    }
+
+    if (_isLoading()) {
+      return _buildSkeletonLoading(context);
+    }
+
     final entries = _filteredAndSorted();
     final hasFilters = widget.listNode.filters.isNotEmpty;
 
     if (entries.isEmpty && !hasFilters) {
+      // Use custom emptyState from blueprint if available
+      final customEmptyState =
+          widget.listNode.properties['emptyState'] as Map<String, dynamic>?;
+      if (customEmptyState != null) {
+        return _buildCustomEmptyState(context);
+      }
+
       final emptyNode = EmptyStateNode(
         icon: 'list',
         title: 'No entries yet',
@@ -418,9 +560,15 @@ class _EntryListWidgetState extends State<_EntryListWidget>
             hasMore &&
             notification.metrics.pixels >=
                 notification.metrics.maxScrollExtent - 200) {
-          setState(() {
-            _loadedCount += pageSize;
-          });
+          // SQL-driven pagination: dispatch load next page event
+          final source = widget.listNode.properties['source'] as String?;
+          if (source != null && widget.ctx.onLoadNextPage != null) {
+            widget.ctx.onLoadNextPage!(source);
+          } else {
+            setState(() {
+              _loadedCount += pageSize;
+            });
+          }
         }
         return false;
       },
@@ -515,6 +663,99 @@ class _EntryListWidgetState extends State<_EntryListWidget>
           },
         ),
       ],
+    );
+  }
+}
+
+/// Skeleton loading card with a warm shimmer matching the Sumi ink aesthetic.
+class _SkeletonCard extends StatefulWidget {
+  final AppColors colors;
+  final int delay;
+
+  const _SkeletonCard({required this.colors, this.delay = 0});
+
+  @override
+  State<_SkeletonCard> createState() => _SkeletonCardState();
+}
+
+class _SkeletonCardState extends State<_SkeletonCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmer;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmer = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _shimmer.repeat();
+    });
+  }
+
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+
+    return AnimatedBuilder(
+      animation: _shimmer,
+      builder: (context, child) {
+        final shimmerValue = _shimmer.value;
+        final opacity = 0.06 + (0.04 * (0.5 + 0.5 * math.sin(shimmerValue * math.pi * 2)));
+
+        return Container(
+          height: 64,
+          decoration: BoxDecoration(
+            color: colors.onBackground.withValues(alpha: opacity),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colors.onBackground.withValues(alpha: opacity),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 80,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: colors.onBackground.withValues(alpha: opacity * 0.7),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 48,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: colors.onBackground.withValues(alpha: opacity * 0.7),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

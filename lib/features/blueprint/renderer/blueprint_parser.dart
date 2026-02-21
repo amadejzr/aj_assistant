@@ -1,7 +1,9 @@
 import 'blueprint_node.dart';
 
 class BlueprintParser {
-  const BlueprintParser();
+  final Map<String, List<Map<String, dynamic>>> fieldSets;
+
+  const BlueprintParser({this.fieldSets = const {}});
 
   BlueprintNode parse(Map<String, dynamic> json) {
     final type = json['type'] as String? ?? '';
@@ -51,10 +53,25 @@ class BlueprintParser {
   List<BlueprintNode> _parseChildren(dynamic raw) {
     if (raw == null) return [];
     if (raw is! List) return [];
-    return raw
-        .whereType<Map<String, dynamic>>()
-        .map(parse)
-        .toList();
+
+    final nodes = <BlueprintNode>[];
+    for (final element in raw) {
+      // $fieldSetName — expand from fieldSets map
+      if (element is String && element.startsWith(r'$')) {
+        final key = element.substring(1);
+        final fields = fieldSets[key];
+        if (fields != null) {
+          for (final field in fields) {
+            nodes.add(parse(Map<String, dynamic>.from(field)));
+          }
+        }
+        continue;
+      }
+      if (element is Map<String, dynamic>) {
+        nodes.add(parse(element));
+      }
+    }
+    return nodes;
   }
 
   BlueprintNode? _parseChild(dynamic raw) {

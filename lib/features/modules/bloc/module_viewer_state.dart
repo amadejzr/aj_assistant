@@ -35,9 +35,12 @@ class ModuleViewerLoaded extends ModuleViewerState {
   final List<ScreenEntry> screenStack;
   final bool isSubmitting;
   final String? submitError;
+  final String? submitSuccess;
   final ({String fieldKey, String entryId})? pendingAutoSelect;
   final Map<String, dynamic> resolvedExpressions;
   final Map<String, List<Map<String, dynamic>>> queryResults;
+  final Map<String, String> queryErrors;
+  final Map<String, int> paginationOffsets;
 
   const ModuleViewerLoaded({
     required this.module,
@@ -47,9 +50,12 @@ class ModuleViewerLoaded extends ModuleViewerState {
     this.screenStack = const [],
     this.isSubmitting = false,
     this.submitError,
+    this.submitSuccess,
     this.pendingAutoSelect,
     this.resolvedExpressions = const {},
     this.queryResults = const {},
+    this.queryErrors = const {},
+    this.paginationOffsets = const {},
   });
 
   bool get canGoBack => screenStack.isNotEmpty;
@@ -63,10 +69,14 @@ class ModuleViewerLoaded extends ModuleViewerState {
     bool? isSubmitting,
     String? submitError,
     bool clearSubmitError = false,
+    String? submitSuccess,
+    bool clearSubmitSuccess = false,
     ({String fieldKey, String entryId})? pendingAutoSelect,
     bool clearPendingAutoSelect = false,
     Map<String, dynamic>? resolvedExpressions,
     Map<String, List<Map<String, dynamic>>>? queryResults,
+    Map<String, String>? queryErrors,
+    Map<String, int>? paginationOffsets,
   }) {
     return ModuleViewerLoaded(
       module: module ?? this.module,
@@ -78,11 +88,16 @@ class ModuleViewerLoaded extends ModuleViewerState {
       submitError: clearSubmitError
           ? null
           : (submitError ?? this.submitError),
+      submitSuccess: clearSubmitSuccess
+          ? null
+          : (submitSuccess ?? this.submitSuccess),
       pendingAutoSelect: clearPendingAutoSelect
           ? null
           : (pendingAutoSelect ?? this.pendingAutoSelect),
       resolvedExpressions: resolvedExpressions ?? this.resolvedExpressions,
       queryResults: queryResults ?? this.queryResults,
+      queryErrors: queryErrors ?? this.queryErrors,
+      paginationOffsets: paginationOffsets ?? this.paginationOffsets,
     );
   }
 
@@ -95,9 +110,12 @@ class ModuleViewerLoaded extends ModuleViewerState {
         screenStack,
         isSubmitting,
         submitError,
+        submitSuccess,
         pendingAutoSelect,
         resolvedExpressions,
         queryResults,
+        queryErrors,
+        paginationOffsets,
       ];
 }
 

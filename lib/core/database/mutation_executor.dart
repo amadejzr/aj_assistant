@@ -33,7 +33,13 @@ class MutationExecutor {
     };
 
     await _enableForeignKeys();
-    final (sql, variables) = _bind(mutation.sql, params);
+
+    if (mutation.isMultiStep) {
+      await _executeTransaction(mutation.steps!, params);
+      return id;
+    }
+
+    final (sql, variables) = _bind(mutation.sql!, params);
     await db.customInsert(sql, variables: variables, updates: _tableRefs);
 
     return id;
@@ -54,7 +60,13 @@ class MutationExecutor {
     };
 
     await _enableForeignKeys();
-    final (sql, variables) = _bind(mutation.sql, params);
+
+    if (mutation.isMultiStep) {
+      await _executeTransaction(mutation.steps!, params);
+      return;
+    }
+
+    final (sql, variables) = _bind(mutation.sql!, params);
     await db.customUpdate(
       sql,
       variables: variables,
@@ -68,13 +80,36 @@ class MutationExecutor {
     final params = {'id': id};
 
     await _enableForeignKeys();
-    final (sql, variables) = _bind(mutation.sql, params);
+
+    if (mutation.isMultiStep) {
+      await _executeTransaction(mutation.steps!, params);
+      return;
+    }
+
+    final (sql, variables) = _bind(mutation.sql!, params);
     await db.customUpdate(
       sql,
       variables: variables,
       updates: _tableRefs,
       updateKind: UpdateKind.delete,
     );
+  }
+
+  /// Executes multiple SQL statements in a single transaction.
+  Future<void> _executeTransaction(
+    List<String> sqls,
+    Map<String, dynamic> params,
+  ) async {
+    await db.transaction(() async {
+      for (final sql in sqls) {
+        final (boundSql, variables) = _bind(sql, params);
+        await db.customUpdate(
+          boundSql,
+          variables: variables,
+          updates: _tableRefs,
+        );
+      }
+    });
   }
 
   Future<void> _enableForeignKeys() async {
