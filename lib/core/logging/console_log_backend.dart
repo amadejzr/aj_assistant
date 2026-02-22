@@ -33,7 +33,7 @@ class ConsoleLogBackend implements LogBackend {
 
     dev.log(
       buffer.toString(),
-      name: 'AJ',
+      name: 'Bower',
       level: _devLogLevel(level),
       error: error,
       stackTrace: stackTrace,

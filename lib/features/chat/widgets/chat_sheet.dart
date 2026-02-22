@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/repositories/entry_repository.dart';
+import '../../../core/database/app_database.dart';
+import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../bloc/chat_bloc.dart';
@@ -18,7 +19,8 @@ void showChatSheet(
   BuildContext context, {
   required String userId,
   required ChatRepository chatRepository,
-  required EntryRepository entryRepository,
+  required AppDatabase appDatabase,
+  required ModuleRepository moduleRepository,
 }) {
   showModalBottomSheet(
     context: context,
@@ -29,8 +31,9 @@ void showChatSheet(
     builder: (_) => BlocProvider(
       create: (_) => ChatBloc(
         chatRepository: chatRepository,
-        entryRepository: entryRepository,
         userId: userId,
+        appDatabase: appDatabase,
+        moduleRepository: moduleRepository,
       )..add(const ChatStarted()),
       child: const _ChatSheetBody(),
     ),
@@ -82,7 +85,7 @@ class _ChatSheetBody extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'AJ',
+            'Bower',
             style: TextStyle(
               fontFamily: 'CormorantGaramond',
               fontSize: 22,
@@ -282,7 +285,7 @@ class _ChatInputState extends State<_ChatInput> {
                 color: colors.onBackground,
               ),
               decoration: InputDecoration(
-                hintText: 'Message AJ...',
+                hintText: 'Message Bower...',
                 fillColor: colors.background,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,

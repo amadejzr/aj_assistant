@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/models/entry.dart';
-import '../../../core/repositories/entry_repository.dart';
+import '../../../core/database/app_database.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -11,6 +10,8 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../blueprint/navigation/module_navigation.dart';
 import '../../blueprint/utils/icon_resolver.dart';
+import '../../capabilities/repositories/capability_repository.dart';
+import '../../capabilities/services/notification_scheduler.dart';
 import '../bloc/module_viewer_bloc.dart';
 import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
@@ -30,8 +31,10 @@ class ModuleViewerScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => ModuleViewerBloc(
         moduleRepository: context.read<ModuleRepository>(),
-        entryRepository: context.read<EntryRepository>(),
+        appDatabase: context.read<AppDatabase>(),
         userId: userId,
+        capabilityRepository: context.read<CapabilityRepository>(),
+        notificationScheduler: context.read<NotificationScheduler>(),
       )..add(ModuleViewerStarted(moduleId)),
       child: const _ModuleViewerBody(),
     );
@@ -43,23 +46,45 @@ class _ModuleViewerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ModuleViewerBloc, ModuleViewerState>(
-      listenWhen: (prev, curr) {
-        final prevError =
-            prev is ModuleViewerLoaded ? prev.submitError : null;
-        final currError =
-            curr is ModuleViewerLoaded ? curr.submitError : null;
-        return currError != null && currError != prevError;
-      },
-      listener: (context, state) {
-        if (state is ModuleViewerLoaded && state.submitError != null) {
-          AppToast.show(
-            context,
-            message: state.submitError!,
-            type: AppToastType.error,
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ModuleViewerBloc, ModuleViewerState>(
+          listenWhen: (prev, curr) {
+            final prevError =
+                prev is ModuleViewerLoaded ? prev.submitError : null;
+            final currError =
+                curr is ModuleViewerLoaded ? curr.submitError : null;
+            return currError != null && currError != prevError;
+          },
+          listener: (context, state) {
+            if (state is ModuleViewerLoaded && state.submitError != null) {
+              AppToast.show(
+                context,
+                message: state.submitError!,
+                type: AppToastType.error,
+              );
+            }
+          },
+        ),
+        BlocListener<ModuleViewerBloc, ModuleViewerState>(
+          listenWhen: (prev, curr) {
+            final prevSuccess =
+                prev is ModuleViewerLoaded ? prev.submitSuccess : null;
+            final currSuccess =
+                curr is ModuleViewerLoaded ? curr.submitSuccess : null;
+            return currSuccess != null && currSuccess != prevSuccess;
+          },
+          listener: (context, state) {
+            if (state is ModuleViewerLoaded && state.submitSuccess != null) {
+              AppToast.show(
+                context,
+                message: state.submitSuccess!,
+                type: AppToastType.success,
+              );
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<ModuleViewerBloc, ModuleViewerState>(
         builder: (context, state) {
           return switch (state) {
@@ -94,18 +119,18 @@ class _LoadedViewState extends State<_LoadedView> {
 
   RenderContext _buildRenderContext(BuildContext context, {bool hasDrawer = false}) {
     final bloc = context.read<ModuleViewerBloc>();
-    final entryRepo = context.read<EntryRepository>();
-    final authState = context.read<AuthBloc>().state;
-    final userId = authState is AuthAuthenticated ? authState.user.uid : '';
 
     return RenderContext(
       module: state.module,
-      entries: state.entries,
-      allEntries: state.entries,
       formValues: state.formValues,
       screenParams: state.screenParams,
       canGoBack: state.canGoBack,
       resolvedExpressions: state.resolvedExpressions,
+      queryResults: state.queryResults,
+      queryErrors: state.queryErrors,
+      onLoadNextPage: (queryName) {
+        bloc.add(ModuleViewerLoadNextPage(queryName));
+      },
       onFormValueChanged: (fieldKey, value) {
         bloc.add(ModuleViewerFormValueChanged(fieldKey, value));
       },
@@ -138,30 +163,6 @@ class _LoadedViewState extends State<_LoadedView> {
       },
       onScreenParamChanged: (key, value) {
         bloc.add(ModuleViewerScreenParamChanged(key, value));
-      },
-      onCreateEntry: (schemaKey, data) async {
-        final entry = Entry(
-          id: '',
-          data: data,
-          schemaVersion: state.module.schemas[schemaKey]?.version ?? 1,
-          schemaKey: schemaKey,
-        );
-        return entryRepo.createEntry(userId, state.module.id, entry);
-      },
-      onUpdateEntry: (entryId, schemaKey, data) async {
-        final existing =
-            state.entries.where((e) => e.id == entryId).firstOrNull;
-        final mergedData = {
-          if (existing != null) ...existing.data,
-          ...data,
-        };
-        final updated = Entry(
-          id: entryId,
-          data: mergedData,
-          schemaVersion: state.module.schemas[schemaKey]?.version ?? 1,
-          schemaKey: schemaKey,
-        );
-        await entryRepo.updateEntry(userId, state.module.id, updated);
       },
       onOpenDrawer: hasDrawer
           ? () => _drawerKey.currentState?.openDrawer()

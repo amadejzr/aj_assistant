@@ -2,29 +2,43 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/database/app_database.dart';
+import '../../../core/database/mutation_executor.dart';
+import '../../../core/database/param_resolver.dart';
+import '../../../core/database/query_executor.dart';
+import '../../../core/database/schema_manager.dart';
+import '../../../core/database/screen_query.dart';
 import '../../../core/logging/log.dart';
-import '../../../core/models/entry.dart';
 import '../../../core/models/module.dart';
-import '../../../core/repositories/entry_repository.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
-import '../../blueprint/engine/post_submit_effect.dart';
-import '../models/schema_effect.dart';
+import '../../capabilities/models/capability.dart';
+import '../../capabilities/repositories/capability_repository.dart';
+import '../../capabilities/services/notification_scheduler.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 
 class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   final ModuleRepository moduleRepository;
-  final EntryRepository entryRepository;
+  final AppDatabase? appDatabase;
   final String userId;
+  final CapabilityRepository? capabilityRepository;
+  final NotificationScheduler? notificationScheduler;
 
-  StreamSubscription<List<Entry>>? _entriesSub;
+  // SQL-driven screen state
+  QueryExecutor? _queryExecutor;
+  MutationExecutor? _mutationExecutor;
+  StreamSubscription<QueryWatchResult>? _querySub;
+  List<ScreenQuery> _currentQueries = [];
+  ScreenMutations? _currentMutations;
 
   ModuleViewerBloc({
     required this.moduleRepository,
-    required this.entryRepository,
+    this.appDatabase,
     required this.userId,
+    this.capabilityRepository,
+    this.notificationScheduler,
   }) : super(const ModuleViewerInitial()) {
     on<ModuleViewerStarted>(_onStarted);
     on<ModuleViewerScreenChanged>(_onScreenChanged);
@@ -33,11 +47,11 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     on<ModuleViewerFormSubmitted>(_onFormSubmitted);
     on<ModuleViewerFormReset>(_onFormReset);
     on<ModuleViewerEntryDeleted>(_onEntryDeleted);
-    on<ModuleViewerEntriesUpdated>(_onEntriesUpdated);
     on<ModuleViewerModuleRefreshed>(_onModuleRefreshed);
     on<ModuleViewerScreenParamChanged>(_onScreenParamChanged);
-    on<ModuleViewerQuickEntryCreated>(_onQuickEntryCreated);
-    on<ModuleViewerQuickEntryUpdated>(_onQuickEntryUpdated);
+    on<ModuleViewerQueryResultsUpdated>(_onQueryResultsUpdated);
+    on<ModuleViewerFormPrePopulated>(_onFormPrePopulated);
+    on<ModuleViewerLoadNextPage>(_onLoadNextPage);
   }
 
   Future<void> _onStarted(
@@ -55,14 +69,20 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       emit(ModuleViewerLoaded(module: module));
 
-      // Subscribe to entries (capped at 500 most recent to limit reads)
-      _entriesSub?.cancel();
-      _entriesSub = entryRepository
-          .watchEntries(userId, event.moduleId, limit: 500)
-          .listen(
-            (entries) => add(ModuleViewerEntriesUpdated(entries)),
-            onError: (e) => Log.e('Entries stream error', tag: 'ModuleViewer', error: e),
-          );
+      if (module.database != null && appDatabase != null) {
+        // SQL-driven path
+        await SchemaManager(db: appDatabase!).installModule(module);
+        final tableNames = module.database!.tableNames.values.toSet();
+        _queryExecutor = QueryExecutor(
+          db: appDatabase!,
+          moduleTableNames: tableNames,
+        );
+        _mutationExecutor = MutationExecutor(
+          db: appDatabase!,
+          moduleTableNames: tableNames,
+        );
+        _subscribeToScreen(module, 'main', const {});
+      }
     } catch (e) {
       Log.e('Failed to load module', tag: 'ModuleViewer', error: e);
       emit(ModuleViewerError('Failed to load module: $e'));
@@ -85,11 +105,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
             ScreenEntry(current.currentScreenId, params: current.screenParams),
           ];
 
-    final resolved = _resolveExpressions(
-      current.module,
-      event.screenId,
-      current.entries,
-    );
+    final resolved = _resolveExpressions(current.module, event.screenId);
 
     emit(current.copyWith(
       currentScreenId: event.screenId,
@@ -98,6 +114,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       formValues: {},
       resolvedExpressions: resolved,
     ));
+
+    if (_queryExecutor != null) {
+      _subscribeToScreen(current.module, event.screenId, event.params);
+    }
   }
 
   void _onNavigateBack(
@@ -139,6 +159,9 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       clearPendingAutoSelect: shouldClear,
       clearSubmitError: current.submitError != null,
     ));
+
+    // Re-run queries that depend on this field
+    _rerunDependentQueries(event.fieldKey, updated, current.screenParams);
   }
 
   Future<void> _onFormSubmitted(
@@ -154,29 +177,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       // Clean form data — remove meta keys (prefixed with _)
       final data = Map<String, dynamic>.from(current.formValues)
         ..removeWhere((key, _) => key.startsWith('_'));
-
-      // Look up effects from the schema (not the screen)
-      final schemaKey =
-          current.screenParams['_schemaKey'] as String? ?? 'default';
-      final schemaEffects =
-          current.module.schemas[schemaKey]?.effects ?? const [];
-
-      // Validate effect guards (e.g. min: 0) before creating entry
-      if (schemaEffects.isNotEmpty) {
-        const executor = PostSubmitEffectExecutor();
-        final error = executor.validateEffects(
-          effects: schemaEffects,
-          formData: data,
-          entries: current.entries,
-        );
-        if (error != null) {
-          emit(current.copyWith(
-            isSubmitting: false,
-            submitError: error,
-          ));
-          return;
-        }
-      }
 
       // Settings mode — update module settings instead of entries
       if (current.screenParams['_settingsMode'] == true) {
@@ -205,56 +205,54 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       final entryId = current.screenParams['_entryId'] as String?;
 
-      final isCreate = entryId == null || entryId.isEmpty;
+      // SQL mutation path
+      if (_mutationExecutor != null && _currentMutations != null) {
+        final ScreenMutation mutation;
+        if (entryId != null && entryId.isNotEmpty) {
+          mutation = _currentMutations!.update!;
+          await _mutationExecutor!.update(mutation, entryId, data);
+        } else {
+          mutation = _currentMutations!.create!;
+          await _mutationExecutor!.create(mutation, data);
+        }
 
-      if (!isCreate) {
-        // Update existing entry — merge new form values into existing data
-        final existing = current.entries
-            .where((e) => e.id == entryId)
-            .firstOrNull;
-        final mergedData = {
-          if (existing != null) ...existing.data,
-          ...data,
-        };
-        final updated = Entry(
-          id: entryId,
-          data: mergedData,
-          schemaVersion: current.module.schema.version,
-          schemaKey: existing?.schemaKey ?? schemaKey,
+        await _processReminderSideEffects(
+          mutation,
+          current.formValues,
+          current.screenParams,
+          current.module.id,
         );
-        await entryRepository.updateEntry(userId, current.module.id, updated);
-      } else {
-        // Create new entry
-        final entry = Entry(
-          id: '',
-          data: data,
-          schemaVersion: current.module.schema.version,
-          schemaKey: schemaKey,
-        );
-        await entryRepository.createEntry(userId, current.module.id, entry);
+
+        final successMessage = mutation.onSuccess?['message'] as String?;
+
+        final stack = List<ScreenEntry>.from(current.screenStack);
+        final previous = stack.isNotEmpty
+            ? stack.removeLast()
+            : const ScreenEntry('main');
+
+        emit(current.copyWith(
+          currentScreenId: previous.screenId,
+          screenParams: previous.params,
+          screenStack: stack,
+          formValues: {},
+          isSubmitting: false,
+          submitSuccess: successMessage,
+        ));
+
+        // Re-subscribe to the previous screen's queries
+        _subscribeToScreen(current.module, previous.screenId, previous.params);
+        return;
       }
 
-      // Execute effects from schema (only on create, not edit)
-      if (isCreate && schemaEffects.isNotEmpty) {
-        await _applyPostSubmitEffects(current, schemaEffects, data);
-      }
-
-      // Navigate back to previous screen (or main)
-      final stack = List<ScreenEntry>.from(current.screenStack);
-      final previous = stack.isNotEmpty
-          ? stack.removeLast()
-          : const ScreenEntry('main');
-
-      emit(current.copyWith(
-        currentScreenId: previous.screenId,
-        screenParams: previous.params,
-        screenStack: stack,
-        formValues: {},
-        isSubmitting: false,
-      ));
     } catch (e) {
       Log.e('Failed to save entry', tag: 'ModuleViewer', error: e);
-      emit(current.copyWith(isSubmitting: false));
+
+      // Use mutation-specific error message if available
+      final errorMessage = _getMutationErrorMessage(e, current);
+      emit(current.copyWith(
+        isSubmitting: false,
+        submitError: errorMessage,
+      ));
     }
   }
 
@@ -276,94 +274,39 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
 
     try {
-      // Look up the entry being deleted to run delete effects (inverted)
-      final deletedEntry = current.entries
-          .where((e) => e.id == event.entryId)
-          .firstOrNull;
+      // SQL delete path
+      if (_mutationExecutor != null && _currentMutations?.delete != null) {
+        final mutation = _currentMutations!.delete!;
+        await _mutationExecutor!.delete(mutation, event.entryId);
 
-      if (deletedEntry != null) {
-        final schema = current.module.schemas[deletedEntry.schemaKey];
-        if (schema != null && schema.effects.isNotEmpty) {
-          await _applyDeleteEffects(current, schema.effects, deletedEntry);
+        final successMessage = mutation.onSuccess?['message'] as String?;
+
+        // Navigate back if on detail screen for this entry
+        final currentEntryId = current.screenParams['_entryId'] as String?;
+        if (currentEntryId == event.entryId &&
+            current.screenStack.isNotEmpty) {
+          final stack = List<ScreenEntry>.from(current.screenStack);
+          final previous = stack.removeLast();
+          emit(current.copyWith(
+            currentScreenId: previous.screenId,
+            screenParams: previous.params,
+            screenStack: stack,
+            formValues: {},
+            submitSuccess: successMessage,
+          ));
+        } else if (successMessage != null) {
+          emit(current.copyWith(submitSuccess: successMessage));
         }
+        return;
       }
 
-      await entryRepository.deleteEntry(userId, current.module.id, event.entryId);
-
-      // If we're on a detail screen for this entry, navigate back
-      final currentEntryId = current.screenParams['_entryId'] as String?;
-      if (currentEntryId == event.entryId && current.screenStack.isNotEmpty) {
-        final stack = List<ScreenEntry>.from(current.screenStack);
-        final previous = stack.removeLast();
-        emit(current.copyWith(
-          currentScreenId: previous.screenId,
-          screenParams: previous.params,
-          screenStack: stack,
-          formValues: {},
-        ));
-      }
     } catch (e) {
       Log.e('Failed to delete entry', tag: 'ModuleViewer', error: e);
+      final errorMessage =
+          _currentMutations?.delete?.onError?['message'] as String? ??
+              e.toString();
+      emit(current.copyWith(submitError: errorMessage));
     }
-  }
-
-  /// Applies delete effects (auto-inverted) using [PostSubmitEffectExecutor].
-  Future<void> _applyDeleteEffects(
-    ModuleViewerLoaded current,
-    List<SchemaEffect> effects,
-    Entry deletedEntry,
-  ) async {
-    const executor = PostSubmitEffectExecutor();
-    final updates = executor.computeDeleteUpdates(
-      effects: effects,
-      deletedEntryData: deletedEntry.data,
-      entries: current.entries,
-    );
-
-    for (final update in updates.entries) {
-      final existing = current.entries
-          .where((e) => e.id == update.key)
-          .firstOrNull;
-      if (existing == null) continue;
-
-      final updatedEntry = Entry(
-        id: existing.id,
-        data: {...existing.data, ...update.value},
-        schemaVersion: existing.schemaVersion,
-        schemaKey: existing.schemaKey,
-      );
-
-      try {
-        await entryRepository.updateEntry(
-          userId,
-          current.module.id,
-          updatedEntry,
-        );
-      } catch (e) {
-        Log.e('Delete effect failed', tag: 'ModuleViewer', error: e);
-      }
-    }
-  }
-
-  void _onEntriesUpdated(
-    ModuleViewerEntriesUpdated event,
-    Emitter<ModuleViewerState> emit,
-  ) {
-    final current = state;
-    if (current is! ModuleViewerLoaded) return;
-
-    Log.d('Entries updated: ${event.entries.length} entries', tag: 'Perf');
-
-    final resolved = _resolveExpressions(
-      current.module,
-      current.currentScreenId,
-      event.entries,
-    );
-
-    emit(current.copyWith(
-      entries: event.entries,
-      resolvedExpressions: resolved,
-    ));
   }
 
   Future<void> _onModuleRefreshed(
@@ -393,106 +336,203 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     updated[event.key] = event.value;
 
     emit(current.copyWith(screenParams: updated));
+
+    if (_queryExecutor != null) {
+      _subscribeToScreen(current.module, current.currentScreenId, updated);
+    }
   }
 
-  Future<void> _onQuickEntryCreated(
-    ModuleViewerQuickEntryCreated event,
-    Emitter<ModuleViewerState> emit,
+  // ─── SQL-driven screen subscription ───
+
+  void _subscribeToScreen(
+    Module module,
+    String screenId,
+    Map<String, dynamic> screenParams,
+  ) {
+    _querySub?.cancel();
+    final screenJson = module.screens[screenId];
+    if (screenJson == null) return;
+
+    _currentQueries = parseScreenQueries(screenJson);
+    final mutationsJson = screenJson['mutations'] as Map<String, dynamic>?;
+    _currentMutations = mutationsJson != null
+        ? ScreenMutations.fromJson(mutationsJson)
+        : null;
+
+    if (_currentQueries.isNotEmpty) {
+      final resolvedParams = resolveQueryParams(_currentQueries, screenParams);
+      _querySub = _queryExecutor!
+          .watchAll(_currentQueries, resolvedParams)
+          .listen((result) => add(ModuleViewerQueryResultsUpdated(
+                result.results,
+                errors: result.errors,
+              )));
+    }
+
+    // Pre-populate form for edit mode
+    _prePopulateForm(module, screenParams);
+  }
+
+  Future<void> _prePopulateForm(
+    Module module,
+    Map<String, dynamic> screenParams,
   ) async {
-    final current = state;
-    if (current is! ModuleViewerLoaded) return;
+    final entryId = screenParams['_entryId'] as String?;
+    if (entryId == null || _queryExecutor == null) return;
+
+    final schemaKey = screenParams['_schemaKey'] as String? ?? 'default';
+    final tableName = module.database?.tableNames[schemaKey];
+    if (tableName == null) return;
 
     try {
-      final entry = Entry(
-        id: '',
-        data: event.data,
-        schemaVersion:
-            current.module.schemas[event.schemaKey]?.version ?? 1,
-        schemaKey: event.schemaKey,
+      final rows = await _queryExecutor!.execute(
+        ScreenQuery(
+          name: '_lookup',
+          sql: 'SELECT * FROM "$tableName" WHERE id = :id',
+        ),
+        {'id': entryId},
       );
-      final newId = await entryRepository.createEntry(
-        userId,
-        current.module.id,
-        entry,
-      );
-
-      if (event.autoSelectFieldKey != null) {
-        emit(current.copyWith(
-          pendingAutoSelect: (
-            fieldKey: event.autoSelectFieldKey!,
-            entryId: newId,
-          ),
-        ));
+      if (rows.isNotEmpty) {
+        add(ModuleViewerFormPrePopulated(rows.first));
       }
     } catch (e) {
-      Log.e('Failed to create quick entry', tag: 'ModuleViewer', error: e);
+      Log.e('Failed to pre-populate form', tag: 'ModuleViewer', error: e);
     }
   }
 
-  Future<void> _onQuickEntryUpdated(
-    ModuleViewerQuickEntryUpdated event,
+  void _onQueryResultsUpdated(
+    ModuleViewerQueryResultsUpdated event,
+    Emitter<ModuleViewerState> emit,
+  ) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    emit(current.copyWith(
+      queryResults: event.results,
+      queryErrors: event.errors,
+    ));
+  }
+
+  Future<void> _onLoadNextPage(
+    ModuleViewerLoadNextPage event,
     Emitter<ModuleViewerState> emit,
   ) async {
     final current = state;
     if (current is! ModuleViewerLoaded) return;
+    if (_queryExecutor == null) return;
+
+    final query = _currentQueries.cast<ScreenQuery?>().firstWhere(
+          (q) => q!.name == event.queryName,
+          orElse: () => null,
+        );
+    if (query == null) return;
+
+    // Get the page size from the screen JSON
+    final screenJson = current.module.screens[current.currentScreenId];
+    final pageSize = _findPageSizeForQuery(screenJson, event.queryName) ?? 20;
+
+    final offsets = Map<String, int>.from(current.paginationOffsets);
+    final currentOffset = offsets[event.queryName] ?? pageSize;
+    final newOffset = currentOffset + pageSize;
+    offsets[event.queryName] = newOffset;
 
     try {
-      final existing = current.entries
-          .where((e) => e.id == event.entryId)
-          .firstOrNull;
-      final mergedData = {
-        if (existing != null) ...existing.data,
-        ...event.data,
-      };
-      final updated = Entry(
-        id: event.entryId,
-        data: mergedData,
-        schemaVersion:
-            current.module.schemas[event.schemaKey]?.version ?? 1,
-        schemaKey: event.schemaKey,
+      final resolvedParams = resolveQueryParams(
+        [query],
+        current.screenParams,
+        formValues: current.formValues,
       );
-      await entryRepository.updateEntry(userId, current.module.id, updated);
+      final newRows = await _queryExecutor!.executePaginated(
+        query,
+        resolvedParams,
+        limit: pageSize,
+        offset: currentOffset,
+      );
+
+      final updatedResults = Map<String, List<Map<String, dynamic>>>.from(
+        current.queryResults,
+      );
+      final existing = updatedResults[event.queryName] ?? [];
+      updatedResults[event.queryName] = [...existing, ...newRows];
+
+      emit(current.copyWith(
+        queryResults: updatedResults,
+        paginationOffsets: offsets,
+      ));
     } catch (e) {
-      Log.e('Failed to update quick entry', tag: 'ModuleViewer', error: e);
+      Log.e('Failed to load next page', tag: 'ModuleViewer', error: e);
     }
   }
 
-  /// Applies post-submit effects using [PostSubmitEffectExecutor].
-  Future<void> _applyPostSubmitEffects(
-    ModuleViewerLoaded current,
-    List<SchemaEffect> effects,
-    Map<String, dynamic> formData,
-  ) async {
-    const executor = PostSubmitEffectExecutor();
-    final updates = executor.computeUpdates(
-      effects: effects,
-      formData: formData,
-      entries: current.entries,
+  int? _findPageSizeForQuery(Map<String, dynamic>? screenJson, String queryName) {
+    if (screenJson == null) return null;
+    final children = screenJson['children'] as List?;
+    if (children == null) return null;
+    for (final child in children) {
+      if (child is Map<String, dynamic>) {
+        if (child['type'] == 'entry_list' && child['source'] == queryName) {
+          return child['pageSize'] as int?;
+        }
+        // Recurse into children
+        final nested = _findPageSizeForQuery(child, queryName);
+        if (nested != null) return nested;
+      }
+    }
+    return null;
+  }
+
+  void _onFormPrePopulated(
+    ModuleViewerFormPrePopulated event,
+    Emitter<ModuleViewerState> emit,
+  ) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    emit(current.copyWith(formValues: event.values));
+  }
+
+  /// Re-runs queries whose `dependsOn` list contains the changed field.
+  void _rerunDependentQueries(
+    String changedField,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+  ) {
+    if (_queryExecutor == null) return;
+
+    final dependentQueries = _currentQueries
+        .where((q) => q.dependsOn.contains(changedField))
+        .toList();
+
+    if (dependentQueries.isEmpty) return;
+
+    final resolvedParams = resolveQueryParams(
+      dependentQueries,
+      screenParams,
+      formValues: formValues,
     );
 
-    for (final update in updates.entries) {
-      final existing = current.entries
-          .where((e) => e.id == update.key)
-          .firstOrNull;
-      if (existing == null) continue;
-
-      final updatedEntry = Entry(
-        id: existing.id,
-        data: {...existing.data, ...update.value},
-        schemaVersion: existing.schemaVersion,
-        schemaKey: existing.schemaKey,
-      );
-
-      try {
-        await entryRepository.updateEntry(
-          userId,
-          current.module.id,
-          updatedEntry,
+    for (final query in dependentQueries) {
+      _queryExecutor!.execute(query, resolvedParams).then((rows) {
+        final current = state;
+        if (current is! ModuleViewerLoaded) return;
+        final updated = Map<String, List<Map<String, dynamic>>>.from(
+          current.queryResults,
         );
-      } catch (e) {
-        Log.e('Post-submit effect failed', tag: 'ModuleViewer', error: e);
-      }
+        updated[query.name] = rows;
+        add(ModuleViewerQueryResultsUpdated(updated));
+      });
     }
+  }
+
+  String _getMutationErrorMessage(Object error, ModuleViewerLoaded current) {
+    final entryId = current.screenParams['_entryId'] as String?;
+    final ScreenMutation? mutation;
+    if (entryId != null && entryId.isNotEmpty) {
+      mutation = _currentMutations?.update;
+    } else {
+      mutation = _currentMutations?.create;
+    }
+    return mutation?.onError?['message'] as String? ?? error.toString();
   }
 
   static const _expressionCollector = ExpressionCollector();
@@ -503,7 +543,6 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   Map<String, dynamic> _resolveExpressions(
     Module module,
     String screenId,
-    List<Entry> entries,
   ) {
     final blueprint = module.screens[screenId];
     if (blueprint == null) return const {};
@@ -512,7 +551,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (expressions.isEmpty) return const {};
 
     final evaluator = ExpressionEvaluator(
-      entries: entries,
+      entries: const [],
       params: module.settings,
     );
 
@@ -528,9 +567,82 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     return resolved;
   }
 
+  // ─── Reminder side-effects ───
+
+  Future<void> _processReminderSideEffects(
+    ScreenMutation mutation,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+    String moduleId,
+  ) async {
+    if (mutation.reminders.isEmpty) return;
+    if (capabilityRepository == null) return;
+
+    final data = {...screenParams, ...formValues};
+
+    for (final reminder in mutation.reminders) {
+      if (reminder.conditionField != null) {
+        final conditionValue = data[reminder.conditionField];
+        if (conditionValue == null || conditionValue == false) continue;
+      }
+
+      final dateValue = data[reminder.dateField];
+      if (dateValue == null) continue;
+
+      final title = _resolveTemplate(reminder.titleField, data);
+      final message = _resolveTemplate(reminder.messageField, data);
+
+      final scheduledDate = dateValue is int
+          ? DateTime.fromMillisecondsSinceEpoch(dateValue)
+          : DateTime.tryParse(dateValue.toString());
+      if (scheduledDate == null) continue;
+
+      var hour = reminder.hour;
+      var minute = reminder.minute;
+      if (reminder.timeField != null) {
+        final timeValue = data[reminder.timeField];
+        if (timeValue is Map) {
+          hour = timeValue['hour'] as int? ?? hour;
+          minute = timeValue['minute'] as int? ?? minute;
+        } else if (timeValue is int) {
+          hour = timeValue ~/ 60;
+          minute = timeValue % 60;
+        }
+      }
+
+      final now = DateTime.now();
+      final capability = ScheduledReminder(
+        id: '${moduleId}_reminder_${now.millisecondsSinceEpoch}',
+        moduleId: moduleId,
+        title: title,
+        message: message,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+        frequency: ReminderFrequency.once,
+        hour: hour,
+        minute: minute,
+        scheduledDate: scheduledDate,
+      );
+
+      await capabilityRepository!.createCapability(capability);
+      await notificationScheduler?.scheduleCapability(capability);
+    }
+  }
+
+  String _resolveTemplate(String template, Map<String, dynamic> data) {
+    if (template.contains('{{')) {
+      return template.replaceAllMapped(
+        RegExp(r'\{\{([\w.]+)\}\}'),
+        (match) => data[match.group(1)!]?.toString() ?? '',
+      );
+    }
+    return data[template]?.toString() ?? template;
+  }
+
   @override
   Future<void> close() {
-    _entriesSub?.cancel();
+    _querySub?.cancel();
     return super.close();
   }
 }

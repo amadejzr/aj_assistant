@@ -4,8 +4,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:aj_assistant/core/models/entry.dart';
-import 'package:aj_assistant/core/repositories/entry_repository.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_bloc.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_event.dart';
 import 'package:aj_assistant/features/chat/bloc/chat_state.dart';
@@ -14,25 +12,15 @@ import 'package:aj_assistant/features/chat/repositories/chat_repository.dart';
 
 class MockChatRepository extends Mock implements ChatRepository {}
 
-class MockEntryRepository extends Mock implements EntryRepository {}
-
-class FakeEntry extends Fake implements Entry {}
-
 void main() {
   late MockChatRepository chatRepo;
-  late MockEntryRepository entryRepo;
   late StreamController<List<Message>> messagesController;
 
   const userId = 'test_user';
   const convId = 'conv_123';
 
-  setUpAll(() {
-    registerFallbackValue(FakeEntry());
-  });
-
   setUp(() {
     chatRepo = MockChatRepository();
-    entryRepo = MockEntryRepository();
     messagesController = StreamController<List<Message>>.broadcast();
 
     // Default stubs
@@ -61,12 +49,6 @@ void main() {
           messageId: any(named: 'messageId'),
           status: any(named: 'status'),
         )).thenAnswer((_) async {});
-
-    when(() => entryRepo.createEntry(any(), any(), any()))
-        .thenAnswer((_) async => 'new_entry_id');
-
-    when(() => entryRepo.updateEntry(any(), any(), any()))
-        .thenAnswer((_) async {});
   });
 
   tearDown(() {
@@ -75,7 +57,6 @@ void main() {
 
   ChatBloc buildBloc() => ChatBloc(
         chatRepository: chatRepo,
-        entryRepository: entryRepo,
         userId: userId,
       );
 
@@ -265,33 +246,7 @@ void main() {
               status: 'approved',
             )).called(1);
 
-        // Verify entry was created
-        verify(() => entryRepo.createEntry(userId, 'mod1', any())).called(1);
-
         // Verify confirmation message
-        verify(() => chatRepo.addLocalMessage(
-              userId: userId,
-              conversationId: convId,
-              content: any(named: 'content'),
-              role: 'assistant',
-            )).called(1);
-      },
-    );
-
-    blocTest<ChatBloc, ChatState>(
-      'handles entry creation failure gracefully',
-      build: () {
-        when(() => entryRepo.createEntry(any(), any(), any()))
-            .thenThrow(Exception('Firestore error'));
-        return buildBloc();
-      },
-      seed: () => ChatReady(
-        conversationId: convId,
-        messages: pendingMessages,
-      ),
-      act: (bloc) => bloc.add(const ChatActionApproved()),
-      verify: (_) {
-        // Still writes a confirmation (with error info)
         verify(() => chatRepo.addLocalMessage(
               userId: userId,
               conversationId: convId,

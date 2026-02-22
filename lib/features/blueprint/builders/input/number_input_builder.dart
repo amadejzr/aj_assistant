@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../modules/models/field_constraints.dart';
 import '../../engine/form_validator.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
@@ -32,12 +31,11 @@ class _NumberInputWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = input.properties['label'] as String? ?? field?.label ?? input.fieldKey;
-    final isRequired = field?.required ?? false;
-    final nc = field?.constraints;
-    final min = nc is NumberConstraints ? nc.min : null;
-    final max = nc is NumberConstraints ? nc.max : null;
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+    final label = meta.label;
+    final isRequired = meta.required;
+    final min = meta.min;
+    final max = meta.max;
     final readOnly = input.properties['readOnly'] as bool? ?? false;
     final validation = input.properties['validation'] as Map<String, dynamic>?;
     final currentValue = ctx.getFormValue(input.fieldKey);

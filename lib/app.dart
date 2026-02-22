@@ -31,7 +31,7 @@ class _AJAssistantAppState extends State<AJAssistantApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'AJ Assistant',
+      title: 'Bower',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

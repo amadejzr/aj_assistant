@@ -132,11 +132,11 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
             sortOrder: t.sortOrder,
             installCount: t.installCount + 1,
             version: t.version,
-            schemas: t.schemas,
             screens: t.screens,
             settings: t.settings,
             guide: t.guide,
             navigation: t.navigation,
+            database: t.database,
           );
         }
         return t;

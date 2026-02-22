@@ -17,6 +17,14 @@ class DriftModuleRepository implements ModuleRepository {
   }
 
   @override
+  Future<List<Module>> getModules(String userId) async {
+    final query = _db.select(_db.modules)
+      ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]);
+    final rows = await query.get();
+    return rows.map(_rowToModule).toList();
+  }
+
+  @override
   Future<Module?> getModule(String userId, String moduleId) async {
     final query = _db.select(_db.modules)..where((t) => t.id.equals(moduleId));
     final row = await query.getSingleOrNull();
@@ -36,11 +44,11 @@ class DriftModuleRepository implements ModuleRepository {
             icon: Value(module.icon),
             color: Value(module.color),
             sortOrder: Value(module.sortOrder),
-            schemas: module.schemas,
             screens: module.screens,
             settings: Value(module.settings),
             guide: Value(module.guide),
             navigation: Value(module.navigation),
+            database: Value(module.database),
             version: Value(module.version),
             createdAt: now,
             updatedAt: now,
@@ -58,11 +66,11 @@ class DriftModuleRepository implements ModuleRepository {
         icon: Value(module.icon),
         color: Value(module.color),
         sortOrder: Value(module.sortOrder),
-        schemas: Value(module.schemas),
         screens: Value(module.screens),
         settings: Value(module.settings),
         guide: Value(module.guide),
         navigation: Value(module.navigation),
+        database: Value(module.database),
         version: Value(module.version),
         updatedAt: Value(now),
       ),
@@ -71,15 +79,22 @@ class DriftModuleRepository implements ModuleRepository {
 
   @override
   Future<void> deleteModule(String userId, String moduleId) async {
+    // Look up the module first so we can drop its tables.
+    final module = await getModule(userId, moduleId);
+
     await _db.transaction(() async {
+      // Drop module-owned tables
+      if (module?.database != null) {
+        for (final tableName in module!.database!.tableNames.values) {
+          await _db.customStatement('DROP TABLE IF EXISTS "$tableName"');
+        }
+      }
+
       // Delete capabilities
       await (_db.delete(_db.capabilities)
             ..where((t) => t.moduleId.equals(moduleId)))
           .go();
-      // Delete all entries belonging to this module
-      await (_db.delete(_db.entries)
-            ..where((t) => t.moduleId.equals(moduleId)))
-          .go();
+
       await (_db.delete(_db.modules)
             ..where((t) => t.id.equals(moduleId)))
           .go();
@@ -94,12 +109,12 @@ class DriftModuleRepository implements ModuleRepository {
       icon: row.icon,
       color: row.color,
       sortOrder: row.sortOrder,
-      schemas: row.schemas,
       screens: row.screens,
       settings: row.settings,
       guide: row.guide,
       version: row.version,
       navigation: row.navigation,
+      database: row.database,
     );
   }
 }

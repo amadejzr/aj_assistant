@@ -3,9 +3,6 @@ import 'package:aj_assistant/core/theme/app_theme.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
 import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
 import 'package:aj_assistant/features/blueprint/renderer/widget_registry.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,22 +10,6 @@ void main() {
   const testModule = Module(
     id: 'test',
     name: 'Test',
-    schemas: {
-      'default': ModuleSchema(
-        fields: {
-          'note': FieldDefinition(
-            key: 'note',
-            type: FieldType.text,
-            label: 'Note',
-          ),
-          'amount': FieldDefinition(
-            key: 'amount',
-            type: FieldType.number,
-            label: 'Amount',
-          ),
-        },
-      ),
-    },
   );
 
   setUpAll(() {
@@ -47,8 +28,14 @@ void main() {
           title: 'Add Expense',
           submitLabel: 'Save',
           children: [
-            TextInputNode(fieldKey: 'note'),
-            NumberInputNode(fieldKey: 'amount'),
+            TextInputNode(
+              fieldKey: 'note',
+              properties: {'label': 'Note'},
+            ),
+            NumberInputNode(
+              fieldKey: 'amount',
+              properties: {'label': 'Amount'},
+            ),
           ],
         );
 

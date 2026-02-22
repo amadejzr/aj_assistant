@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../modules/models/field_constraints.dart';
 import '../../engine/form_validator.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
@@ -32,12 +31,10 @@ class _TextInputWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = field?.label ?? input.fieldKey;
-    final isRequired = field?.required ?? false;
-    final maxLength = field?.constraints is TextConstraints
-        ? (field!.constraints as TextConstraints).maxLength
-        : null;
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+    final label = meta.label;
+    final isRequired = meta.required;
+    final maxLength = meta.maxLength;
     final readOnly = input.properties['readOnly'] as bool? ?? false;
     final validation = input.properties['validation'] as Map<String, dynamic>?;
     final currentValue = ctx.getFormValue(input.fieldKey) as String? ?? '';

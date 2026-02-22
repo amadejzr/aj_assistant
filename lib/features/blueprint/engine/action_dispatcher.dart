@@ -6,7 +6,6 @@ import '../builders/layout/form_screen_builder.dart';
 import '../renderer/blueprint_node.dart';
 import '../renderer/blueprint_parser.dart';
 import '../renderer/render_context.dart';
-import 'post_submit_effect.dart';
 
 /// Centralized action handler for blueprint actions.
 ///
@@ -74,12 +73,8 @@ class BlueprintActionDispatcher {
         _showConfirmDialog(action, ctx, buildContext, entryData: entryData, entryId: entryId);
 
       case 'update_entry':
-        final id = entryId ?? ctx.screenParams['_entryId'] as String?;
-        if (id == null || id.isEmpty) return;
-        final data = Map<String, dynamic>.from(action['data'] as Map? ?? {});
-        final schemaKey =
-            ctx.screenParams['_schemaKey'] as String? ?? 'default';
-        ctx.onUpdateEntry?.call(id, schemaKey, data);
+        // TODO: Implement SQL-based mutations via MutationExecutor
+        break;
 
       case 'toast':
         final message = action['message'] as String? ?? '';
@@ -106,7 +101,7 @@ class BlueprintActionDispatcher {
     final screenDef = ctx.module.screens[screenId];
     if (screenDef == null) return;
 
-    final parser = const BlueprintParser();
+    final parser = BlueprintParser(fieldSets: ctx.module.fieldSets);
     final node = parser.parse(screenDef);
     if (node is! FormScreenNode) return;
 
@@ -284,64 +279,7 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
   }
 
   Future<void> _onSubmit() async {
-    // Clean form data — remove meta keys
-    final data = Map<String, dynamic>.from(_formValues)
-      ..removeWhere((key, _) => key.startsWith('_'));
-
-    final schemaKey = widget.sheetParams['_schemaKey'] as String? ?? 'default';
-    final entryId = widget.sheetParams['_entryId'] as String?;
-
-    // Read effects from schema (not screen)
-    final schemaEffects =
-        widget.ctx.module.schemas[schemaKey]?.effects ?? const [];
-
-    // Validate effect guards (e.g. min: 0) before creating entry
-    if (schemaEffects.isNotEmpty) {
-      const executor = PostSubmitEffectExecutor();
-      final error = executor.validateEffects(
-        effects: schemaEffects,
-        formData: data,
-        entries: widget.ctx.allEntries,
-      );
-      if (error != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        }
-        return;
-      }
-    }
-
-    if (entryId != null && entryId.isNotEmpty) {
-      await widget.ctx.onUpdateEntry?.call(entryId, schemaKey, data);
-    } else {
-      await widget.ctx.onCreateEntry?.call(schemaKey, data);
-    }
-
-    // Apply post-submit effects from schema
-    if (schemaEffects.isNotEmpty && widget.ctx.onUpdateEntry != null) {
-      const executor = PostSubmitEffectExecutor();
-      final updates = executor.computeUpdates(
-        effects: schemaEffects,
-        formData: data,
-        entries: widget.ctx.allEntries,
-      );
-
-      for (final update in updates.entries) {
-        final existing = widget.ctx.allEntries
-            .where((e) => e.id == update.key)
-            .firstOrNull;
-        if (existing == null) continue;
-
-        await widget.ctx.onUpdateEntry!(
-          existing.id,
-          existing.schemaKey,
-          {...existing.data, ...update.value},
-        );
-      }
-    }
-
+    // TODO: Form sheets need to go through BLoC mutations
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -354,8 +292,6 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
     // Build a sheet-local RenderContext with isolated form state
     final sheetCtx = RenderContext(
       module: widget.ctx.module,
-      entries: widget.ctx.entries,
-      allEntries: widget.ctx.allEntries,
       formValues: _formValues,
       screenParams: widget.sheetParams,
       canGoBack: false,
@@ -365,8 +301,6 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
       onNavigateBack: () => Navigator.of(context).pop(),
       onDeleteEntry: widget.ctx.onDeleteEntry,
       resolvedExpressions: widget.ctx.resolvedExpressions,
-      onCreateEntry: widget.ctx.onCreateEntry,
-      onUpdateEntry: widget.ctx.onUpdateEntry,
       onScreenParamChanged: widget.ctx.onScreenParamChanged,
     );
 

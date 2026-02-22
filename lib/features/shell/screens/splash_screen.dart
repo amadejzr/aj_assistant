@@ -216,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Opacity(
                         opacity: _titleOpacity.value,
                         child: Text(
-                          'AJ',
+                          'bower',
                           style: TextStyle(
                             fontFamily: 'CormorantGaramond',
                             fontSize: 26,

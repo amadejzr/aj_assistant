@@ -3,30 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
-import '../../features/modules/models/module_schema.dart';
-
-class SchemasConverter
-    extends TypeConverter<Map<String, ModuleSchema>, String> {
-  const SchemasConverter();
-
-  @override
-  Map<String, ModuleSchema> fromSql(String fromDb) {
-    final map = jsonDecode(fromDb) as Map<String, dynamic>;
-    return map.map(
-      (key, value) => MapEntry(
-        key,
-        ModuleSchema.fromJson(Map<String, dynamic>.from(value as Map)),
-      ),
-    );
-  }
-
-  @override
-  String toSql(Map<String, ModuleSchema> value) {
-    return jsonEncode(
-      value.map((key, schema) => MapEntry(key, schema.toJson())),
-    );
-  }
-}
+import 'module_database.dart';
 
 class ScreensConverter
     extends TypeConverter<Map<String, Map<String, dynamic>>, String> {
@@ -83,4 +60,18 @@ class NavigationConverter extends TypeConverter<ModuleNavigation, String> {
 
   @override
   String toSql(ModuleNavigation value) => jsonEncode(value.toJson());
+}
+
+class ModuleDatabaseConverter extends TypeConverter<ModuleDatabase, String> {
+  const ModuleDatabaseConverter();
+
+  @override
+  ModuleDatabase fromSql(String fromDb) {
+    return ModuleDatabase.fromJson(
+      Map<String, dynamic>.from(jsonDecode(fromDb) as Map),
+    );
+  }
+
+  @override
+  String toSql(ModuleDatabase value) => jsonEncode(value.toJson());
 }

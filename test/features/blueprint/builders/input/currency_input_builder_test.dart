@@ -4,9 +4,6 @@ import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
 import 'package:aj_assistant/features/blueprint/renderer/blueprint_parser.dart';
 import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
 import 'package:aj_assistant/features/blueprint/renderer/widget_registry.dart';
-import 'package:aj_assistant/features/modules/models/field_definition.dart';
-import 'package:aj_assistant/features/modules/models/field_type.dart';
-import 'package:aj_assistant/features/modules/models/module_schema.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -45,17 +42,6 @@ void main() {
     const testModule = Module(
       id: 'test',
       name: 'Test',
-      schemas: {
-        'default': ModuleSchema(
-          fields: {
-            'amount': FieldDefinition(
-              key: 'amount',
-              type: FieldType.currency,
-              label: 'Amount',
-            ),
-          },
-        ),
-      },
     );
 
     setUpAll(() {
@@ -68,7 +54,10 @@ void main() {
       void Function(String, dynamic)? onChanged,
     }) {
       final inputNode = node ??
-          const CurrencyInputNode(fieldKey: 'amount');
+          const CurrencyInputNode(
+            fieldKey: 'amount',
+            properties: {'label': 'Amount'},
+          );
 
       final ctx = RenderContext(
         module: testModule,
@@ -85,7 +74,7 @@ void main() {
       );
     }
 
-    testWidgets('renders with label from field definition', (tester) async {
+    testWidgets('renders with label from node properties', (tester) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
 

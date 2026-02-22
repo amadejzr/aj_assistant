@@ -1,7 +1,9 @@
 import 'blueprint_node.dart';
 
 class BlueprintParser {
-  const BlueprintParser();
+  final Map<String, List<Map<String, dynamic>>> fieldSets;
+
+  const BlueprintParser({this.fieldSets = const {}});
 
   BlueprintNode parse(Map<String, dynamic> json) {
     final type = json['type'] as String? ?? '';
@@ -51,10 +53,25 @@ class BlueprintParser {
   List<BlueprintNode> _parseChildren(dynamic raw) {
     if (raw == null) return [];
     if (raw is! List) return [];
-    return raw
-        .whereType<Map<String, dynamic>>()
-        .map(parse)
-        .toList();
+
+    final nodes = <BlueprintNode>[];
+    for (final element in raw) {
+      // $fieldSetName — expand from fieldSets map
+      if (element is String && element.startsWith(r'$')) {
+        final key = element.substring(1);
+        final fields = fieldSets[key];
+        if (fields != null) {
+          for (final field in fields) {
+            nodes.add(parse(Map<String, dynamic>.from(field)));
+          }
+        }
+        continue;
+      }
+      if (element is Map<String, dynamic>) {
+        nodes.add(parse(element));
+      }
+    }
+    return nodes;
   }
 
   BlueprintNode? _parseChild(dynamic raw) {
@@ -79,11 +96,24 @@ class BlueprintParser {
   ScreenNode _parseScreen(Map<String, dynamic> json) {
     final layout = json['layout'] as Map<String, dynamic>?;
     final children = layout != null ? [parse(layout)] : _parseChildren(json['children']);
+
+    // Merge screen-level appBarActions into the AppBarNode.
+    var appBar = _parseAppBar(json['appBar']);
+    final screenActions = _parseChildren(json['appBarActions']);
+    if (screenActions.isNotEmpty) {
+      appBar = AppBarNode(
+        title: appBar?.title ?? json['title'] as String?,
+        actions: [...?appBar?.actions, ...screenActions],
+        showBack: appBar?.showBack ?? true,
+        properties: appBar?.properties ?? const {},
+      );
+    }
+
     return ScreenNode(
       title: json['title'] as String?,
       children: children,
       fab: _parseChild(json['fab']),
-      appBar: _parseAppBar(json['appBar']),
+      appBar: appBar,
       properties: json,
     );
   }
@@ -266,7 +296,7 @@ class BlueprintParser {
 
   TextDisplayNode _parseTextDisplay(Map<String, dynamic> json) {
     return TextDisplayNode(
-      text: json['text'] as String? ?? '',
+      text: json['text'] as String? ?? json['value'] as String? ?? '',
       style: json['style'] as String?,
       properties: json,
     );

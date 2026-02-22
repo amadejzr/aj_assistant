@@ -26,11 +26,40 @@ class _DatePickerWidget extends StatelessWidget {
 
   const _DatePickerWidget({required this.input, required this.ctx});
 
+  DateTime _resolveMinDate() {
+    final validation = input.properties['validation'] as Map<String, dynamic>?;
+    final minDate = validation?['minDate'] as String?;
+    if (minDate == 'today') return DateUtils.dateOnly(DateTime.now());
+    return DateTime(2000);
+  }
+
+  String? _validateDate(DateTime? date) {
+    final validation = input.properties['validation'] as Map<String, dynamic>?;
+    if (validation == null) return null;
+
+    final customMessage = validation['message'] as String?;
+    final isRequired = validation['required'] as bool? ?? false;
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+
+    if (isRequired && date == null) {
+      return customMessage ?? '${meta.label} is required';
+    }
+
+    if (date == null) return null;
+
+    final minDate = validation['minDate'] as String?;
+    if (minDate == 'today' && date.isBefore(DateUtils.dateOnly(DateTime.now()))) {
+      return customMessage ?? '${meta.label} cannot be in the past';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = ctx.getFieldDefinition(input.fieldKey);
-    final label = field?.label ?? input.fieldKey;
+    final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
+    final label = meta.label;
     final currentValue = ctx.getFormValue(input.fieldKey) as String?;
 
     DateTime? parsed;
@@ -41,6 +70,9 @@ class _DatePickerWidget extends StatelessWidget {
     final displayText = parsed != null
         ? DateFormat.yMMMd().format(parsed)
         : 'Select date';
+
+    final errorText = _validateDate(parsed);
+    final minDate = _resolveMinDate();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -61,10 +93,11 @@ class _DatePickerWidget extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () async {
+              final initialDate = parsed ?? DateTime.now();
               final picked = await showDatePicker(
                 context: context,
-                initialDate: parsed ?? DateTime.now(),
-                firstDate: DateTime(2000),
+                initialDate: initialDate.isBefore(minDate) ? minDate : initialDate,
+                firstDate: minDate,
                 lastDate: DateTime(2100),
                 builder: (ctx, child) {
                   return Theme(
@@ -90,7 +123,9 @@ class _DatePickerWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: colors.border),
+                border: Border.all(
+                  color: errorText != null ? colors.accent : colors.border,
+                ),
               ),
               child: Row(
                 children: [
@@ -115,6 +150,18 @@ class _DatePickerWidget extends StatelessWidget {
               ),
             ),
           ),
+          if (errorText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4),
+              child: Text(
+                errorText,
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 12,
+                  color: colors.accent,
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
-import '../../features/modules/models/module_schema.dart';
+import '../database/module_database.dart';
 import 'module.dart';
 
 class ModuleTemplate extends Equatable {
@@ -18,11 +18,11 @@ class ModuleTemplate extends Equatable {
   final int sortOrder;
   final int installCount;
   final int version;
-  final Map<String, ModuleSchema> schemas;
   final Map<String, Map<String, dynamic>> screens;
   final Map<String, dynamic> settings;
   final List<Map<String, String>> guide;
   final ModuleNavigation? navigation;
+  final ModuleDatabase? database;
 
   const ModuleTemplate({
     required this.id,
@@ -37,11 +37,11 @@ class ModuleTemplate extends Equatable {
     this.sortOrder = 0,
     this.installCount = 0,
     this.version = 1,
-    this.schemas = const {'default': ModuleSchema()},
     this.screens = const {},
     this.settings = const {},
     this.guide = const [],
     this.navigation,
+    this.database,
   });
 
   factory ModuleTemplate.fromFirestore(
@@ -61,7 +61,6 @@ class ModuleTemplate extends Equatable {
       sortOrder: data['sortOrder'] as int? ?? 0,
       installCount: data['installCount'] as int? ?? 0,
       version: data['version'] as int? ?? 1,
-      schemas: _parseSchemas(data['schemas']),
       screens: _parseScreens(data['screens']),
       settings: Map<String, dynamic>.from(data['settings'] as Map? ?? {}),
       guide: (data['guide'] as List?)
@@ -72,6 +71,10 @@ class ModuleTemplate extends Equatable {
       navigation: data['navigation'] != null
           ? ModuleNavigation.fromJson(
               Map<String, dynamic>.from(data['navigation'] as Map))
+          : null,
+      database: data['database'] != null
+          ? ModuleDatabase.fromJson(
+              Map<String, dynamic>.from(data['database'] as Map))
           : null,
     );
   }
@@ -89,13 +92,11 @@ class ModuleTemplate extends Equatable {
       'sortOrder': sortOrder,
       'installCount': installCount,
       'version': version,
-      'schemas': schemas.map(
-        (key, schema) => MapEntry(key, schema.toJson()),
-      ),
       'screens': screens,
       'settings': settings,
       'guide': guide,
       if (navigation != null) 'navigation': navigation!.toJson(),
+      if (database != null) 'database': database!.toJson(),
     };
   }
 
@@ -108,23 +109,12 @@ class ModuleTemplate extends Equatable {
       icon: icon,
       color: color,
       sortOrder: 0,
-      schemas: schemas,
       screens: screens,
       settings: settings,
       guide: guide,
       version: version,
       navigation: navigation,
-    );
-  }
-
-  static Map<String, ModuleSchema> _parseSchemas(dynamic raw) {
-    if (raw == null) return const {'default': ModuleSchema()};
-    final map = Map<String, dynamic>.from(raw as Map);
-    return map.map(
-      (key, value) => MapEntry(
-        key,
-        ModuleSchema.fromJson(Map<String, dynamic>.from(value as Map)),
-      ),
+      database: database,
     );
   }
 
@@ -153,10 +143,10 @@ class ModuleTemplate extends Equatable {
         sortOrder,
         installCount,
         version,
-        schemas,
         screens,
         settings,
         guide,
         navigation,
+        database,
       ];
 }

@@ -1,5 +1,3 @@
-import '../../../core/models/entry.dart';
-
 /// Evaluates expression strings against entries.
 ///
 /// Syntax: `functionName(args)` — args are field names or nested calls.
@@ -14,7 +12,7 @@ import '../../../core/models/entry.dart';
 ///   `subtract(a, b)` — a - b
 ///   `percentage(a, b)` — a / b * 100
 class ExpressionEvaluator {
-  final List<Entry> entries;
+  final List<Map<String, dynamic>> entries;
   final Map<String, dynamic> params;
 
   const ExpressionEvaluator({
@@ -127,7 +125,7 @@ class ExpressionEvaluator {
 
   /// Apply where() and period() filters from args, returning
   /// the filtered entries and the remaining field-name arg (if any).
-  ({List<Entry> filtered, String? field}) _applyFilters(List<String> args) {
+  ({List<Map<String, dynamic>> filtered, String? field}) _applyFilters(List<String> args) {
     var filtered = entries;
     String? field;
 
@@ -140,10 +138,7 @@ class ExpressionEvaluator {
           final op = parts[1].trim();
           final value = parts[2].trim();
           filtered = filtered.where((e) {
-            // schemaKey lives on the Entry object, not inside entry.data
-            final v = whereField == 'schemaKey'
-                ? e.schemaKey
-                : e.data[whereField];
+            final v = e[whereField];
             if (v == null) return false;
             final vStr = v.toString();
             return switch (op) {
@@ -162,7 +157,7 @@ class ExpressionEvaluator {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
         filtered = filtered.where((e) {
-          final dateStr = e.data['date'] as String?;
+          final dateStr = e['date'] as String?;
           if (dateStr == null) return false;
           final date = DateTime.tryParse(dateStr);
           if (date == null) return false;
@@ -229,7 +224,7 @@ class ExpressionEvaluator {
     if (entries.isEmpty) return 0;
 
     final dates = entries
-        .map((e) => e.data[dateField] as String?)
+        .map((e) => e[dateField] as String?)
         .where((d) => d != null)
         .map((d) => DateTime.tryParse(d!))
         .where((d) => d != null)
@@ -311,9 +306,9 @@ class ExpressionEvaluator {
     }
 
     // Group entries by field value
-    final groups = <String, List<Entry>>{};
+    final groups = <String, List<Map<String, dynamic>>>{};
     for (final entry in filtered) {
-      final key = entry.data[groupField]?.toString() ?? 'Unknown';
+      final key = entry[groupField]?.toString() ?? 'Unknown';
       groups.putIfAbsent(key, () => []).add(entry);
     }
 
@@ -330,10 +325,10 @@ class ExpressionEvaluator {
     return result;
   }
 
-  List<num> _numericValuesFrom(List<Entry> source, String field) {
+  List<num> _numericValuesFrom(List<Map<String, dynamic>> source, String field) {
     return source
         .map((e) {
-          final v = e.data[field];
+          final v = e[field];
           if (v is num) return v;
           if (v is String) return num.tryParse(v);
           return null;

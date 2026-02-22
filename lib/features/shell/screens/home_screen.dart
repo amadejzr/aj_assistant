@@ -156,17 +156,26 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
   }
 
   Widget _buildTopBar(AppColors colors) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: IconButton(
-        onPressed: () {
-          context.read<AuthBloc>().add(const AuthLogoutRequested());
-        },
-        icon: Icon(
-          PhosphorIcons.signOut(PhosphorIconsStyle.light),
-          color: colors.onBackgroundMuted,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        IconButton(
+          onPressed: () => context.push('/db-test'),
+          icon: Icon(
+            PhosphorIcons.database(PhosphorIconsStyle.light),
+            color: colors.onBackgroundMuted,
+          ),
         ),
-      ),
+        IconButton(
+          onPressed: () {
+            context.read<AuthBloc>().add(const AuthLogoutRequested());
+          },
+          icon: Icon(
+            PhosphorIcons.signOut(PhosphorIconsStyle.light),
+            color: colors.onBackgroundMuted,
+          ),
+        ),
+      ],
     );
   }
 

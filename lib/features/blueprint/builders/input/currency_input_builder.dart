@@ -74,8 +74,11 @@ class _CurrencyInputWidgetState extends State<_CurrencyInputWidget> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final field = widget.ctx.getFieldDefinition(widget.input.fieldKey);
-    final label = field?.label ?? widget.input.fieldKey;
+    final meta = widget.ctx.resolveFieldMeta(
+      widget.input.fieldKey,
+      widget.input.properties,
+    );
+    final label = meta.label;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -117,7 +120,7 @@ class _CurrencyInputWidgetState extends State<_CurrencyInputWidget> {
               ),
             ),
             validator: (value) {
-              if (field?.required == true && (value == null || value.isEmpty)) {
+              if (meta.required && (value == null || value.isEmpty)) {
                 return '$label is required';
               }
               return null;

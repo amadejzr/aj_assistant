@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/logging/log.dart';
-import '../../../core/models/entry.dart';
-import '../../../core/repositories/entry_repository.dart';
+import '../../../core/repositories/module_repository.dart';
 import '../models/message.dart';
 import '../repositories/chat_repository.dart';
+import '../services/chat_action_executor.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
 
@@ -14,18 +15,27 @@ const _tag = 'ChatBloc';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository _chatRepository;
-  final EntryRepository _entryRepository;
   final String _userId;
+  final ModuleRepository? _moduleRepository;
+  final ChatActionExecutor? _actionExecutor;
 
   StreamSubscription<List<Message>>? _messagesSub;
 
   ChatBloc({
     required ChatRepository chatRepository,
-    required EntryRepository entryRepository,
     required String userId,
+    AppDatabase? appDatabase,
+    ModuleRepository? moduleRepository,
   })  : _chatRepository = chatRepository,
-        _entryRepository = entryRepository,
         _userId = userId,
+        _moduleRepository = moduleRepository,
+        _actionExecutor = appDatabase != null && moduleRepository != null
+            ? ChatActionExecutor(
+                db: appDatabase,
+                moduleRepository: moduleRepository,
+                userId: userId,
+              )
+            : null,
         super(const ChatInitial()) {
     on<ChatStarted>(_onStarted);
     on<ChatMessageSent>(_onMessageSent);
@@ -96,10 +106,22 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ));
 
     try {
+      List<Map<String, dynamic>>? moduleContext;
+      if (_moduleRepository != null) {
+        final modules = await _moduleRepository.getModules(_userId);
+        moduleContext = modules.map((m) => {
+          'id': m.id,
+          'name': m.name,
+          'description': m.description,
+          if (m.database != null) 'database': m.database!.toJson(),
+        }).toList();
+      }
+
       await _chatRepository.sendMessage(
         userId: _userId,
         conversationId: current.conversationId!,
         content: event.text,
+        modules: moduleContext,
       );
 
       final latest = state;
@@ -155,79 +177,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       try {
         switch (action.name) {
           case 'createEntry':
-            final moduleId = action.input['moduleId'] as String;
-            final schemaKey = action.input['schemaKey'] as String? ?? 'default';
-            final data = Map<String, dynamic>.from(
-              action.input['data'] as Map? ?? {},
-            );
-            final entry = Entry(
-              id: '',
-              data: data,
-              schemaKey: schemaKey,
-            );
-            final id = await _entryRepository.createEntry(
-              _userId, moduleId, entry,
-            );
-            Log.i('Created entry $id in $moduleId', tag: _tag);
-            results.add('Created entry in $schemaKey');
-
-          case 'updateEntry':
-            final moduleId = action.input['moduleId'] as String;
-            final entryId = action.input['entryId'] as String;
-            final data = Map<String, dynamic>.from(
-              action.input['data'] as Map? ?? {},
-            );
-            final entry = Entry(id: entryId, data: data);
-            await _entryRepository.updateEntry(_userId, moduleId, entry);
-            Log.i('Updated entry $entryId in $moduleId', tag: _tag);
-            results.add('Updated entry');
-
           case 'createEntries':
-            final moduleId = action.input['moduleId'] as String;
-            final schemaKey =
-                action.input['schemaKey'] as String? ?? 'default';
-            final entriesList =
-                (action.input['entries'] as List?) ?? [];
-            var created = 0;
-            for (final raw in entriesList) {
-              final entryMap = raw as Map;
-              final data = Map<String, dynamic>.from(
-                entryMap['data'] as Map? ?? {},
-              );
-              final entry = Entry(
-                id: '',
-                data: data,
-                schemaKey: schemaKey,
-              );
-              await _entryRepository.createEntry(
-                _userId, moduleId, entry,
-              );
-              created++;
-            }
-            Log.i('Batch created $created entries in $moduleId',
-                tag: _tag);
-            results.add('Created $created entries');
-
+          case 'updateEntry':
           case 'updateEntries':
-            final moduleId = action.input['moduleId'] as String;
-            final entriesList =
-                (action.input['entries'] as List?) ?? [];
-            var updated = 0;
-            for (final raw in entriesList) {
-              final entryMap = raw as Map;
-              final entryId = entryMap['entryId'] as String;
-              final data = Map<String, dynamic>.from(
-                entryMap['data'] as Map? ?? {},
-              );
-              final entry = Entry(id: entryId, data: data);
-              await _entryRepository.updateEntry(
-                _userId, moduleId, entry,
-              );
-              updated++;
+            if (_actionExecutor == null) {
+              results.add('Database not available');
+              break;
             }
-            Log.i('Batch updated $updated entries in $moduleId',
-                tag: _tag);
-            results.add('Updated $updated entries');
+            final result = await _actionExecutor.execute(action);
+            results.add(result);
 
           default:
             Log.e('Unhandled action: ${action.name}', tag: _tag);

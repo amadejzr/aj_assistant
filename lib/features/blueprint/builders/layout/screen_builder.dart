@@ -128,13 +128,16 @@ AppBar buildBlueprintAppBar({
     );
   }
 
+  // Interpolate {{key}} template expressions in the title.
+  final resolvedTitle = title != null ? _interpolateTitle(title, ctx) : null;
+
   return AppBar(
     backgroundColor: colors.background,
     elevation: 0,
     leading: leading,
-    title: title != null
+    title: resolvedTitle != null
         ? Text(
-            title,
+            resolvedTitle,
             style: TextStyle(
               fontFamily: 'CormorantGaramond',
               fontSize: 26,
@@ -145,5 +148,17 @@ AppBar buildBlueprintAppBar({
         : null,
     iconTheme: IconThemeData(color: colors.onBackground),
     actions: actions,
+  );
+}
+
+String _interpolateTitle(String template, RenderContext ctx) {
+  final data = {...ctx.screenParams, ...ctx.formValues};
+  return template.replaceAllMapped(
+    RegExp(r'\{\{([\w.]+)\}\}'),
+    (match) {
+      final key = match.group(1)!;
+      final value = data[key];
+      return value?.toString() ?? '';
+    },
   );
 }

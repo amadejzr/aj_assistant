@@ -21,13 +21,18 @@ class BlueprintRenderer extends StatefulWidget {
 }
 
 class _BlueprintRendererState extends State<BlueprintRenderer> {
-  static const _parser = BlueprintParser();
   late BlueprintNode _node;
+
+  BlueprintParser _createParser() {
+    return BlueprintParser(
+      fieldSets: widget.context_.module.fieldSets,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _node = _parser.parse(widget.blueprintJson);
+    _node = _createParser().parse(widget.blueprintJson);
     Log.d('Parsed blueprint for initial build', tag: 'Perf');
   }
 
@@ -35,7 +40,7 @@ class _BlueprintRendererState extends State<BlueprintRenderer> {
   void didUpdateWidget(BlueprintRenderer old) {
     super.didUpdateWidget(old);
     if (!identical(widget.blueprintJson, old.blueprintJson)) {
-      _node = _parser.parse(widget.blueprintJson);
+      _node = _createParser().parse(widget.blueprintJson);
       Log.d('Blueprint changed — re-parsing', tag: 'Perf');
     } else {
       Log.d('Blueprint identical — skipped parse', tag: 'Perf');
