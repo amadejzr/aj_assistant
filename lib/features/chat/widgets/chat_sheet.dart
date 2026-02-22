@@ -85,7 +85,7 @@ class _ChatSheetBody extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'AJ',
+            'Bower',
             style: TextStyle(
               fontFamily: 'CormorantGaramond',
               fontSize: 22,
@@ -285,7 +285,7 @@ class _ChatInputState extends State<_ChatInput> {
                 color: colors.onBackground,
               ),
               decoration: InputDecoration(
-                hintText: 'Message AJ...',
+                hintText: 'Message Bower...',
                 fillColor: colors.background,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,

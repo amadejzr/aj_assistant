@@ -82,7 +82,7 @@ class ChatRepository {
       throw ChatException(_friendlyError(e.code, e.message));
     } catch (e) {
       Log.e('Function call failed: $e', tag: _tag);
-      throw ChatException('Unable to reach AJ. Check your connection.');
+      throw ChatException('Unable to reach Bower. Check your connection.');
     }
   }
 
@@ -126,7 +126,7 @@ class ChatRepository {
       case 'unauthenticated':
         return 'Please sign in again to continue.';
       case 'unavailable':
-        return 'AJ is temporarily unavailable. Please try again.';
+        return 'Bower is temporarily unavailable. Please try again.';
       case 'deadline-exceeded':
         return 'Request timed out. Try a simpler message.';
       case 'resource-exhausted':
