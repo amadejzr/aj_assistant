@@ -13,6 +13,9 @@ import '../../../core/models/module.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../blueprint/engine/expression_collector.dart';
 import '../../blueprint/engine/expression_evaluator.dart';
+import '../../capabilities/models/capability.dart';
+import '../../capabilities/repositories/capability_repository.dart';
+import '../../capabilities/services/notification_scheduler.dart';
 import 'module_viewer_event.dart';
 import 'module_viewer_state.dart';
 
@@ -20,6 +23,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   final ModuleRepository moduleRepository;
   final AppDatabase? appDatabase;
   final String userId;
+  final CapabilityRepository? capabilityRepository;
+  final NotificationScheduler? notificationScheduler;
 
   // SQL-driven screen state
   QueryExecutor? _queryExecutor;
@@ -32,6 +37,8 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     required this.moduleRepository,
     this.appDatabase,
     required this.userId,
+    this.capabilityRepository,
+    this.notificationScheduler,
   }) : super(const ModuleViewerInitial()) {
     on<ModuleViewerStarted>(_onStarted);
     on<ModuleViewerScreenChanged>(_onScreenChanged);
@@ -208,6 +215,13 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           mutation = _currentMutations!.create!;
           await _mutationExecutor!.create(mutation, data);
         }
+
+        await _processReminderSideEffects(
+          mutation,
+          current.formValues,
+          current.screenParams,
+          current.module.id,
+        );
 
         final successMessage = mutation.onSuccess?['message'] as String?;
 
@@ -551,6 +565,79 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     }
     Log.d('Resolved ${expressions.length} expressions for screen "$screenId"', tag: 'Perf');
     return resolved;
+  }
+
+  // ─── Reminder side-effects ───
+
+  Future<void> _processReminderSideEffects(
+    ScreenMutation mutation,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+    String moduleId,
+  ) async {
+    if (mutation.reminders.isEmpty) return;
+    if (capabilityRepository == null) return;
+
+    final data = {...screenParams, ...formValues};
+
+    for (final reminder in mutation.reminders) {
+      if (reminder.conditionField != null) {
+        final conditionValue = data[reminder.conditionField];
+        if (conditionValue == null || conditionValue == false) continue;
+      }
+
+      final dateValue = data[reminder.dateField];
+      if (dateValue == null) continue;
+
+      final title = _resolveTemplate(reminder.titleField, data);
+      final message = _resolveTemplate(reminder.messageField, data);
+
+      final scheduledDate = dateValue is int
+          ? DateTime.fromMillisecondsSinceEpoch(dateValue)
+          : DateTime.tryParse(dateValue.toString());
+      if (scheduledDate == null) continue;
+
+      var hour = reminder.hour;
+      var minute = reminder.minute;
+      if (reminder.timeField != null) {
+        final timeValue = data[reminder.timeField];
+        if (timeValue is Map) {
+          hour = timeValue['hour'] as int? ?? hour;
+          minute = timeValue['minute'] as int? ?? minute;
+        } else if (timeValue is int) {
+          hour = timeValue ~/ 60;
+          minute = timeValue % 60;
+        }
+      }
+
+      final now = DateTime.now();
+      final capability = ScheduledReminder(
+        id: '${moduleId}_reminder_${now.millisecondsSinceEpoch}',
+        moduleId: moduleId,
+        title: title,
+        message: message,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+        frequency: ReminderFrequency.once,
+        hour: hour,
+        minute: minute,
+        scheduledDate: scheduledDate,
+      );
+
+      await capabilityRepository!.createCapability(capability);
+      await notificationScheduler?.scheduleCapability(capability);
+    }
+  }
+
+  String _resolveTemplate(String template, Map<String, dynamic> data) {
+    if (template.contains('{{')) {
+      return template.replaceAllMapped(
+        RegExp(r'\{\{([\w.]+)\}\}'),
+        (match) => data[match.group(1)!]?.toString() ?? '',
+      );
+    }
+    return data[template]?.toString() ?? template;
   }
 
   @override

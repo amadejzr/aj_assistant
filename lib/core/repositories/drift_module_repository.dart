@@ -17,6 +17,14 @@ class DriftModuleRepository implements ModuleRepository {
   }
 
   @override
+  Future<List<Module>> getModules(String userId) async {
+    final query = _db.select(_db.modules)
+      ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]);
+    final rows = await query.get();
+    return rows.map(_rowToModule).toList();
+  }
+
+  @override
   Future<Module?> getModule(String userId, String moduleId) async {
     final query = _db.select(_db.modules)..where((t) => t.id.equals(moduleId));
     final row = await query.getSingleOrNull();

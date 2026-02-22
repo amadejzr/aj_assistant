@@ -10,6 +10,8 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../blueprint/navigation/module_navigation.dart';
 import '../../blueprint/utils/icon_resolver.dart';
+import '../../capabilities/repositories/capability_repository.dart';
+import '../../capabilities/services/notification_scheduler.dart';
 import '../bloc/module_viewer_bloc.dart';
 import '../bloc/module_viewer_event.dart';
 import '../bloc/module_viewer_state.dart';
@@ -31,6 +33,8 @@ class ModuleViewerScreen extends StatelessWidget {
         moduleRepository: context.read<ModuleRepository>(),
         appDatabase: context.read<AppDatabase>(),
         userId: userId,
+        capabilityRepository: context.read<CapabilityRepository>(),
+        notificationScheduler: context.read<NotificationScheduler>(),
       )..add(ModuleViewerStarted(moduleId)),
       child: const _ModuleViewerBody(),
     );

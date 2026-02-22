@@ -58,6 +58,7 @@ class ChatRepository {
     required String userId,
     required String conversationId,
     required String content,
+    List<Map<String, dynamic>>? modules,
   }) async {
     Log.i('Calling chat function — conv=$conversationId', tag: _tag);
     final callable = _functions.httpsCallable(
@@ -69,6 +70,7 @@ class ChatRepository {
       final result = await callable.call<Map<String, dynamic>>({
         'conversationId': conversationId,
         'message': content,
+        if (modules != null) 'modules': modules,
       });
 
       final data = result.data;

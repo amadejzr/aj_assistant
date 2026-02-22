@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'app_database.dart';
+import 'mutation_table.dart';
 import 'screen_query.dart';
 
 final _paramPattern = RegExp(r':([a-zA-Z_][a-zA-Z0-9_]*)');
@@ -11,7 +12,7 @@ class MutationExecutor {
   final Set<String> moduleTableNames;
 
   late final Set<ResultSetImplementation> _tableRefs = moduleTableNames
-      .map((name) => _MutationTable(name, db))
+      .map((name) => MutationTable(name, db))
       .toSet();
 
   MutationExecutor({required this.db, required this.moduleTableNames});
@@ -134,32 +135,5 @@ class MutationExecutor {
     });
 
     return (bound, variables);
-  }
-}
-
-/// Lightweight Drift table reference for mutation notifications.
-class _MutationTable extends ResultSetImplementation<_MutationTable, Never> {
-  @override
-  final String entityName;
-
-  final DatabaseConnectionUser _db;
-
-  _MutationTable(this.entityName, this._db);
-
-  @override
-  DatabaseConnectionUser get attachedDatabase => _db;
-
-  @override
-  _MutationTable get asDslTable => this;
-
-  @override
-  List<GeneratedColumn> get $columns => const [];
-
-  @override
-  Map<String, GeneratedColumn> get columnsByName => const {};
-
-  @override
-  Never map(Map<String, dynamic> data, {String? tablePrefix}) {
-    throw UnsupportedError('Mutation tables do not support mapping');
   }
 }

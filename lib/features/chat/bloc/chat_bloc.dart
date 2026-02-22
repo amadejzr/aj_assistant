@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/logging/log.dart';
+import '../../../core/repositories/module_repository.dart';
 import '../models/message.dart';
 import '../repositories/chat_repository.dart';
+import '../services/chat_action_executor.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
 
@@ -13,14 +16,26 @@ const _tag = 'ChatBloc';
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository _chatRepository;
   final String _userId;
+  final ModuleRepository? _moduleRepository;
+  final ChatActionExecutor? _actionExecutor;
 
   StreamSubscription<List<Message>>? _messagesSub;
 
   ChatBloc({
     required ChatRepository chatRepository,
     required String userId,
+    AppDatabase? appDatabase,
+    ModuleRepository? moduleRepository,
   })  : _chatRepository = chatRepository,
         _userId = userId,
+        _moduleRepository = moduleRepository,
+        _actionExecutor = appDatabase != null && moduleRepository != null
+            ? ChatActionExecutor(
+                db: appDatabase,
+                moduleRepository: moduleRepository,
+                userId: userId,
+              )
+            : null,
         super(const ChatInitial()) {
     on<ChatStarted>(_onStarted);
     on<ChatMessageSent>(_onMessageSent);
@@ -91,10 +106,22 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ));
 
     try {
+      List<Map<String, dynamic>>? moduleContext;
+      if (_moduleRepository != null) {
+        final modules = await _moduleRepository.getModules(_userId);
+        moduleContext = modules.map((m) => {
+          'id': m.id,
+          'name': m.name,
+          'description': m.description,
+          if (m.database != null) 'database': m.database!.toJson(),
+        }).toList();
+      }
+
       await _chatRepository.sendMessage(
         userId: _userId,
         conversationId: current.conversationId!,
         content: event.text,
+        modules: moduleContext,
       );
 
       final latest = state;
@@ -150,11 +177,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       try {
         switch (action.name) {
           case 'createEntry':
-          case 'updateEntry':
           case 'createEntries':
+          case 'updateEntry':
           case 'updateEntries':
-            // TODO: Implement SQL-based mutations via MutationExecutor
-            results.add('Entry actions not yet migrated to SQL');
+            if (_actionExecutor == null) {
+              results.add('Database not available');
+              break;
+            }
+            final result = await _actionExecutor.execute(action);
+            results.add(result);
 
           default:
             Log.e('Unhandled action: ${action.name}', tag: _tag);

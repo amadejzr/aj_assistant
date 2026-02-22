@@ -34,6 +34,51 @@ class ScreenQuery extends Equatable {
   List<Object?> get props => [name, sql, params, defaults, dependsOn];
 }
 
+/// A declarative reminder to create after a mutation succeeds.
+class ReminderSideEffect extends Equatable {
+  final String type;
+  final String frequency;
+  final String titleField;
+  final String messageField;
+  final String dateField;
+  final String? timeField;
+  final String? conditionField;
+  final int hour;
+  final int minute;
+
+  const ReminderSideEffect({
+    required this.type,
+    required this.frequency,
+    required this.titleField,
+    required this.messageField,
+    required this.dateField,
+    this.timeField,
+    this.conditionField,
+    this.hour = 9,
+    this.minute = 0,
+  });
+
+  factory ReminderSideEffect.fromJson(Map<String, dynamic> json) {
+    return ReminderSideEffect(
+      type: json['type'] as String? ?? 'scheduled',
+      frequency: json['frequency'] as String? ?? 'once',
+      titleField: json['titleField'] as String,
+      messageField: json['messageField'] as String,
+      dateField: json['dateField'] as String,
+      timeField: json['timeField'] as String?,
+      conditionField: json['conditionField'] as String?,
+      hour: json['hour'] as int? ?? 9,
+      minute: json['minute'] as int? ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        type, frequency, titleField, messageField,
+        dateField, timeField, conditionField, hour, minute,
+      ];
+}
+
 /// A parsed mutation from a screen's JSON blueprint.
 ///
 /// Supports both single-step (bare SQL string or `{sql: ...}` map) and
@@ -44,6 +89,7 @@ class ScreenMutation extends Equatable {
   final List<String> refresh;
   final Map<String, dynamic>? onSuccess;
   final Map<String, dynamic>? onError;
+  final List<ReminderSideEffect> reminders;
 
   const ScreenMutation({
     this.sql,
@@ -51,6 +97,7 @@ class ScreenMutation extends Equatable {
     this.refresh = const [],
     this.onSuccess,
     this.onError,
+    this.reminders = const [],
   });
 
   bool get isMultiStep => steps != null && steps!.isNotEmpty;
@@ -65,13 +112,18 @@ class ScreenMutation extends Equatable {
         refresh: List<String>.from(json['refresh'] as List? ?? []),
         onSuccess: json['onSuccess'] as Map<String, dynamic>?,
         onError: json['onError'] as Map<String, dynamic>?,
+        reminders: (json['reminders'] as List?)
+                ?.map((e) =>
+                    ReminderSideEffect.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
       );
     }
     throw ArgumentError('Invalid mutation format: $json');
   }
 
   @override
-  List<Object?> get props => [sql, steps, refresh, onSuccess, onError];
+  List<Object?> get props => [sql, steps, refresh, onSuccess, onError, reminders];
 }
 
 /// The set of mutations available for a screen (create, update, delete).
