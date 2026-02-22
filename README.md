@@ -33,12 +33,11 @@ Bower is a modular personal notebook app. It uses a blueprint system and a local
 
 ## How it works
 
-1. **Define a module** — pick one from the marketplace or build it yourself. Each module has a schema with field definitions, constraints, and triggers
-2. **Tables are created locally** — Bower generates SQLite tables on your device based on the module's database fields
-3. **Blueprints describe the UI** — each screen is a JSON document that defines layout, inputs, displays, and actions
-4. **Blueprint renderer builds native screens** — the blueprint is parsed into a widget tree and rendered as real Flutter widgets
-5. **Data stays local** — all entries are stored in SQLite via Drift, on your device
-6. **Chat with the AI** — add entries, query your data, and interact with your modules through conversation
+1. **Pick a module** — browse the marketplace and install a pre-made template
+2. **Each module is a JSON blueprint** — it defines a SQLite schema (tables, indexes, triggers), navigation, and screens built from composable widgets like stat cards, forms, lists, and charts
+3. **The blueprint engine renders native screens** — JSON is parsed into a Flutter widget tree at runtime, no custom code needed
+4. **Data stays on your device** — all entries live in SQLite via Drift, locally
+5. **Chat with the AI** — add entries, query your data, and interact with your modules through conversation
 
 ## Features
 
