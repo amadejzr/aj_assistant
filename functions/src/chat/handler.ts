@@ -23,6 +23,15 @@ interface PendingAction {
 interface ChatRequest {
   conversationId: string;
   message: string;
+  modules?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    database?: {
+      tableNames: Record<string, string>;
+      setup: string[];
+    };
+  }>;
 }
 
 function describeAction(
@@ -68,7 +77,8 @@ export const chat = onCall(
       throw new HttpsError("unauthenticated", "Must be signed in.");
     }
     const userId = request.auth.uid;
-    const {conversationId, message} = request.data as ChatRequest;
+    const {conversationId, message, modules: clientModules} =
+      request.data as ChatRequest;
 
     if (!conversationId || !message) {
       throw new HttpsError(
@@ -116,29 +126,23 @@ export const chat = onCall(
       }
     }
 
-    // Load modules for system prompt
-    const modulesSnap = await db
-      .collection("users").doc(userId)
-      .collection("modules")
-      .get();
-
+    // Use client-provided modules (local SQLite) instead of Firestore
     const modules: Record<string, {
       name: string;
       description?: string;
-      schemas?: Record<string, unknown>;
-      settings?: Record<string, unknown>;
+      database?: { tableNames: Record<string, string>; setup: string[] };
     }> = {};
-    for (const doc of modulesSnap.docs) {
-      const d = doc.data();
-      modules[doc.id] = {
-        name: d.name ?? "",
-        description: d.description,
-        schemas: d.schemas,
-        settings: d.settings,
-      };
+    if (clientModules) {
+      for (const mod of clientModules) {
+        modules[mod.id] = {
+          name: mod.name,
+          description: mod.description,
+          database: mod.database,
+        };
+      }
     }
 
-    const systemPrompt = buildSystemPrompt(modules as never);
+    const systemPrompt = buildSystemPrompt(modules);
 
     // Call Claude API
     const apiKey = process.env.ANTHROPIC_API_KEY;

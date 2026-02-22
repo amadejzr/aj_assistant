@@ -14,8 +14,14 @@ interface SchemaData {
 interface ModuleData {
   name: string;
   description?: string;
+  // Old format (Firestore):
   schemas?: Record<string, SchemaData>;
   settings?: Record<string, unknown>;
+  // New format (local DB):
+  database?: {
+    tableNames: Record<string, string>;
+    setup: string[];
+  };
 }
 
 function formatField(key: string, field: FieldDef): string {
@@ -56,9 +62,21 @@ function formatModule(id: string, mod: ModuleData): string {
     lines.push(`  Description: ${mod.description}`);
   }
 
-  const schemas = mod.schemas ?? {};
-  for (const [schemaKey, schema] of Object.entries(schemas)) {
-    lines.push(formatSchema(schemaKey, schema));
+  if (mod.database) {
+    // New format: show table names and SQL schemas
+    for (const [schemaKey, tableName] of Object.entries(mod.database.tableNames)) {
+      lines.push(`  Schema key "${schemaKey}" → table "${tableName}"`);
+    }
+    for (const sql of mod.database.setup) {
+      if (sql.toUpperCase().startsWith("CREATE TABLE")) {
+        lines.push(`  ${sql}`);
+      }
+    }
+  } else if (mod.schemas) {
+    // Old format fallback
+    for (const [schemaKey, schema] of Object.entries(mod.schemas)) {
+      lines.push(formatSchema(schemaKey, schema));
+    }
   }
 
   if (mod.settings && Object.keys(mod.settings).length > 0) {
