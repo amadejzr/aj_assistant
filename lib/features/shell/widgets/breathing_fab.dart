@@ -73,7 +73,7 @@ class _BreathingFabState extends State<BreathingFab>
           child: Center(
             child: SealLogo(
               color: colors.accent,
-              textColor: colors.onBackground,
+              textColor: colors.background,
               size: 58,
             ),
           ),

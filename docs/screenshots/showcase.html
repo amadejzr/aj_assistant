@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Karla:wght@500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #F5F0E8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 60px 80px;
+  }
+
+  .showcase {
+    display: flex;
+    gap: 44px;
+    align-items: flex-start;
+  }
+
+  .phone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .phone img {
+    width: 280px;
+    border-radius: 28px;
+    box-shadow:
+      0 12px 40px rgba(60, 50, 40, 0.15),
+      0 2px 8px rgba(60, 50, 40, 0.08);
+  }
+
+  .phone .label {
+    font-family: 'Karla', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8C8278;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="showcase">
+    <div class="phone">
+      <img src="home.png" alt="Home" />
+      <span class="label">Home</span>
+    </div>
+    <div class="phone">
+      <img src="chat.png" alt="AI Chat" />
+      <span class="label">AI Chat</span>
+    </div>
+    <div class="phone">
+      <img src="marketplace.png" alt="Marketplace" />
+      <span class="label">Marketplace</span>
+    </div>
+    <div class="phone">
+      <img src="expense_tracker.png" alt="Expense Tracker" />
+      <span class="label">Expense Tracker</span>
+    </div>
+  </div>
+</body>
+</html>

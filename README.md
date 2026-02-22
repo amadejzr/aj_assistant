@@ -52,16 +52,9 @@ Bower is a modular personal notebook app. It uses a blueprint system and a local
 
 ## Screenshots
 
-> Coming soon — screenshots of the login screen, chat interface, module viewer, and splash animation.
-
-<!--
 <p align="center">
-  <img src="docs/screenshots/login.png" width="200" />
-  <img src="docs/screenshots/chat.png" width="200" />
-  <img src="docs/screenshots/module.png" width="200" />
-  <img src="docs/screenshots/splash.png" width="200" />
+  <img src="docs/screenshots/showcase.png" width="800" alt="Bower Pshowcase" />
 </p>
--->
 
 ## Roadmap
 

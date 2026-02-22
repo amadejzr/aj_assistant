@@ -13,6 +13,7 @@ import '../lib/features/blueprint/dsl/blueprint_dsl.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart' hide Query;
 import 'templates/hiking.dart';
+import 'templates/expense_tracker.dart';
 
 Future<void> main() async {
   final admin = FirebaseAdminApp.initializeApp(
@@ -26,6 +27,7 @@ Future<void> main() async {
   final templates = {
     'savings_goals': _savingsGoals(),
     'hiking_journal': hikingTemplate(),
+    'expense_tracker': expenseTrackerTemplate(),
   };
 
   for (final entry in templates.entries) {
