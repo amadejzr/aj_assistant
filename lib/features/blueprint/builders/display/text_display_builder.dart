@@ -90,6 +90,7 @@ class _TextDisplayWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = _interpolate(display.text);
+    final label = display.properties['label'] as String?;
 
     TextStyle style;
     switch (display.style) {
@@ -119,6 +120,36 @@ class _TextDisplayWidget extends StatelessWidget {
           fontSize: 15,
           color: colors.onBackground,
         );
+    }
+
+    // Label-value pair rendering
+    if (label != null && display.style == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Karla',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.onBackgroundMuted,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                text.isNotEmpty ? text : '—',
+                style: style,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return Text(text, style: style);

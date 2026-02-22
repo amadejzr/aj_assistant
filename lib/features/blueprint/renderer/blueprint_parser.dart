@@ -96,11 +96,24 @@ class BlueprintParser {
   ScreenNode _parseScreen(Map<String, dynamic> json) {
     final layout = json['layout'] as Map<String, dynamic>?;
     final children = layout != null ? [parse(layout)] : _parseChildren(json['children']);
+
+    // Merge screen-level appBarActions into the AppBarNode.
+    var appBar = _parseAppBar(json['appBar']);
+    final screenActions = _parseChildren(json['appBarActions']);
+    if (screenActions.isNotEmpty) {
+      appBar = AppBarNode(
+        title: appBar?.title ?? json['title'] as String?,
+        actions: [...?appBar?.actions, ...screenActions],
+        showBack: appBar?.showBack ?? true,
+        properties: appBar?.properties ?? const {},
+      );
+    }
+
     return ScreenNode(
       title: json['title'] as String?,
       children: children,
       fab: _parseChild(json['fab']),
-      appBar: _parseAppBar(json['appBar']),
+      appBar: appBar,
       properties: json,
     );
   }
@@ -283,7 +296,7 @@ class BlueprintParser {
 
   TextDisplayNode _parseTextDisplay(Map<String, dynamic> json) {
     return TextDisplayNode(
-      text: json['text'] as String? ?? '',
+      text: json['text'] as String? ?? json['value'] as String? ?? '',
       style: json['style'] as String?,
       properties: json,
     );

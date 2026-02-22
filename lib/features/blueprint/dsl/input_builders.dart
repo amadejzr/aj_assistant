@@ -17,14 +17,14 @@ class Inputs {
   }) => {
     'type': 'text_input',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (multiline != null) 'multiline': multiline,
-    if (maxLength != null) 'maxLength': maxLength,
-    if (minLength != null) 'minLength': minLength,
-    if (defaultValue != null) 'defaultValue': defaultValue,
-    if (validation != null) 'validation': validation,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'multiline': ?multiline,
+    'maxLength': ?maxLength,
+    'minLength': ?minLength,
+    'defaultValue': ?defaultValue,
+    'validation': ?validation,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json numberInput({
@@ -40,14 +40,14 @@ class Inputs {
   }) => {
     'type': 'number_input',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (min != null) 'min': min,
-    if (max != null) 'max': max,
-    if (step != null) 'step': step,
-    if (defaultValue != null) 'defaultValue': defaultValue,
-    if (validation != null) 'validation': validation,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'min': ?min,
+    'max': ?max,
+    'step': ?step,
+    'defaultValue': ?defaultValue,
+    'validation': ?validation,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json currencyInput({
@@ -62,13 +62,13 @@ class Inputs {
   }) => {
     'type': 'currency_input',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (currencySymbol != null) 'currencySymbol': currencySymbol,
-    if (decimalPlaces != null) 'decimalPlaces': decimalPlaces,
-    if (min != null) 'min': min,
-    if (validation != null) 'validation': validation,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'currencySymbol': ?currencySymbol,
+    'decimalPlaces': ?decimalPlaces,
+    'min': ?min,
+    'validation': ?validation,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json datePicker({
@@ -81,11 +81,11 @@ class Inputs {
   }) => {
     'type': 'date_picker',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (defaultValue != null) 'defaultValue': defaultValue,
-    if (validation != null) 'validation': validation,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'defaultValue': ?defaultValue,
+    'validation': ?validation,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json timePicker({
@@ -97,10 +97,10 @@ class Inputs {
   }) => {
     'type': 'time_picker',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (defaultValue != null) 'defaultValue': defaultValue,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'defaultValue': ?defaultValue,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json enumSelector({
@@ -112,10 +112,10 @@ class Inputs {
   }) => {
     'type': 'enum_selector',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (options != null) 'options': options,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'required': ?required,
+    'options': ?options,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json multiEnumSelector({
@@ -126,9 +126,9 @@ class Inputs {
   }) => {
     'type': 'multi_enum_selector',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (options != null) 'options': options,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'options': ?options,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json toggle({
@@ -138,8 +138,8 @@ class Inputs {
   }) => {
     'type': 'toggle',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json slider({
@@ -153,12 +153,12 @@ class Inputs {
   }) => {
     'type': 'slider',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (min != null) 'min': min,
-    if (max != null) 'max': max,
-    if (step != null) 'step': step,
-    if (divisions != null) 'divisions': divisions,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'min': ?min,
+    'max': ?max,
+    'step': ?step,
+    'divisions': ?divisions,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json ratingInput({
@@ -169,9 +169,9 @@ class Inputs {
   }) => {
     'type': 'rating_input',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (maxRating != null) 'maxRating': maxRating,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'maxRating': ?maxRating,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json referencePicker({
@@ -188,13 +188,13 @@ class Inputs {
     'type': 'reference_picker',
     'fieldKey': fieldKey,
     'schemaKey': schemaKey,
-    if (displayField != null) 'displayField': displayField,
-    if (source != null) 'source': source,
-    if (label != null) 'label': label,
-    if (required != null) 'required': required,
-    if (emptyLabel != null) 'emptyLabel': emptyLabel,
-    if (emptyAction != null) 'emptyAction': emptyAction,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'displayField': ?displayField,
+    'source': ?source,
+    'label': ?label,
+    'required': ?required,
+    'emptyLabel': ?emptyLabel,
+    'emptyAction': ?emptyAction,
+    'visibleWhen': ?visibleWhen,
   };
 
   static Json colorPicker({
@@ -204,7 +204,7 @@ class Inputs {
   }) => {
     'type': 'color_picker',
     'fieldKey': fieldKey,
-    if (label != null) 'label': label,
-    if (visibleWhen != null) 'visibleWhen': visibleWhen,
+    'label': ?label,
+    'visibleWhen': ?visibleWhen,
   };
 }

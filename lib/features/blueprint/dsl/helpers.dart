@@ -11,9 +11,9 @@ class Query {
     List<String>? dependsOn,
   }) => {
     'sql': sql,
-    if (params != null) 'params': params,
-    if (defaults != null) 'defaults': defaults,
-    if (dependsOn != null) 'dependsOn': dependsOn,
+    'params': ?params,
+    'defaults': ?defaults,
+    'dependsOn': ?dependsOn,
   };
 }
 
@@ -32,9 +32,9 @@ class Mut {
     Json? onError,
   }) => {
     'sql': sql,
-    if (refresh != null) 'refresh': refresh,
-    if (onSuccess != null) 'onSuccess': onSuccess,
-    if (onError != null) 'onError': onError,
+    'refresh': ?refresh,
+    'onSuccess': ?onSuccess,
+    'onError': ?onError,
   };
 
   /// Multi-step transaction.
@@ -45,9 +45,9 @@ class Mut {
     Json? onError,
   }) => {
     'steps': steps,
-    if (refresh != null) 'refresh': refresh,
-    if (onSuccess != null) 'onSuccess': onSuccess,
-    if (onError != null) 'onError': onError,
+    'refresh': ?refresh,
+    'onSuccess': ?onSuccess,
+    'onError': ?onError,
   };
 }
 
@@ -62,7 +62,7 @@ class Nav {
   static Json drawer({required List<Json> items, String? header}) => {
     'drawer': {
       'items': items,
-      if (header != null) 'header': header,
+      'header': ?header,
     },
   };
 
@@ -127,20 +127,20 @@ class TemplateDef {
   }) => {
     'name': name,
     'description': description,
-    if (longDescription != null) 'longDescription': longDescription,
+    'longDescription': ?longDescription,
     'icon': icon,
     'color': color,
     'category': category,
-    if (tags != null) 'tags': tags,
-    if (featured != null) 'featured': featured,
-    if (sortOrder != null) 'sortOrder': sortOrder,
+    'tags': ?tags,
+    'featured': ?featured,
+    'sortOrder': ?sortOrder,
     'installCount': installCount ?? 0,
     'version': version ?? 1,
     'settings': settings ?? <String, dynamic>{},
-    if (guide != null) 'guide': guide,
-    if (navigation != null) 'navigation': navigation,
-    if (database != null) 'database': database,
+    'guide': ?guide,
+    'navigation': ?navigation,
+    'database': ?database,
     'screens': screens,
-    if (fieldSets != null) 'fieldSets': fieldSets,
+    'fieldSets': ?fieldSets,
   };
 }

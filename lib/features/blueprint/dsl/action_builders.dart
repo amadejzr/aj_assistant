@@ -11,14 +11,14 @@ class Actions {
   }) => {
     'type': 'button',
     'label': label,
-    if (action != null) 'action': action,
-    if (style != null) 'style': style,
+    'action': ?action,
+    'style': ?style,
   };
 
   static Json fab({String? icon, Json? action}) => {
     'type': 'fab',
-    if (icon != null) 'icon': icon,
-    if (action != null) 'action': action,
+    'icon': ?icon,
+    'action': ?action,
   };
 
   static Json iconButton({
@@ -28,14 +28,14 @@ class Actions {
   }) => {
     'type': 'icon_button',
     'icon': icon,
-    if (action != null) 'action': action,
-    if (tooltip != null) 'tooltip': tooltip,
+    'action': ?action,
+    'tooltip': ?tooltip,
   };
 
   static Json actionMenu({String? icon, List<Json>? items}) => {
     'type': 'action_menu',
-    if (icon != null) 'icon': icon,
-    if (items != null) 'items': items,
+    'icon': ?icon,
+    'items': ?items,
   };
 
   static Json menuItem({
@@ -44,8 +44,8 @@ class Actions {
     Json? action,
   }) => {
     'label': label,
-    if (icon != null) 'icon': icon,
-    if (action != null) 'action': action,
+    'icon': ?icon,
+    'action': ?action,
   };
 }
 
@@ -61,9 +61,9 @@ class Act {
   }) => {
     'type': 'navigate',
     'screen': screen,
-    if (params != null) 'params': params,
-    if (forwardFields != null) 'forwardFields': forwardFields,
-    if (label != null) 'label': label,
+    'params': ?params,
+    'forwardFields': ?forwardFields,
+    'label': ?label,
   };
 
   static Json navigateBack() => {'type': 'navigate_back'};
@@ -78,8 +78,8 @@ class Act {
     required Json onConfirm,
   }) => {
     'type': 'confirm',
-    if (title != null) 'title': title,
-    if (message != null) 'message': message,
+    'title': ?title,
+    'message': ?message,
     'onConfirm': onConfirm,
   };
 }

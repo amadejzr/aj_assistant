@@ -45,6 +45,22 @@ class _StatCardWidget extends StatelessWidget {
       return value.toString();
     }
 
+    // Inline value — resolve {{key}} template expressions from screen params
+    final rawValue = card.properties['value'] as String?;
+    if (rawValue != null) {
+      final data = {...ctx.screenParams, ...ctx.formValues};
+      final resolved = rawValue.replaceAllMapped(
+        RegExp(r'\{\{([\w.]+)\}\}'),
+        (match) {
+          final key = match.group(1)!;
+          final v = data[key];
+          return v?.toString() ?? '';
+        },
+      );
+      if (resolved.isNotEmpty) return resolved;
+      return '--';
+    }
+
     // Use cached resolvedExpressions
     if (card.expression != null &&
         card.expression!.isNotEmpty &&

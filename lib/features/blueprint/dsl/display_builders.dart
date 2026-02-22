@@ -21,13 +21,13 @@ class Display {
     'type': 'stat_card',
     'label': label,
     'stat': stat,
-    if (format != null) 'format': format,
-    if (source != null) 'source': source,
-    if (valueKey != null) 'valueKey': valueKey,
-    if (value != null) 'value': value,
+    'format': ?format,
+    'source': ?source,
+    'valueKey': ?valueKey,
+    'value': ?value,
     if (accent == true) 'accent': true,
-    if (expression != null) 'expression': expression,
-    if (filter != null) 'filter': filter,
+    'expression': ?expression,
+    'filter': ?filter,
   };
 
   static Json entryList({
@@ -40,13 +40,13 @@ class Display {
     List<Json>? filters,
   }) => {
     'type': 'entry_list',
-    if (title != null) 'title': title,
-    if (source != null) 'source': source,
-    if (emptyState != null) 'emptyState': emptyState,
-    if (itemLayout != null) 'itemLayout': itemLayout,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (viewAllScreen != null) 'viewAllScreen': viewAllScreen,
-    if (filters != null) 'filters': filters,
+    'title': ?title,
+    'source': ?source,
+    'emptyState': ?emptyState,
+    'itemLayout': ?itemLayout,
+    'pageSize': ?pageSize,
+    'viewAllScreen': ?viewAllScreen,
+    'filters': ?filters,
   };
 
   static Json entryCard({
@@ -58,12 +58,12 @@ class Display {
     Map<String, dynamic>? swipeActions,
   }) => {
     'type': 'entry_card',
-    if (title != null) 'title': title,
-    if (subtitle != null) 'subtitle': subtitle,
-    if (trailing != null) 'trailing': trailing,
-    if (trailingFormat != null) 'trailingFormat': trailingFormat,
-    if (onTap != null) 'onTap': onTap,
-    if (swipeActions != null) 'swipeActions': swipeActions,
+    'title': ?title,
+    'subtitle': ?subtitle,
+    'trailing': ?trailing,
+    'trailingFormat': ?trailingFormat,
+    'onTap': ?onTap,
+    'swipeActions': ?swipeActions,
   };
 
   static Json textDisplay({
@@ -73,10 +73,10 @@ class Display {
     String? style,
   }) => {
     'type': 'text_display',
-    if (label != null) 'label': label,
-    if (value != null) 'value': value,
-    if (text != null) 'text': text,
-    if (style != null) 'style': style,
+    'label': ?label,
+    'value': ?value,
+    'text': ?text,
+    'style': ?style,
   };
 
   static Json progressBar({
@@ -93,17 +93,17 @@ class Display {
     dynamic filter,
   }) => {
     'type': 'progress_bar',
-    if (label != null) 'label': label,
-    if (value != null) 'value': value,
-    if (max != null) 'max': max,
-    if (expression != null) 'expression': expression,
-    if (format != null) 'format': format,
-    if (source != null) 'source': source,
-    if (valueKey != null) 'valueKey': valueKey,
-    if (maxKey != null) 'maxKey': maxKey,
-    if (color != null) 'color': color,
-    if (showPercentage != null) 'showPercentage': showPercentage,
-    if (filter != null) 'filter': filter,
+    'label': ?label,
+    'value': ?value,
+    'max': ?max,
+    'expression': ?expression,
+    'format': ?format,
+    'source': ?source,
+    'valueKey': ?valueKey,
+    'maxKey': ?maxKey,
+    'color': ?color,
+    'showPercentage': ?showPercentage,
+    'filter': ?filter,
   };
 
   static Json chart({
@@ -118,15 +118,15 @@ class Display {
     dynamic filter,
   }) => {
     'type': 'chart',
-    if (chartType != null) 'chartType': chartType,
-    if (source != null) 'source': source,
-    if (groupBy != null) 'groupBy': groupBy,
-    if (valueField != null) 'valueField': valueField,
-    if (aggregate != null) 'aggregate': aggregate,
-    if (expression != null) 'expression': expression,
-    if (title != null) 'title': title,
-    if (height != null) 'height': height,
-    if (filter != null) 'filter': filter,
+    'chartType': ?chartType,
+    'source': ?source,
+    'groupBy': ?groupBy,
+    'valueField': ?valueField,
+    'aggregate': ?aggregate,
+    'expression': ?expression,
+    'title': ?title,
+    'height': ?height,
+    'filter': ?filter,
   };
 
   static Json emptyState({
@@ -135,9 +135,9 @@ class Display {
     Json? action,
   }) => {
     'type': 'empty_state',
-    if (message != null) 'message': message,
-    if (icon != null) 'icon': icon,
-    if (action != null) 'action': action,
+    'message': ?message,
+    'icon': ?icon,
+    'action': ?action,
   };
 
   static Json badge({
@@ -147,8 +147,8 @@ class Display {
   }) => {
     'type': 'badge',
     'text': text,
-    if (expression != null) 'expression': expression,
-    if (variant != null) 'variant': variant,
+    'expression': ?expression,
+    'variant': ?variant,
   };
 
   static Json cardGrid({
@@ -159,9 +159,9 @@ class Display {
   }) => {
     'type': 'card_grid',
     'fieldKey': fieldKey,
-    if (action != null) 'action': action,
-    if (options != null) 'options': options,
-    if (source != null) 'source': source,
+    'action': ?action,
+    'options': ?options,
+    'source': ?source,
   };
 
   static Json dateCalendar({
@@ -172,17 +172,17 @@ class Display {
     dynamic filter,
   }) => {
     'type': 'date_calendar',
-    if (dateField != null) 'dateField': dateField,
-    if (source != null) 'source': source,
-    if (onEntryTap != null) 'onEntryTap': onEntryTap,
-    if (forwardFields != null) 'forwardFields': forwardFields,
-    if (filter != null) 'filter': filter,
+    'dateField': ?dateField,
+    'source': ?source,
+    'onEntryTap': ?onEntryTap,
+    'forwardFields': ?forwardFields,
+    'filter': ?filter,
   };
 
   static Json divider() => {'type': 'divider'};
 
   static Json spacer({double? height}) => {
     'type': 'spacer',
-    if (height != null) 'height': height,
+    'height': ?height,
   };
 }

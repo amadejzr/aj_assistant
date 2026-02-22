@@ -14,13 +14,13 @@ class Layout {
     List<Json>? appBarActions,
   }) => {
     'type': 'screen',
-    if (title != null) 'title': title,
-    if (appBar != null) 'appBar': appBar,
-    if (queries != null) 'queries': queries,
-    if (mutations != null) 'mutations': mutations,
-    if (children != null) 'children': children,
-    if (fab != null) 'fab': fab,
-    if (appBarActions != null) 'appBarActions': appBarActions,
+    'title': ?title,
+    'appBar': ?appBar,
+    'queries': ?queries,
+    'mutations': ?mutations,
+    'children': ?children,
+    'fab': ?fab,
+    'appBarActions': ?appBarActions,
   };
 
   static Json formScreen({
@@ -33,13 +33,13 @@ class Layout {
     List<Json>? children,
   }) => {
     'type': 'form_screen',
-    if (title != null) 'title': title,
-    if (submitLabel != null) 'submitLabel': submitLabel,
-    if (editLabel != null) 'editLabel': editLabel,
-    if (defaults != null) 'defaults': defaults,
-    if (queries != null) 'queries': queries,
-    if (mutations != null) 'mutations': mutations,
-    if (children != null) 'children': children,
+    'title': ?title,
+    'submitLabel': ?submitLabel,
+    'editLabel': ?editLabel,
+    'defaults': ?defaults,
+    'queries': ?queries,
+    'mutations': ?mutations,
+    'children': ?children,
   };
 
   static Json tabScreen({
@@ -50,32 +50,32 @@ class Layout {
     Json? fab,
   }) => {
     'type': 'tab_screen',
-    if (title != null) 'title': title,
-    if (appBar != null) 'appBar': appBar,
-    if (queries != null) 'queries': queries,
-    if (tabs != null) 'tabs': tabs,
-    if (fab != null) 'fab': fab,
+    'title': ?title,
+    'appBar': ?appBar,
+    'queries': ?queries,
+    'tabs': ?tabs,
+    'fab': ?fab,
   };
 
   static Json scrollColumn({List<Json>? children}) => {
     'type': 'scroll_column',
-    if (children != null) 'children': children,
+    'children': ?children,
   };
 
   static Json row({List<Json>? children}) => {
     'type': 'row',
-    if (children != null) 'children': children,
+    'children': ?children,
   };
 
   static Json column({List<Json>? children}) => {
     'type': 'column',
-    if (children != null) 'children': children,
+    'children': ?children,
   };
 
   static Json section({String? title, List<Json>? children}) => {
     'type': 'section',
-    if (title != null) 'title': title,
-    if (children != null) 'children': children,
+    'title': ?title,
+    'children': ?children,
   };
 
   static Json expandable({
@@ -84,9 +84,9 @@ class Layout {
     List<Json>? children,
   }) => {
     'type': 'expandable',
-    if (title != null) 'title': title,
-    if (initiallyExpanded != null) 'initiallyExpanded': initiallyExpanded,
-    if (children != null) 'children': children,
+    'title': ?title,
+    'initiallyExpanded': ?initiallyExpanded,
+    'children': ?children,
   };
 
   static Json conditional({
@@ -96,8 +96,8 @@ class Layout {
   }) => {
     'type': 'conditional',
     'condition': condition,
-    if (thenChildren != null) 'then': thenChildren,
-    if (elseChildren != null) 'else': elseChildren,
+    'then': ?thenChildren,
+    'else': ?elseChildren,
   };
 
   static Json appBar({
@@ -106,8 +106,8 @@ class Layout {
     List<Json>? actions,
   }) => {
     'type': 'app_bar',
-    if (title != null) 'title': title,
-    if (showBack != null) 'showBack': showBack,
-    if (actions != null) 'actions': actions,
+    'title': ?title,
+    'showBack': ?showBack,
+    'actions': ?actions,
   };
 }
