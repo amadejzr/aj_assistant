@@ -169,6 +169,13 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
             ),
           ),
         IconButton(
+          onPressed: () => context.push('/settings'),
+          icon: Icon(
+            PhosphorIcons.gearSix(PhosphorIconsStyle.light),
+            color: colors.onBackgroundMuted,
+          ),
+        ),
+        IconButton(
           onPressed: () {
             context.read<AuthBloc>().add(const AuthLogoutRequested());
           },

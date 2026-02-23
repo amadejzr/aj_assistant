@@ -16,6 +16,7 @@ import 'features/modules/screens/module_info_screen.dart';
 import 'features/modules/screens/module_viewer_screen.dart';
 import 'features/shell/screens/db_test_screen.dart';
 import 'features/shell/screens/shell_screen.dart';
+import 'features/settings/screens/settings_screen.dart';
 import 'features/shell/screens/splash_screen.dart';
 
 const _tag = 'Router';
@@ -127,6 +128,14 @@ GoRouter createRouter(AuthBloc authBloc) {
             child: RemindersScreen(moduleId: moduleId),
           );
         },
+      ),
+      // Settings — full-screen, outside the shell
+      GoRoute(
+        path: '/settings',
+        pageBuilder: (context, state) => _pageFadeSlide(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
       ),
       // Module viewer — full-screen, outside the shell (no bottom nav / chat FAB)
       GoRoute(
