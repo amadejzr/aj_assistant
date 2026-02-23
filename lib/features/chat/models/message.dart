@@ -1,4 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/features/chat/models/message.dart
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
 
 enum MessageRole { user, assistant }
@@ -27,6 +29,13 @@ class PendingAction extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'toolUseId': toolUseId,
+        'name': name,
+        'input': input,
+        'description': description,
+      };
+
   @override
   List<Object?> get props => [toolUseId, name, input, description];
 }
@@ -50,42 +59,59 @@ class Message extends Equatable {
 
   bool get hasPendingActions => pendingActions.isNotEmpty;
 
-  factory Message.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data() ?? {};
-    final actionsRaw = data['pendingActions'] as List?;
-    final actions = actionsRaw
-            ?.map((a) => PendingAction.fromMap(
-                  Map<String, dynamic>.from(a as Map),
-                ))
-            .toList() ??
-        const [];
+  /// Converts to Claude API message format.
+  Map<String, dynamic> toApiMessage() => {
+        'role': role == MessageRole.user ? 'user' : 'assistant',
+        'content': content,
+      };
 
-    final statusStr = data['approvalStatus'] as String?;
-    final approvalStatus = switch (statusStr) {
-      'approved' => ApprovalStatus.approved,
-      'rejected' => ApprovalStatus.rejected,
-      'pending' => ApprovalStatus.pending,
-      _ => actions.isNotEmpty ? ApprovalStatus.pending : null,
-    };
+  /// Creates from a Drift ChatMessage row data map.
+  factory Message.fromRow(Map<String, dynamic> row) {
+    final toolCallsJson = row['tool_calls'] as String?;
+    List<PendingAction> actions = const [];
+    ApprovalStatus? status;
+
+    if (toolCallsJson != null) {
+      final decoded = jsonDecode(toolCallsJson) as Map<String, dynamic>;
+      actions = (decoded['actions'] as List?)
+              ?.map((a) => PendingAction.fromMap(
+                    Map<String, dynamic>.from(a as Map),
+                  ))
+              .toList() ??
+          const [];
+      final statusStr = decoded['approvalStatus'] as String?;
+      status = switch (statusStr) {
+        'approved' => ApprovalStatus.approved,
+        'rejected' => ApprovalStatus.rejected,
+        'pending' => ApprovalStatus.pending,
+        _ => actions.isNotEmpty ? ApprovalStatus.pending : null,
+      };
+    }
 
     return Message(
-      id: doc.id,
-      role: data['role'] == 'assistant'
+      id: row['id'] as String,
+      role: row['role'] == 'assistant'
           ? MessageRole.assistant
           : MessageRole.user,
-      content: data['content'] as String? ?? '',
-      timestamp: _toDateTime(data['timestamp']),
+      content: row['content'] as String? ?? '',
+      timestamp:
+          DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int),
       pendingActions: actions,
-      approvalStatus: approvalStatus,
+      approvalStatus: status,
     );
   }
 
-  static DateTime? _toDateTime(dynamic value) {
-    if (value is Timestamp) return value.toDate();
-    if (value is DateTime) return value;
-    return null;
+  Message copyWith({
+    ApprovalStatus? approvalStatus,
+  }) {
+    return Message(
+      id: id,
+      role: role,
+      content: content,
+      timestamp: timestamp,
+      pendingActions: pendingActions,
+      approvalStatus: approvalStatus ?? this.approvalStatus,
+    );
   }
 
   @override

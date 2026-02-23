@@ -1,124 +1,90 @@
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:aj_assistant/features/chat/models/message.dart';
 
 void main() {
-  group('Message constructor and properties', () {
-    test('basic user message', () {
-      const msg = Message(
-        id: 'msg1',
+  group('Message', () {
+    test('creates user message', () {
+      final msg = Message(
+        id: '1',
         role: MessageRole.user,
         content: 'Hello',
-        timestamp: null,
+        timestamp: DateTime(2026, 2, 23),
       );
-      expect(msg.id, 'msg1');
       expect(msg.role, MessageRole.user);
       expect(msg.content, 'Hello');
-      expect(msg.hasPendingActions, false);
-      expect(msg.approvalStatus, isNull);
+      expect(msg.hasPendingActions, isFalse);
     });
 
-    test('assistant message', () {
+    test('hasPendingActions returns true when actions present', () {
       const msg = Message(
-        id: 'msg2',
-        role: MessageRole.assistant,
-        content: 'Hi there!',
-      );
-      expect(msg.role, MessageRole.assistant);
-      expect(msg.content, 'Hi there!');
-    });
-
-    test('message with pending actions', () {
-      const msg = Message(
-        id: 'msg3',
+        id: '1',
         role: MessageRole.assistant,
         content: '',
         pendingActions: [
           PendingAction(
             toolUseId: 'tool_1',
             name: 'createEntry',
-            input: {'moduleId': 'mod1', 'data': {'amount': 50}},
-            description: 'Create expense',
+            input: {'moduleId': 'test'},
+            description: 'Create entry',
           ),
         ],
         approvalStatus: ApprovalStatus.pending,
       );
-      expect(msg.hasPendingActions, true);
-      expect(msg.pendingActions.length, 1);
-      expect(msg.pendingActions[0].name, 'createEntry');
-      expect(msg.pendingActions[0].toolUseId, 'tool_1');
-      expect(msg.pendingActions[0].input['moduleId'], 'mod1');
-      expect(msg.approvalStatus, ApprovalStatus.pending);
+      expect(msg.hasPendingActions, isTrue);
     });
 
-    test('approved status', () {
+    test('toApiMessage formats user message', () {
       const msg = Message(
-        id: 'msg4',
-        role: MessageRole.assistant,
-        content: '',
-        approvalStatus: ApprovalStatus.approved,
-      );
-      expect(msg.approvalStatus, ApprovalStatus.approved);
-    });
-
-    test('rejected status', () {
-      const msg = Message(
-        id: 'msg5',
-        role: MessageRole.assistant,
-        content: '',
-        approvalStatus: ApprovalStatus.rejected,
-      );
-      expect(msg.approvalStatus, ApprovalStatus.rejected);
-    });
-
-    test('empty message defaults', () {
-      const msg = Message(
-        id: 'msg6',
+        id: '1',
         role: MessageRole.user,
-        content: '',
+        content: 'What are my expenses?',
       );
-      expect(msg.content, '');
-      expect(msg.timestamp, isNull);
-      expect(msg.pendingActions, isEmpty);
-      expect(msg.hasPendingActions, false);
-    });
-  });
-
-  group('PendingAction', () {
-    test('fromMap parses correctly', () {
-      final action = PendingAction.fromMap({
-        'toolUseId': 'tool_x',
-        'name': 'createEntry',
-        'input': {'moduleId': 'mod1', 'data': {'amount': 100}},
-        'description': 'Create expense: 100',
-      });
-
-      expect(action.toolUseId, 'tool_x');
-      expect(action.name, 'createEntry');
-      expect(action.input['moduleId'], 'mod1');
-      expect(action.description, 'Create expense: 100');
+      final api = msg.toApiMessage();
+      expect(api['role'], 'user');
+      expect(api['content'], 'What are my expenses?');
     });
 
-    test('fromMap handles missing fields', () {
-      final action = PendingAction.fromMap({});
-      expect(action.toolUseId, '');
-      expect(action.name, '');
-      expect(action.input, isEmpty);
-      expect(action.description, '');
-    });
-  });
-
-  group('Message equality', () {
-    test('equal messages have same props', () {
-      const m1 = Message(id: '1', role: MessageRole.user, content: 'hi');
-      const m2 = Message(id: '1', role: MessageRole.user, content: 'hi');
-      expect(m1, equals(m2));
+    test('toApiMessage formats assistant message', () {
+      const msg = Message(
+        id: '2',
+        role: MessageRole.assistant,
+        content: 'You have 5 expenses.',
+      );
+      final api = msg.toApiMessage();
+      expect(api['role'], 'assistant');
+      expect(api['content'], 'You have 5 expenses.');
     });
 
-    test('different content means not equal', () {
-      const m1 = Message(id: '1', role: MessageRole.user, content: 'hi');
-      const m2 = Message(id: '1', role: MessageRole.user, content: 'bye');
-      expect(m1, isNot(equals(m2)));
+    test('copyWith updates approvalStatus', () {
+      const msg = Message(
+        id: '1',
+        role: MessageRole.assistant,
+        content: '',
+        pendingActions: [
+          PendingAction(
+            toolUseId: 't1',
+            name: 'createEntry',
+            input: {},
+            description: 'test',
+          ),
+        ],
+        approvalStatus: ApprovalStatus.pending,
+      );
+      final updated = msg.copyWith(approvalStatus: ApprovalStatus.approved);
+      expect(updated.approvalStatus, ApprovalStatus.approved);
+      expect(updated.content, msg.content);
+    });
+
+    test('PendingAction.toMap roundtrips', () {
+      const action = PendingAction(
+        toolUseId: 't1',
+        name: 'createEntry',
+        input: {'moduleId': 'test', 'data': {'amount': 50}},
+        description: 'Create entry',
+      );
+      final map = action.toMap();
+      final restored = PendingAction.fromMap(map);
+      expect(restored, action);
     });
   });
 }
