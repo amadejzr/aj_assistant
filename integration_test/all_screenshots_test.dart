@@ -18,8 +18,8 @@ import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
 import 'package:aj_assistant/features/blueprint/renderer/widget_registry.dart';
 import 'package:aj_assistant/features/blueprint/utils/icon_resolver.dart';
 import 'package:aj_assistant/features/blueprint/dsl/blueprint_dsl.dart';
+import 'package:aj_assistant/core/ai/api_key_service.dart';
 import 'package:aj_assistant/features/capabilities/repositories/capability_repository.dart';
-import 'package:aj_assistant/features/chat/repositories/chat_repository.dart';
 import 'package:aj_assistant/features/marketplace/screens/marketplace_screen.dart';
 import 'package:aj_assistant/features/shell/screens/home_screen.dart';
 import 'package:aj_assistant/features/shell/screens/shell_screen.dart';
@@ -57,7 +57,7 @@ void main() {
 
   testWidgets('home', (tester) async {
     debugPrint('📸 [home] setting up mocks...');
-    final chatRepo = MockChatRepository();
+    final apiKeyService = MockApiKeyService();
     final appDatabase = MockAppDatabase();
 
     debugPrint('📸 [home] pumping widget...');
@@ -67,7 +67,7 @@ void main() {
           RepositoryProvider<ModuleRepository>.value(value: moduleRepo),
           RepositoryProvider<CapabilityRepository>.value(
               value: capabilityRepo),
-          RepositoryProvider<ChatRepository>.value(value: chatRepo),
+          RepositoryProvider<ApiKeyService>.value(value: apiKeyService),
           RepositoryProvider<AppDatabase>.value(value: appDatabase),
         ],
         child: BlocProvider<AuthBloc>.value(
@@ -96,11 +96,9 @@ void main() {
 
   testWidgets('chat', (tester) async {
     debugPrint('📸 [chat] setting up mocks...');
-    final chatRepo = MockChatRepository();
-    when(() => chatRepo.createConversation(any()))
-        .thenAnswer((_) async => 'test_conv');
-    when(() => chatRepo.watchMessages(any(), any()))
-        .thenAnswer((_) => Stream.value(testMessages));
+    final apiKeyService = MockApiKeyService();
+    when(() => apiKeyService.getKey())
+        .thenAnswer((_) async => 'test-api-key');
 
     final appDatabase = MockAppDatabase();
 
@@ -109,7 +107,7 @@ void main() {
       MultiRepositoryProvider(
         providers: [
           RepositoryProvider<ModuleRepository>.value(value: moduleRepo),
-          RepositoryProvider<ChatRepository>.value(value: chatRepo),
+          RepositoryProvider<ApiKeyService>.value(value: apiKeyService),
           RepositoryProvider<AppDatabase>.value(value: appDatabase),
           RepositoryProvider<CapabilityRepository>.value(
               value: capabilityRepo),

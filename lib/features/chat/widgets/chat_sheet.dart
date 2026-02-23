@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/ai/claude_client.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_colors.dart';
@@ -9,7 +10,6 @@ import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
 import '../models/message.dart';
-import '../repositories/chat_repository.dart';
 import 'approval_card.dart';
 import 'message_bubble.dart';
 import 'typing_indicator.dart';
@@ -18,7 +18,7 @@ import 'typing_indicator.dart';
 void showChatSheet(
   BuildContext context, {
   required String userId,
-  required ChatRepository chatRepository,
+  required ClaudeClient claude,
   required AppDatabase appDatabase,
   required ModuleRepository moduleRepository,
 }) {
@@ -30,10 +30,10 @@ void showChatSheet(
     backgroundColor: Colors.transparent,
     builder: (_) => BlocProvider(
       create: (_) => ChatBloc(
-        chatRepository: chatRepository,
-        userId: userId,
-        appDatabase: appDatabase,
+        claude: claude,
+        db: appDatabase,
         moduleRepository: moduleRepository,
+        userId: userId,
       )..add(const ChatStarted()),
       child: const _ChatSheetBody(),
     ),
@@ -180,8 +180,17 @@ class _MessageList extends StatelessWidget {
                 reverse: true,
                 itemCount: state.messages.length + (state.isAiTyping ? 1 : 0),
                 itemBuilder: (context, index) {
-                  // Typing indicator at position 0 (bottom) when reversed
+                  // At index 0 (bottom) when reversed, show streaming or typing
                   if (state.isAiTyping && index == 0) {
+                    if (state.streamingText.isNotEmpty) {
+                      return MessageBubble(
+                        message: Message(
+                          id: '_streaming',
+                          role: MessageRole.assistant,
+                          content: state.streamingText,
+                        ),
+                      );
+                    }
                     return const Align(
                       alignment: Alignment.centerLeft,
                       child: TypingIndicator(),

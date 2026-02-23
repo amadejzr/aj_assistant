@@ -18,7 +18,7 @@ import 'features/blueprint/renderer/widget_registry.dart';
 import 'features/capabilities/repositories/capability_repository.dart';
 import 'features/capabilities/repositories/drift_capability_repository.dart';
 import 'features/capabilities/services/notification_scheduler.dart';
-import 'features/chat/repositories/chat_repository.dart';
+import 'core/ai/api_key_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -43,7 +43,7 @@ void main() async {
   final db = AppDatabase();
   final moduleRepository = DriftModuleRepository(db);
   final capabilityRepository = DriftCapabilityRepository(db);
-  final chatRepository = ChatRepository();
+  final apiKeyService = ApiKeyService();
   final marketplaceRepository = FirestoreMarketplaceRepository();
 
   // Initialize notification scheduler
@@ -61,7 +61,7 @@ void main() async {
         RepositoryProvider<CapabilityRepository>.value(
           value: capabilityRepository,
         ),
-        RepositoryProvider<ChatRepository>.value(value: chatRepository),
+        RepositoryProvider<ApiKeyService>.value(value: apiKeyService),
         RepositoryProvider<MarketplaceRepository>.value(
           value: marketplaceRepository,
         ),

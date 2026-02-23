@@ -11,8 +11,8 @@ import 'package:aj_assistant/features/auth/bloc/auth_event.dart';
 import 'package:aj_assistant/features/auth/bloc/auth_state.dart';
 import 'package:aj_assistant/features/auth/models/app_user.dart';
 import 'package:aj_assistant/features/capabilities/repositories/capability_repository.dart';
+import 'package:aj_assistant/core/ai/api_key_service.dart';
 import 'package:aj_assistant/features/chat/models/message.dart';
-import 'package:aj_assistant/features/chat/repositories/chat_repository.dart';
 
 // ── Mocks ────────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ class MockMarketplaceRepository extends Mock
 
 class MockModuleRepository extends Mock implements ModuleRepository {}
 
-class MockChatRepository extends Mock implements ChatRepository {}
+class MockApiKeyService extends Mock implements ApiKeyService {}
 
 class MockAppDatabase extends Mock implements AppDatabase {}
 
