@@ -72,10 +72,6 @@ class BlueprintActionDispatcher {
       case 'confirm':
         _showConfirmDialog(action, ctx, buildContext, entryData: entryData, entryId: entryId);
 
-      case 'update_entry':
-        // TODO: Implement SQL-based mutations via MutationExecutor
-        break;
-
       case 'toast':
         final message = action['message'] as String? ?? '';
         if (message.isNotEmpty && buildContext.mounted) {
@@ -279,7 +275,6 @@ class _FormSheetWrapperState extends State<_FormSheetWrapper> {
   }
 
   Future<void> _onSubmit() async {
-    // TODO: Form sheets need to go through BLoC mutations
     if (mounted) {
       Navigator.of(context).pop();
     }

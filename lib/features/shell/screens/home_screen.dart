@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -159,13 +160,14 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        IconButton(
-          onPressed: () => context.push('/db-test'),
-          icon: Icon(
-            PhosphorIcons.database(PhosphorIconsStyle.light),
-            color: colors.onBackgroundMuted,
+        if (kDebugMode)
+          IconButton(
+            onPressed: () => context.push('/db-test'),
+            icon: Icon(
+              PhosphorIcons.database(PhosphorIconsStyle.light),
+              color: colors.onBackgroundMuted,
+            ),
           ),
-        ),
         IconButton(
           onPressed: () {
             context.read<AuthBloc>().add(const AuthLogoutRequested());

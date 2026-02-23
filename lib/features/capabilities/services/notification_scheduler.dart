@@ -72,10 +72,8 @@ class NotificationScheduler {
       case ScheduledReminder():
         await _scheduleReminder(capability);
       case DeadlineReminder():
-        // TODO: implement deadline scheduling (needs entry queries)
         break;
       case StreakNudge():
-        // TODO: implement streak nudge scheduling
         break;
     }
   }

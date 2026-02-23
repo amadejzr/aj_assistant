@@ -53,7 +53,7 @@ Bower is a modular personal notebook app. It uses a blueprint system and a local
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/showcase.png" width="800" alt="Bower Pshowcase" />
+  <img src="docs/screenshots/showcase.png" width="800" alt="Bower showcase" />
 </p>
 
 ## Roadmap
@@ -67,6 +67,61 @@ Bower is in active development. The architecture and approach are still evolving
 - [ ] Remove Firebase dependency — no login required, modules and marketplace work offline
 - [ ] Local AI chat — runs on-device with your own API key, no cloud functions
 - [ ] Multiple AI providers — support for different LLM backends beyond Claude
+
+## Getting started
+
+### Prerequisites
+
+- [Flutter](https://flutter.dev/docs/get-started/install) 3.38+
+- [Firebase CLI](https://firebase.google.com/docs/cli) and [FlutterFire CLI](https://firebase.flutter.dev/docs/cli)
+- A Firebase project
+- An [Anthropic API key](https://console.anthropic.com/) (for AI chat)
+
+### Setup
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/amadejzr/bower.git
+   cd bower
+   ```
+
+2. **Generate Firebase config files**
+   ```bash
+   flutterfire configure
+   ```
+   This creates `lib/firebase_options.dart`, `ios/Runner/GoogleService-Info.plist`, and `android/app/google-services.json`. These files are gitignored — each contributor generates their own from their Firebase project.
+
+3. **Install Flutter dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+4. **Set up Cloud Functions**
+   ```bash
+   cd functions
+   npm install
+   ```
+
+5. **Configure the Anthropic API key** as a Firebase secret:
+   ```bash
+   firebase functions:secrets:set ANTHROPIC_API_KEY
+   ```
+
+6. **Deploy Cloud Functions**
+   ```bash
+   firebase deploy --only functions
+   ```
+
+7. **Seed the marketplace** (optional — populates module templates in Firestore):
+   ```bash
+   dart run scripts/seed_marketplace.dart
+   ```
+   This requires a Firebase service account key at `scripts/service-account.json`. Generate one from Firebase Console → Project Settings → Service Accounts.
+
+8. **Run the app**
+   ```bash
+   flutter run
+   ```
 
 ## Tech stack
 

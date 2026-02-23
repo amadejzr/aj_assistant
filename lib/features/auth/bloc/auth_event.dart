@@ -19,7 +19,7 @@ class AuthLoginWithEmail extends AuthEvent {
   const AuthLoginWithEmail({required this.email, required this.password});
 
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [email];
 }
 
 class AuthSignUpWithEmail extends AuthEvent {
@@ -34,7 +34,7 @@ class AuthSignUpWithEmail extends AuthEvent {
   });
 
   @override
-  List<Object?> get props => [email, password, displayName];
+  List<Object?> get props => [email, displayName];
 }
 
 class AuthLogoutRequested extends AuthEvent {
