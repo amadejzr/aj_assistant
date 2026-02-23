@@ -77,6 +77,12 @@ class WidgetRegistry {
       }
     }
 
+    // Hide schedule_notification when notifications capability is disabled
+    if (node.type == 'schedule_notification' &&
+        !ctx.module.isCapabilityEnabled('notifications')) {
+      return const SizedBox.shrink();
+    }
+
     final builder = _builders[node.type];
     if (builder == null) return const SizedBox.shrink();
     return builder(node, ctx);

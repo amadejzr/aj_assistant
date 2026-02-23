@@ -25,6 +25,13 @@ class Module extends Equatable {
           ?.cast<Map<String, dynamic>>() ??
           const [];
 
+  /// Per-capability enabled/disabled overrides set by the user.
+  Map<String, bool> get capabilityStates =>
+      (settings['capabilityStates'] as Map?)?.cast<String, bool>() ?? const {};
+
+  /// Whether a given capability type is enabled (defaults to `true`).
+  bool isCapabilityEnabled(String type) => capabilityStates[type] ?? true;
+
   const Module({
     required this.id,
     required this.name,

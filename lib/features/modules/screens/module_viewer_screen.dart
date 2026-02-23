@@ -140,7 +140,9 @@ class _LoadedViewState extends State<_LoadedView> {
       onNavigateToScreen: (screenId,
           {Map<String, dynamic> params = const {}}) {
         if (screenId == '_info') {
-          context.push('/module/${state.module.id}/info');
+          context
+              .push('/module/${state.module.id}/info')
+              .then((_) => bloc.add(const ModuleViewerModuleRefreshed()));
           return;
         }
         if (screenId == '_settings') {

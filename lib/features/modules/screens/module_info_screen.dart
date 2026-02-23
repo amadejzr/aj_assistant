@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/database/screen_query.dart';
 import '../../../core/models/module.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_colors.dart';
@@ -65,7 +66,7 @@ class _InfoScaffoldState extends State<_InfoScaffold>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -116,6 +117,7 @@ class _InfoScaffoldState extends State<_InfoScaffold>
           tabs: const [
             Tab(text: 'Overview'),
             Tab(text: 'Database'),
+            Tab(text: 'Settings'),
           ],
         ),
       ),
@@ -127,6 +129,7 @@ class _InfoScaffoldState extends State<_InfoScaffold>
             children: [
               _OverviewTab(module: widget.module, moduleColor: moduleColor),
               _DatabaseTab(module: widget.module),
+              _SettingsTab(module: widget.module),
             ],
           ),
         ],
@@ -462,6 +465,199 @@ class _DatabaseTab extends StatelessWidget {
             }).toList(),
           ),
       ],
+    );
+  }
+}
+
+// ─── Settings Tab ───
+
+class _SettingsTab extends StatefulWidget {
+  final Module module;
+
+  const _SettingsTab({required this.module});
+
+  @override
+  State<_SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<_SettingsTab> {
+  late Map<String, bool> _states;
+
+  @override
+  void initState() {
+    super.initState();
+    _states = Map<String, bool>.from(widget.module.capabilityStates);
+  }
+
+  bool _hasNotificationCapability() {
+    // Check settings.capabilities for auto_notify
+    for (final cap in widget.module.capabilities) {
+      if (cap['type'] == 'auto_notify') return true;
+    }
+
+    // Check screen JSON for schedule_notification nodes
+    for (final screen in widget.module.screens.values) {
+      if (_containsNodeType(screen, 'schedule_notification')) return true;
+    }
+
+    // Check mutations for reminders
+    for (final screen in widget.module.screens.values) {
+      final mutationsJson = screen['mutations'] as Map<String, dynamic>?;
+      if (mutationsJson == null) continue;
+      final mutations = ScreenMutations.fromJson(mutationsJson);
+      for (final m in [mutations.create, mutations.update]) {
+        if (m != null && m.reminders.isNotEmpty) return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _containsNodeType(Map<String, dynamic> json, String type) {
+    if (json['type'] == type) return true;
+    for (final value in json.values) {
+      if (value is Map<String, dynamic>) {
+        if (_containsNodeType(value, type)) return true;
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map<String, dynamic>) {
+            if (_containsNodeType(item, type)) return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  Future<void> _onToggle(String capabilityType, bool enabled) async {
+    setState(() => _states[capabilityType] = enabled);
+
+    final updatedSettings = Map<String, dynamic>.from(widget.module.settings);
+    updatedSettings['capabilityStates'] = {..._states};
+
+    final updatedModule = widget.module.copyWith(settings: updatedSettings);
+
+    final authState = context.read<AuthBloc>().state;
+    final userId = authState is AuthAuthenticated ? authState.user.uid : '';
+    await context.read<ModuleRepository>().updateModule(userId, updatedModule);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final hasNotifications = _hasNotificationCapability();
+
+    if (!hasNotifications) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text(
+            'No configurable capabilities',
+            style: TextStyle(
+              fontFamily: 'Karla',
+              fontSize: 15,
+              color: colors.onBackgroundMuted,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screenPadding,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Capabilities',
+            style: TextStyle(
+              fontFamily: 'CormorantGaramond',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: colors.onBackground,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (hasNotifications)
+            _CapabilityToggle(
+              label: 'Notifications',
+              description: 'Reminders and scheduled notifications',
+              icon: PhosphorIcons.bell(PhosphorIconsStyle.bold),
+              enabled: _states['notifications'] ?? true,
+              onChanged: (v) => _onToggle('notifications', v),
+              colors: colors,
+            ),
+          const SizedBox(height: AppSpacing.xxl),
+        ],
+      ),
+    );
+  }
+}
+
+class _CapabilityToggle extends StatelessWidget {
+  final String label;
+  final String description;
+  final IconData icon;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+  final AppColors colors;
+
+  const _CapabilityToggle({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.enabled,
+    required this.onChanged,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: colors.onBackgroundMuted),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: colors.onBackground,
+                  ),
+                ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 13,
+                    color: colors.onBackgroundMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: enabled,
+            onChanged: onChanged,
+            activeTrackColor: colors.accent,
+          ),
+        ],
+      ),
     );
   }
 }

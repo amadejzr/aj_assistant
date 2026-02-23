@@ -219,10 +219,10 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         }
 
         await _processReminderSideEffects(
+          current.module,
           mutation,
           current.formValues,
           current.screenParams,
-          current.module.id,
           resolvedEntryId,
         );
 
@@ -591,12 +591,13 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
   // ─── Reminder side-effects ───
 
   Future<void> _processReminderSideEffects(
+    Module module,
     ScreenMutation mutation,
     Map<String, dynamic> formValues,
     Map<String, dynamic> screenParams,
-    String moduleId,
     String entryId,
   ) async {
+    if (!module.isCapabilityEnabled('notifications')) return;
     if (mutation.reminders.isEmpty) return;
     if (capabilityRepository == null) return;
 
@@ -652,13 +653,13 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       // Entry-linked ID — cancel existing before rescheduling
       final fieldKey = reminder.compoundField ?? reminder.dateField ?? 'reminder';
-      final capabilityId = '${moduleId}_${entryId}_$fieldKey';
+      final capabilityId = '${module.id}_${entryId}_$fieldKey';
       await notificationScheduler?.cancelCapability(capabilityId);
 
       final now = DateTime.now();
       final capability = ScheduledReminder(
         id: capabilityId,
-        moduleId: moduleId,
+        moduleId: module.id,
         title: title,
         message: message,
         enabled: true,
@@ -684,6 +685,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     Map<String, dynamic> screenParams,
     String entryId,
   ) async {
+    if (!module.isCapabilityEnabled('notifications')) return;
     if (capabilityRepository == null) return;
 
     final screenJson = module.screens[screenId];
@@ -808,6 +810,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     Map<String, dynamic> screenParams,
     String entryId,
   ) async {
+    if (!module.isCapabilityEnabled('notifications')) return;
     if (capabilityRepository == null) return;
 
     final caps = module.capabilities
