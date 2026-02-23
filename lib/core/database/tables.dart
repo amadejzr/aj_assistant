@@ -44,3 +44,28 @@ class Capabilities extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+@DataClassName('Conversation')
+class Conversations extends Table {
+  TextColumn get id => text()();
+  IntColumn get createdAt => integer()();
+  IntColumn get lastMessageAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('ChatMessage')
+class ChatMessages extends Table {
+  TextColumn get id => text()();
+  TextColumn get conversationId =>
+      text().references(Conversations, #id)();
+  TextColumn get role => text()(); // 'user' or 'assistant'
+  TextColumn get content => text()();
+  TextColumn get toolCalls =>
+      text().nullable()(); // JSON-encoded list, nullable
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

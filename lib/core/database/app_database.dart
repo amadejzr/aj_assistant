@@ -8,7 +8,7 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Modules, Capabilities])
+@DriftDatabase(tables: [Modules, Capabilities, Conversations, ChatMessages])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDefault());
 
@@ -17,7 +17,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -47,6 +47,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await customStatement('DROP TABLE IF EXISTS entries');
+      }
+      if (from < 6) {
+        await m.createTable(conversations);
+        await m.createTable(chatMessages);
       }
     },
   );
