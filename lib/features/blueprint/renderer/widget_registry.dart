@@ -40,6 +40,7 @@ import '../builders/action/icon_button_builder.dart';
 import '../builders/action/action_menu_builder.dart';
 import '../builders/display/badge_builder.dart';
 import '../builders/input/currency_input_builder.dart';
+import '../builders/input/schedule_notification_builder.dart';
 import '../builders/layout/expandable_builder.dart';
 
 typedef WidgetBuilder = Widget Function(
@@ -117,5 +118,6 @@ class WidgetRegistry {
     register('action_menu', buildActionMenu);
     register('badge', buildBadge);
     register('expandable', buildExpandable);
+    register('schedule_notification', buildScheduleNotification);
   }
 }

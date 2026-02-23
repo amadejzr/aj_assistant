@@ -149,35 +149,3 @@ class TemplateDef {
   };
 }
 
-/// DSL for declaring reminder side-effects on mutations.
-class Reminders {
-  Reminders._();
-
-  /// Creates a one-shot reminder from form field values.
-  ///
-  /// - [titleField]: template string like `'Hike: {{name}}'` or a bare field key
-  /// - [messageField]: template string or bare field key
-  /// - [dateField]: form field key containing the reminder date (epoch int)
-  /// - [timeField]: optional form field key for time (overrides hour/minute defaults)
-  /// - [conditionField]: optional form field key — reminder only created when truthy
-  /// - [hour]/[minute]: default time if no timeField provided (defaults 9:00)
-  static Json onFormSubmit({
-    required String titleField,
-    required String messageField,
-    required String dateField,
-    String? timeField,
-    String? conditionField,
-    int hour = 9,
-    int minute = 0,
-  }) => {
-    'type': 'scheduled',
-    'frequency': 'once',
-    'titleField': titleField,
-    'messageField': messageField,
-    'dateField': dateField,
-    'timeField': ?timeField,
-    'conditionField': ?conditionField,
-    'hour': hour,
-    'minute': minute,
-  };
-}

@@ -40,9 +40,10 @@ class ReminderSideEffect extends Equatable {
   final String frequency;
   final String titleField;
   final String messageField;
-  final String dateField;
+  final String? dateField;
   final String? timeField;
   final String? conditionField;
+  final String? compoundField;
   final int hour;
   final int minute;
 
@@ -51,9 +52,10 @@ class ReminderSideEffect extends Equatable {
     required this.frequency,
     required this.titleField,
     required this.messageField,
-    required this.dateField,
+    this.dateField,
     this.timeField,
     this.conditionField,
+    this.compoundField,
     this.hour = 9,
     this.minute = 0,
   });
@@ -64,9 +66,10 @@ class ReminderSideEffect extends Equatable {
       frequency: json['frequency'] as String? ?? 'once',
       titleField: json['titleField'] as String,
       messageField: json['messageField'] as String,
-      dateField: json['dateField'] as String,
+      dateField: json['dateField'] as String?,
       timeField: json['timeField'] as String?,
       conditionField: json['conditionField'] as String?,
+      compoundField: json['compoundField'] as String?,
       hour: json['hour'] as int? ?? 9,
       minute: json['minute'] as int? ?? 0,
     );
@@ -75,7 +78,7 @@ class ReminderSideEffect extends Equatable {
   @override
   List<Object?> get props => [
         type, frequency, titleField, messageField,
-        dateField, timeField, conditionField, hour, minute,
+        dateField, timeField, conditionField, compoundField, hour, minute,
       ];
 }
 

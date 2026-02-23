@@ -19,6 +19,12 @@ class Module extends Equatable {
   final ModuleDatabase? database;
   final Map<String, List<Map<String, dynamic>>> fieldSets;
 
+  /// Reads declared capabilities from `settings['capabilities']`.
+  List<Map<String, dynamic>> get capabilities =>
+      (settings['capabilities'] as List?)
+          ?.cast<Map<String, dynamic>>() ??
+          const [];
+
   const Module({
     required this.id,
     required this.name,

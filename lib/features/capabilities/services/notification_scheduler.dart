@@ -5,6 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+import '../../../core/logging/log.dart';
 import '../models/capability.dart';
 import '../repositories/capability_repository.dart';
 
@@ -117,7 +118,13 @@ class NotificationScheduler {
           cap.minute,
         );
         // Don't schedule if the date is in the past
-        if (oneShot.isBefore(now)) return;
+        if (oneShot.isBefore(now)) {
+          Log.w(
+            'Skipped notification "${cap.title}" — scheduled for $oneShot which is in the past',
+            tag: 'Notifications',
+          );
+          return;
+        }
         await _plugin.zonedSchedule(
           id: notifId,
           title: cap.title,
@@ -179,6 +186,11 @@ class NotificationScheduler {
           matchDateTimeComponents: DateTimeComponents.dayOfMonthAndTime,
         );
     }
+  }
+
+  /// Returns all pending (scheduled) OS notifications.
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return _plugin.pendingNotificationRequests();
   }
 
   /// Cancel all notifications for a capability.

@@ -208,12 +208,14 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       // SQL mutation path
       if (_mutationExecutor != null && _currentMutations != null) {
         final ScreenMutation mutation;
+        final String resolvedEntryId;
         if (entryId != null && entryId.isNotEmpty) {
           mutation = _currentMutations!.update!;
           await _mutationExecutor!.update(mutation, entryId, data);
+          resolvedEntryId = entryId;
         } else {
           mutation = _currentMutations!.create!;
-          await _mutationExecutor!.create(mutation, data);
+          resolvedEntryId = await _mutationExecutor!.create(mutation, data);
         }
 
         await _processReminderSideEffects(
@@ -221,6 +223,22 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           current.formValues,
           current.screenParams,
           current.module.id,
+          resolvedEntryId,
+        );
+
+        await _processScheduleNotificationFields(
+          current.module,
+          current.currentScreenId,
+          current.formValues,
+          current.screenParams,
+          resolvedEntryId,
+        );
+
+        await _processAutoNotifyCapabilities(
+          current.module,
+          current.formValues,
+          current.screenParams,
+          resolvedEntryId,
         );
 
         final successMessage = mutation.onSuccess?['message'] as String?;
@@ -278,6 +296,9 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       if (_mutationExecutor != null && _currentMutations?.delete != null) {
         final mutation = _currentMutations!.delete!;
         await _mutationExecutor!.delete(mutation, event.entryId);
+
+        // Cancel any notifications linked to this entry
+        await _cancelEntryNotifications(current.module, event.entryId);
 
         final successMessage = mutation.onSuccess?['message'] as String?;
 
@@ -574,6 +595,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     Map<String, dynamic> formValues,
     Map<String, dynamic> screenParams,
     String moduleId,
+    String entryId,
   ) async {
     if (mutation.reminders.isEmpty) return;
     if (capabilityRepository == null) return;
@@ -581,12 +603,43 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     final data = {...screenParams, ...formValues};
 
     for (final reminder in mutation.reminders) {
-      if (reminder.conditionField != null) {
-        final conditionValue = data[reminder.conditionField];
-        if (conditionValue == null || conditionValue == false) continue;
+      dynamic dateValue;
+      var hour = reminder.hour;
+      var minute = reminder.minute;
+
+      if (reminder.compoundField != null) {
+        // Compound schedule_notification field
+        final compound = data[reminder.compoundField] as Map?;
+        if (compound == null || compound['enabled'] != true) continue;
+        dateValue = compound['date'];
+        hour = compound['hour'] as int? ?? hour;
+        minute = compound['minute'] as int? ?? minute;
+      } else {
+        // Separate conditionField / dateField / timeField
+        if (reminder.conditionField != null) {
+          final conditionValue = data[reminder.conditionField];
+          if (conditionValue == null || conditionValue == false) continue;
+        }
+
+        dateValue = data[reminder.dateField];
+
+        if (reminder.timeField != null) {
+          final timeValue = data[reminder.timeField];
+          if (timeValue is Map) {
+            hour = timeValue['hour'] as int? ?? hour;
+            minute = timeValue['minute'] as int? ?? minute;
+          } else if (timeValue is int) {
+            hour = timeValue ~/ 60;
+            minute = timeValue % 60;
+          } else if (timeValue is String && timeValue.contains(':')) {
+            // Time picker stores "HH:mm" strings
+            final parts = timeValue.split(':');
+            hour = int.tryParse(parts[0]) ?? hour;
+            minute = int.tryParse(parts[1]) ?? minute;
+          }
+        }
       }
 
-      final dateValue = data[reminder.dateField];
       if (dateValue == null) continue;
 
       final title = _resolveTemplate(reminder.titleField, data);
@@ -597,22 +650,14 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
           : DateTime.tryParse(dateValue.toString());
       if (scheduledDate == null) continue;
 
-      var hour = reminder.hour;
-      var minute = reminder.minute;
-      if (reminder.timeField != null) {
-        final timeValue = data[reminder.timeField];
-        if (timeValue is Map) {
-          hour = timeValue['hour'] as int? ?? hour;
-          minute = timeValue['minute'] as int? ?? minute;
-        } else if (timeValue is int) {
-          hour = timeValue ~/ 60;
-          minute = timeValue % 60;
-        }
-      }
+      // Entry-linked ID — cancel existing before rescheduling
+      final fieldKey = reminder.compoundField ?? reminder.dateField ?? 'reminder';
+      final capabilityId = '${moduleId}_${entryId}_$fieldKey';
+      await notificationScheduler?.cancelCapability(capabilityId);
 
       final now = DateTime.now();
       final capability = ScheduledReminder(
-        id: '${moduleId}_reminder_${now.millisecondsSinceEpoch}',
+        id: capabilityId,
         moduleId: moduleId,
         title: title,
         message: message,
@@ -623,6 +668,217 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         hour: hour,
         minute: minute,
         scheduledDate: scheduledDate,
+      );
+
+      await capabilityRepository!.createCapability(capability);
+      await notificationScheduler?.scheduleCapability(capability);
+    }
+  }
+
+  /// Scans the current screen's blueprint for `schedule_notification` nodes
+  /// and processes any that are enabled — no mutation wiring needed.
+  Future<void> _processScheduleNotificationFields(
+    Module module,
+    String screenId,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+    String entryId,
+  ) async {
+    if (capabilityRepository == null) return;
+
+    final screenJson = module.screens[screenId];
+    if (screenJson == null) return;
+
+    final nodes = _findScheduleNotificationNodes(screenJson);
+    if (nodes.isEmpty) return;
+
+    final data = {...screenParams, ...formValues};
+
+    for (final node in nodes) {
+      final fieldKey = node['fieldKey'] as String?;
+      if (fieldKey == null) continue;
+
+      final compound = data[fieldKey] as Map?;
+      if (compound == null || compound['enabled'] != true) continue;
+
+      final dateValue = compound['date'];
+      if (dateValue == null) continue;
+
+      final scheduledDate = dateValue is int
+          ? DateTime.fromMillisecondsSinceEpoch(dateValue)
+          : DateTime.tryParse(dateValue.toString());
+      if (scheduledDate == null) continue;
+
+      final hour = compound['hour'] as int? ?? 9;
+      final minute = compound['minute'] as int? ?? 0;
+
+      final titleTemplate = node['titleTemplate'] as String? ?? '';
+      final messageTemplate = node['messageTemplate'] as String? ?? '';
+      final title = _resolveTemplate(titleTemplate, data);
+      final message = _resolveTemplate(messageTemplate, data);
+
+      final capabilityId = '${module.id}_${entryId}_$fieldKey';
+      await notificationScheduler?.cancelCapability(capabilityId);
+
+      final now = DateTime.now();
+      final capability = ScheduledReminder(
+        id: capabilityId,
+        moduleId: module.id,
+        title: title,
+        message: message,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+        frequency: ReminderFrequency.once,
+        hour: hour,
+        minute: minute,
+        scheduledDate: scheduledDate,
+      );
+
+      await capabilityRepository!.createCapability(capability);
+      await notificationScheduler?.scheduleCapability(capability);
+    }
+  }
+
+  /// Recursively finds all `schedule_notification` nodes in a screen JSON.
+  List<Map<String, dynamic>> _findScheduleNotificationNodes(
+    Map<String, dynamic> json,
+  ) {
+    final results = <Map<String, dynamic>>[];
+    if (json['type'] == 'schedule_notification') {
+      results.add(json);
+    }
+    for (final value in json.values) {
+      if (value is Map<String, dynamic>) {
+        results.addAll(_findScheduleNotificationNodes(value));
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map<String, dynamic>) {
+            results.addAll(_findScheduleNotificationNodes(item));
+          }
+        }
+      }
+    }
+    return results;
+  }
+
+  /// Cancels all notifications linked to a deleted entry.
+  ///
+  /// Checks all screens for `schedule_notification` fields, mutation reminders,
+  /// and `auto_notify` capabilities — cancels any matching IDs.
+  Future<void> _cancelEntryNotifications(Module module, String entryId) async {
+    if (notificationScheduler == null) return;
+
+    // Cancel auto_notify notifications
+    await notificationScheduler!.cancelCapability('${module.id}_auto_$entryId');
+
+    // Cancel schedule_notification field notifications
+    for (final screenJson in module.screens.values) {
+      final nodes = _findScheduleNotificationNodes(screenJson);
+      for (final node in nodes) {
+        final fieldKey = node['fieldKey'] as String?;
+        if (fieldKey != null) {
+          await notificationScheduler!
+              .cancelCapability('${module.id}_${entryId}_$fieldKey');
+        }
+      }
+    }
+
+    // Cancel mutation reminder notifications
+    // Scan all screens for mutation reminders with known field keys
+    for (final screenJson in module.screens.values) {
+      final mutationsJson = screenJson['mutations'] as Map<String, dynamic>?;
+      if (mutationsJson == null) continue;
+      final mutations = ScreenMutations.fromJson(mutationsJson);
+      for (final mutation in [mutations.create, mutations.update]) {
+        if (mutation == null) continue;
+        for (final reminder in mutation.reminders) {
+          final fieldKey =
+              reminder.compoundField ?? reminder.dateField ?? 'reminder';
+          await notificationScheduler!
+              .cancelCapability('${module.id}_${entryId}_$fieldKey');
+        }
+      }
+    }
+  }
+
+  Future<void> _processAutoNotifyCapabilities(
+    Module module,
+    Map<String, dynamic> formValues,
+    Map<String, dynamic> screenParams,
+    String entryId,
+  ) async {
+    if (capabilityRepository == null) return;
+
+    final caps = module.capabilities
+        .where((c) => c['type'] == 'auto_notify')
+        .toList();
+    if (caps.isEmpty) return;
+
+    final data = {...screenParams, ...formValues};
+
+    for (final cap in caps) {
+      final dateField = cap['dateField'] as String?;
+      if (dateField == null) continue;
+
+      final dateValue = data[dateField];
+      if (dateValue == null) continue;
+
+      final scheduledDate = dateValue is int
+          ? DateTime.fromMillisecondsSinceEpoch(dateValue)
+          : DateTime.tryParse(dateValue.toString());
+      if (scheduledDate == null) continue;
+
+      final offsetMinutes = cap['offsetMinutes'] as int? ?? 0;
+      final adjusted = scheduledDate.add(Duration(minutes: offsetMinutes));
+
+      var hour = adjusted.hour;
+      var minute = adjusted.minute;
+
+      // Optional timeField override
+      final timeField = cap['timeField'] as String?;
+      if (timeField != null) {
+        final timeValue = data[timeField];
+        if (timeValue is Map) {
+          hour = timeValue['hour'] as int? ?? hour;
+          minute = timeValue['minute'] as int? ?? minute;
+        } else if (timeValue is int) {
+          hour = timeValue ~/ 60;
+          minute = timeValue % 60;
+        } else if (timeValue is String && timeValue.contains(':')) {
+          final parts = timeValue.split(':');
+          hour = int.tryParse(parts[0]) ?? hour;
+          minute = int.tryParse(parts[1]) ?? minute;
+        }
+      }
+
+      final title = _resolveTemplate(
+        cap['titleTemplate'] as String? ?? '',
+        data,
+      );
+      final message = _resolveTemplate(
+        cap['messageTemplate'] as String? ?? '',
+        data,
+      );
+
+      final capabilityId = '${module.id}_auto_$entryId';
+
+      // Cancel existing notification for this entry
+      await notificationScheduler?.cancelCapability(capabilityId);
+
+      final now = DateTime.now();
+      final capability = ScheduledReminder(
+        id: capabilityId,
+        moduleId: module.id,
+        title: title,
+        message: message,
+        enabled: true,
+        createdAt: now,
+        updatedAt: now,
+        frequency: ReminderFrequency.once,
+        hour: hour,
+        minute: minute,
+        scheduledDate: adjusted,
       );
 
       await capabilityRepository!.createCapability(capability);

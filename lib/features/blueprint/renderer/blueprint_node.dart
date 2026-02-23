@@ -487,6 +487,21 @@ class ExpandableNode extends BlueprintNode {
   }) : super(type: 'expandable');
 }
 
+// ─── Compound Input ───
+
+class ScheduleNotificationNode extends BlueprintNode {
+  final String fieldKey;
+  final String titleTemplate;
+  final String messageTemplate;
+
+  const ScheduleNotificationNode({
+    required this.fieldKey,
+    required this.titleTemplate,
+    required this.messageTemplate,
+    super.properties,
+  }) : super(type: 'schedule_notification');
+}
+
 // ─── Fallback ───
 
 class UnknownNode extends BlueprintNode {

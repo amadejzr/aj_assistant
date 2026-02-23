@@ -46,6 +46,7 @@ class BlueprintParser {
       'action_menu' => _parseActionMenu(properties),
       'badge' => _parseBadge(properties),
       'expandable' => _parseExpandable(properties),
+      'schedule_notification' => _parseScheduleNotification(properties),
       _ => UnknownNode(type: type, properties: properties),
     };
   }
@@ -443,6 +444,17 @@ class BlueprintParser {
       title: json['title'] as String?,
       children: _parseChildren(json['children']),
       initiallyExpanded: json['initiallyExpanded'] as bool? ?? false,
+      properties: json,
+    );
+  }
+
+  ScheduleNotificationNode _parseScheduleNotification(
+    Map<String, dynamic> json,
+  ) {
+    return ScheduleNotificationNode(
+      fieldKey: json['fieldKey'] as String? ?? '',
+      titleTemplate: json['titleTemplate'] as String? ?? '',
+      messageTemplate: json['messageTemplate'] as String? ?? '',
       properties: json,
     );
   }

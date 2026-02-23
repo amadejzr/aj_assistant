@@ -331,19 +331,10 @@ Json hikingTemplate() => TemplateDef.build(
       submitLabel: 'Save Hike',
       defaults: {'status': 'Planned', 'difficulty': 'Moderate'},
       mutations: {
-        'create': Mut.object(
-          sql: 'INSERT INTO "m_hikes" '
-              '(id, name, location, date, difficulty, distance_km, status, notes, created_at, updated_at) '
-              'VALUES (:id, :name, :location, :date, :difficulty, :distance_km, :status, :notes, :created_at, :updated_at)',
-          reminders: [
-            Reminders.onFormSubmit(
-              titleField: 'Hike: {{name}}',
-              messageField: 'Time to hit the trail at {{location}}!',
-              dateField: 'reminder_date',
-              timeField: 'reminder_time',
-              conditionField: 'set_reminder',
-            ),
-          ],
+        'create': Mut.sql(
+          'INSERT INTO "m_hikes" '
+          '(id, name, location, date, difficulty, distance_km, status, notes, created_at, updated_at) '
+          'VALUES (:id, :name, :location, :date, :difficulty, :distance_km, :status, :notes, :created_at, :updated_at)',
         ),
       },
       children: [
@@ -359,16 +350,11 @@ Json hikingTemplate() => TemplateDef.build(
         ),
         Inputs.numberInput(fieldKey: 'distance_km', label: 'Distance (km)', min: 0),
         Inputs.textInput(fieldKey: 'notes', label: 'Notes', multiline: true),
-        Inputs.toggle(fieldKey: 'set_reminder', label: 'Set Reminder'),
-        Inputs.datePicker(
-          fieldKey: 'reminder_date',
-          label: 'Reminder Date',
-          visibleWhen: {'field': 'set_reminder', 'op': '==', 'value': true},
-        ),
-        Inputs.timePicker(
-          fieldKey: 'reminder_time',
-          label: 'Reminder Time',
-          visibleWhen: {'field': 'set_reminder', 'op': '==', 'value': true},
+        Notifications.scheduleField(
+          fieldKey: 'reminder',
+          label: 'Remind me',
+          titleTemplate: 'Hike: {{name}}',
+          messageTemplate: 'Time to hit the trail at {{location}}!',
         ),
       ],
     ),

@@ -260,6 +260,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              GestureDetector(child: Text('NOTIFICATIONS')),
               Icon(
                 PhosphorIcons.notebook(PhosphorIconsStyle.light),
                 size: 56,
