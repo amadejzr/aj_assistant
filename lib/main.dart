@@ -19,6 +19,7 @@ import 'features/capabilities/repositories/capability_repository.dart';
 import 'features/capabilities/repositories/drift_capability_repository.dart';
 import 'features/capabilities/services/notification_scheduler.dart';
 import 'core/ai/api_key_service.dart';
+import 'features/settings/cubit/theme_cubit.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -44,6 +45,7 @@ void main() async {
   final moduleRepository = DriftModuleRepository(db);
   final capabilityRepository = DriftCapabilityRepository(db);
   final apiKeyService = ApiKeyService();
+  final themeCubit = ThemeCubit()..init();
   final marketplaceRepository = FirestoreMarketplaceRepository();
 
   // Initialize notification scheduler
@@ -69,10 +71,15 @@ void main() async {
           value: notificationScheduler,
         ),
       ],
-      child: BlocProvider(
-        create: (_) =>
-            AuthBloc(authService: authService, userService: userService)
-              ..startListening(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) =>
+                AuthBloc(authService: authService, userService: userService)
+                  ..startListening(),
+          ),
+          BlocProvider.value(value: themeCubit),
+        ],
         child: const AJAssistantApp(),
       ),
     ),

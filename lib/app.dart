@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
+import 'features/settings/cubit/theme_cubit.dart';
 
 class AJAssistantApp extends StatefulWidget {
   const AJAssistantApp({super.key});
@@ -30,13 +31,17 @@ class _AJAssistantAppState extends State<AJAssistantApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Bower',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
-      routerConfig: _router,
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return MaterialApp.router(
+          title: 'Bower',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: themeMode,
+          routerConfig: _router,
+        );
+      },
     );
   }
 }
