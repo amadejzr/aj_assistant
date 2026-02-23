@@ -1,82 +1,79 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/ai/claude_client.dart' hide ChatEvent;
+import '../../../core/ai/system_prompt.dart';
+import '../../../core/ai/tool_definitions.dart';
+import '../../../core/ai/tool_executor.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/logging/log.dart';
+import '../../../core/models/module.dart';
 import '../../../core/repositories/module_repository.dart';
 import '../models/message.dart';
-import '../repositories/chat_repository.dart';
 import '../services/chat_action_executor.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
 
 const _tag = 'ChatBloc';
+const _maxHistory = 20;
+const _maxToolRounds = 10;
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  final ChatRepository _chatRepository;
+  final ClaudeClient _claude;
+  final AppDatabase _db;
+  final ModuleRepository _moduleRepository;
   final String _userId;
-  final ModuleRepository? _moduleRepository;
-  final ChatActionExecutor? _actionExecutor;
-
-  StreamSubscription<List<Message>>? _messagesSub;
+  final ChatActionExecutor _actionExecutor;
+  final ToolExecutor _toolExecutor;
 
   ChatBloc({
-    required ChatRepository chatRepository,
+    required ClaudeClient claude,
+    required AppDatabase db,
+    required ModuleRepository moduleRepository,
     required String userId,
-    AppDatabase? appDatabase,
-    ModuleRepository? moduleRepository,
-  })  : _chatRepository = chatRepository,
-        _userId = userId,
+  })  : _claude = claude,
+        _db = db,
         _moduleRepository = moduleRepository,
-        _actionExecutor = appDatabase != null && moduleRepository != null
-            ? ChatActionExecutor(
-                db: appDatabase,
-                moduleRepository: moduleRepository,
-                userId: userId,
-              )
-            : null,
+        _userId = userId,
+        _actionExecutor = ChatActionExecutor(
+          db: db,
+          moduleRepository: moduleRepository,
+          userId: userId,
+        ),
+        _toolExecutor = ToolExecutor(
+          db: db,
+          moduleRepository: moduleRepository,
+          userId: userId,
+        ),
         super(const ChatInitial()) {
     on<ChatStarted>(_onStarted);
     on<ChatMessageSent>(_onMessageSent);
+    on<ChatStreamDelta>(_onStreamDelta);
+    on<ChatStreamDone>(_onStreamDone);
     on<ChatActionApproved>(_onActionApproved);
     on<ChatActionRejected>(_onActionRejected);
-    on<ChatMessagesUpdated>(_onMessagesUpdated);
   }
 
   Future<void> _onStarted(ChatStarted event, Emitter<ChatState> emit) async {
-    Log.i('ChatStarted — creating conversation', tag: _tag);
     emit(const ChatLoading());
 
     try {
-      final conversationId = await _chatRepository.createConversation(_userId);
-      Log.i('Conversation created: $conversationId', tag: _tag);
+      final conversationId =
+          '${DateTime.now().millisecondsSinceEpoch}_${Object.hash(DateTime.now(), _userId).toUnsigned(32).toRadixString(16)}';
+      final now = DateTime.now().millisecondsSinceEpoch;
 
-      await _messagesSub?.cancel();
-      _messagesSub = _chatRepository
-          .watchMessages(_userId, conversationId)
-          .listen(
-        (messages) {
-          Log.d('Messages stream: ${messages.length} messages', tag: _tag);
-          add(ChatMessagesUpdated(messages));
-        },
-        onError: (Object e) {
-          Log.e('Messages stream error: $e', tag: _tag);
-        },
+      await _db.customInsert(
+        'INSERT INTO conversations (id, created_at, last_message_at) VALUES (?, ?, ?)',
+        variables: [Variable(conversationId), Variable(now), Variable(now)],
       );
 
       emit(ChatReady(conversationId: conversationId));
-    } catch (e, stack) {
+    } catch (e) {
       Log.e('Failed to start conversation: $e', tag: _tag);
-      Log.e('$stack', tag: _tag);
       emit(ChatReady(error: 'Failed to start conversation: $e'));
-    }
-  }
-
-  void _onMessagesUpdated(ChatMessagesUpdated event, Emitter<ChatState> emit) {
-    final current = state;
-    if (current is ChatReady) {
-      emit(current.copyWith(messages: event.messages));
     }
   }
 
@@ -85,58 +82,51 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     final current = state;
-    if (current is! ChatReady || current.conversationId == null) {
-      Log.e('MessageSent but state is not ChatReady', tag: _tag);
-      return;
-    }
+    if (current is! ChatReady || current.conversationId == null) return;
 
-    Log.i('Sending message: "${event.text}"', tag: _tag);
+    // Save user message to Drift
+    final msgId = '${DateTime.now().millisecondsSinceEpoch}_user';
+    final now = DateTime.now().millisecondsSinceEpoch;
 
-    final optimisticMessage = Message(
-      id: 'pending_${DateTime.now().millisecondsSinceEpoch}',
+    await _db.customInsert(
+      'INSERT INTO chat_messages (id, conversation_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)',
+      variables: [
+        Variable(msgId),
+        Variable(current.conversationId!),
+        Variable('user'),
+        Variable(event.text),
+        Variable(now),
+      ],
+    );
+
+    final userMsg = Message(
+      id: msgId,
       role: MessageRole.user,
       content: event.text,
-      timestamp: DateTime.now(),
+      timestamp: DateTime.fromMillisecondsSinceEpoch(now),
     );
 
     emit(current.copyWith(
-      messages: [...current.messages, optimisticMessage],
+      messages: [...current.messages, userMsg],
       isAiTyping: true,
+      streamingText: '',
       clearError: true,
     ));
 
     try {
-      List<Map<String, dynamic>>? moduleContext;
-      if (_moduleRepository != null) {
-        final modules = await _moduleRepository.getModules(_userId);
-        moduleContext = modules.map((m) => {
-          'id': m.id,
-          'name': m.name,
-          'description': m.description,
-          if (m.database != null) 'database': m.database!.toJson(),
-        }).toList();
-      }
+      final modules = await _moduleRepository.getModules(_userId);
+      final systemPrompt = buildSystemPrompt(modules);
 
-      await _chatRepository.sendMessage(
-        userId: _userId,
-        conversationId: current.conversationId!,
-        content: event.text,
-        modules: moduleContext,
-      );
+      final latest = state as ChatReady;
+      final apiMessages = latest.messages
+          .where((m) => m.content.isNotEmpty)
+          .take(_maxHistory)
+          .map((m) => m.toApiMessage())
+          .toList();
 
-      final latest = state;
-      if (latest is ChatReady) {
-        emit(latest.copyWith(isAiTyping: false));
-      }
-    } on ChatException catch (e) {
+      await _runToolLoop(emit, systemPrompt, apiMessages, modules);
+    } catch (e) {
       Log.e('sendMessage failed: $e', tag: _tag);
-      final latest = state;
-      if (latest is ChatReady) {
-        emit(latest.copyWith(isAiTyping: false, error: e.message));
-      }
-    } catch (e, stack) {
-      Log.e('sendMessage failed: $e', tag: _tag);
-      Log.e('$stack', tag: _tag);
       final latest = state;
       if (latest is ChatReady) {
         emit(latest.copyWith(
@@ -147,64 +137,248 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  /// Runs the streaming tool loop: send to Claude, stream response,
+  /// auto-execute read-only tools, pause for write tools.
+  Future<void> _runToolLoop(
+    Emitter<ChatState> emit,
+    String systemPrompt,
+    List<Map<String, dynamic>> messages,
+    List<Module> modules,
+  ) async {
+    final apiMessages = List<Map<String, dynamic>>.from(messages);
+
+    for (var round = 0; round < _maxToolRounds; round++) {
+      Log.i('Claude round ${round + 1}', tag: _tag);
+
+      var fullText = '';
+      final toolCalls = <ChatToolUse>[];
+
+      await for (final event in _claude.stream(
+        systemPrompt: systemPrompt,
+        messages: apiMessages,
+        tools: toolDefinitions,
+      )) {
+        switch (event) {
+          case ChatTextDelta(:final text):
+            fullText += text;
+            add(ChatStreamDelta(text));
+
+          case ChatToolUse():
+            toolCalls.add(event);
+
+          case ChatDone():
+            break;
+
+          case ChatError(:final message):
+            Log.e('Stream error: $message', tag: _tag);
+            final current = state;
+            if (current is ChatReady) {
+              emit(current.copyWith(isAiTyping: false, error: message));
+            }
+            return;
+        }
+      }
+
+      // No tool calls — we're done
+      if (toolCalls.isEmpty) {
+        await _finalizeAssistantMessage(emit, fullText);
+        return;
+      }
+
+      // Split read-only vs write tools
+      final readTools =
+          toolCalls.where((t) => ToolExecutor.isReadOnly(t.name)).toList();
+      final writeTools =
+          toolCalls.where((t) => !ToolExecutor.isReadOnly(t.name)).toList();
+
+      if (writeTools.isNotEmpty) {
+        if (fullText.isNotEmpty) {
+          await _finalizeAssistantMessage(emit, fullText);
+        }
+        await _pauseForApproval(emit, writeTools, modules);
+        return;
+      }
+
+      // All read-only — execute and continue loop
+      final assistantContent = <Map<String, dynamic>>[];
+      if (fullText.isNotEmpty) {
+        assistantContent.add({'type': 'text', 'text': fullText});
+      }
+      for (final tool in toolCalls) {
+        assistantContent.add({
+          'type': 'tool_use',
+          'id': tool.id,
+          'name': tool.name,
+          'input': tool.input,
+        });
+      }
+      apiMessages.add({'role': 'assistant', 'content': assistantContent});
+
+      final toolResults = <Map<String, dynamic>>[];
+      for (final tool in readTools) {
+        final tableName = await _resolveTableForTool(tool, modules);
+        final input = Map<String, dynamic>.from(tool.input);
+        if (tableName != null) input['tableName'] = tableName;
+
+        final result = await _toolExecutor.executeReadOnly(tool.name, input);
+        toolResults.add({
+          'type': 'tool_result',
+          'tool_use_id': tool.id,
+          'content': result,
+        });
+      }
+      apiMessages.add({'role': 'user', 'content': toolResults});
+    }
+  }
+
+  Future<String?> _resolveTableForTool(
+    ChatToolUse tool,
+    List<Module> modules,
+  ) async {
+    final moduleId = tool.input['moduleId'] as String?;
+    if (moduleId == null) return null;
+
+    final module = modules.where((m) => m.id == moduleId).firstOrNull;
+    final schemaKey = tool.input['schemaKey'] as String? ?? 'default';
+    return module?.database?.tableNames[schemaKey];
+  }
+
+  Future<void> _finalizeAssistantMessage(
+    Emitter<ChatState> emit,
+    String text,
+  ) async {
+    final current = state;
+    if (current is! ChatReady) return;
+
+    final msgId = '${DateTime.now().millisecondsSinceEpoch}_assistant';
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await _db.customInsert(
+      'INSERT INTO chat_messages (id, conversation_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)',
+      variables: [
+        Variable(msgId),
+        Variable(current.conversationId!),
+        Variable('assistant'),
+        Variable(text),
+        Variable(now),
+      ],
+    );
+
+    final msg = Message(
+      id: msgId,
+      role: MessageRole.assistant,
+      content: text,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(now),
+    );
+
+    emit(current.copyWith(
+      messages: [...current.messages, msg],
+      isAiTyping: false,
+      streamingText: '',
+    ));
+  }
+
+  Future<void> _pauseForApproval(
+    Emitter<ChatState> emit,
+    List<ChatToolUse> writeTools,
+    List<Module> modules,
+  ) async {
+    final current = state;
+    if (current is! ChatReady) return;
+
+    final actions = writeTools
+        .map((t) => PendingAction(
+              toolUseId: t.id,
+              name: t.name,
+              input: t.input,
+              description: describeAction(t.name, t.input),
+            ))
+        .toList();
+
+    final msgId = '${DateTime.now().millisecondsSinceEpoch}_approval';
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    final toolCallsJson = jsonEncode({
+      'actions': actions.map((a) => a.toMap()).toList(),
+      'approvalStatus': 'pending',
+    });
+
+    await _db.customInsert(
+      'INSERT INTO chat_messages (id, conversation_id, role, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      variables: [
+        Variable(msgId),
+        Variable(current.conversationId!),
+        Variable('assistant'),
+        Variable(''),
+        Variable(toolCallsJson),
+        Variable(now),
+      ],
+    );
+
+    final msg = Message(
+      id: msgId,
+      role: MessageRole.assistant,
+      content: '',
+      timestamp: DateTime.fromMillisecondsSinceEpoch(now),
+      pendingActions: actions,
+      approvalStatus: ApprovalStatus.pending,
+    );
+
+    emit(current.copyWith(
+      messages: [...current.messages, msg],
+      isAiTyping: false,
+      streamingText: '',
+    ));
+  }
+
+  void _onStreamDelta(ChatStreamDelta event, Emitter<ChatState> emit) {
+    final current = state;
+    if (current is! ChatReady) return;
+    emit(current.copyWith(
+      streamingText: current.streamingText + event.text,
+    ));
+  }
+
+  void _onStreamDone(ChatStreamDone event, Emitter<ChatState> emit) {
+    // Handled by _runToolLoop
+  }
+
   Future<void> _onActionApproved(
     ChatActionApproved event,
     Emitter<ChatState> emit,
   ) async {
     final current = state;
-    if (current is! ChatReady || current.conversationId == null) return;
+    if (current is! ChatReady) return;
 
-    // Find the pending actions from the latest message
     final pendingMsg = current.messages.lastWhere(
-      (m) => m.hasPendingActions,
-      orElse: () => const Message(id: '', role: MessageRole.assistant, content: ''),
+      (m) => m.hasPendingActions && m.approvalStatus == ApprovalStatus.pending,
+      orElse: () =>
+          const Message(id: '', role: MessageRole.assistant, content: ''),
     );
     if (!pendingMsg.hasPendingActions) return;
 
-    Log.i('Approving ${pendingMsg.pendingActions.length} actions', tag: _tag);
+    final updatedMessages = current.messages.map((m) {
+      if (m.id == pendingMsg.id) {
+        return m.copyWith(approvalStatus: ApprovalStatus.approved);
+      }
+      return m;
+    }).toList();
 
-    // Mark as approved in Firestore immediately so the card updates
-    await _chatRepository.updateMessageApprovalStatus(
-      userId: _userId,
-      conversationId: current.conversationId!,
-      messageId: pendingMsg.id,
-      status: 'approved',
-    );
+    emit(current.copyWith(messages: updatedMessages, isAiTyping: true));
 
     final results = <String>[];
-
     for (final action in pendingMsg.pendingActions) {
       try {
-        switch (action.name) {
-          case 'createEntry':
-          case 'createEntries':
-          case 'updateEntry':
-          case 'updateEntries':
-            if (_actionExecutor == null) {
-              results.add('Database not available');
-              break;
-            }
-            final result = await _actionExecutor.execute(action);
-            results.add(result);
-
-          default:
-            Log.e('Unhandled action: ${action.name}', tag: _tag);
-            results.add('Unsupported action: ${action.name}');
-        }
+        final result = await _actionExecutor.execute(action);
+        results.add(result);
       } catch (e) {
         Log.e('Action ${action.name} failed: $e', tag: _tag);
         results.add('Failed: $e');
       }
     }
 
-    // Write a confirmation message to the chat
-    final confirmation = results.join('. ');
-    await _chatRepository.addLocalMessage(
-      userId: _userId,
-      conversationId: current.conversationId!,
-      content: 'Done. $confirmation.',
-      role: 'assistant',
-    );
+    final confirmation = 'Done. ${results.join('. ')}.';
+    await _finalizeAssistantMessage(emit, confirmation);
   }
 
   Future<void> _onActionRejected(
@@ -212,36 +386,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     final current = state;
-    if (current is! ChatReady || current.conversationId == null) return;
+    if (current is! ChatReady) return;
 
-    Log.i('User rejected actions', tag: _tag);
-
-    // Find the pending actions message
     final pendingMsg = current.messages.lastWhere(
-      (m) => m.hasPendingActions,
-      orElse: () => const Message(id: '', role: MessageRole.assistant, content: ''),
+      (m) => m.hasPendingActions && m.approvalStatus == ApprovalStatus.pending,
+      orElse: () =>
+          const Message(id: '', role: MessageRole.assistant, content: ''),
     );
 
     if (pendingMsg.hasPendingActions) {
-      await _chatRepository.updateMessageApprovalStatus(
-        userId: _userId,
-        conversationId: current.conversationId!,
-        messageId: pendingMsg.id,
-        status: 'rejected',
-      );
+      final updatedMessages = current.messages.map((m) {
+        if (m.id == pendingMsg.id) {
+          return m.copyWith(approvalStatus: ApprovalStatus.rejected);
+        }
+        return m;
+      }).toList();
+      emit(current.copyWith(messages: updatedMessages));
     }
 
-    await _chatRepository.addLocalMessage(
-      userId: _userId,
-      conversationId: current.conversationId!,
-      content: 'Okay, cancelled.',
-      role: 'assistant',
-    );
-  }
-
-  @override
-  Future<void> close() {
-    _messagesSub?.cancel();
-    return super.close();
+    await _finalizeAssistantMessage(emit, 'Okay, cancelled.');
   }
 }

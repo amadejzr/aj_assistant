@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../models/message.dart';
-
 sealed class ChatEvent extends Equatable {
   const ChatEvent();
 
@@ -9,7 +7,7 @@ sealed class ChatEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Open / resume a chat session.
+/// Open a new chat session.
 class ChatStarted extends ChatEvent {
   const ChatStarted();
 }
@@ -23,21 +21,30 @@ class ChatMessageSent extends ChatEvent {
   List<Object?> get props => [text];
 }
 
-/// User approved pending actions.
+/// User approved pending write actions.
 class ChatActionApproved extends ChatEvent {
   const ChatActionApproved();
 }
 
-/// User rejected pending actions.
+/// User rejected pending write actions.
 class ChatActionRejected extends ChatEvent {
   const ChatActionRejected();
 }
 
-/// Internal: real-time message stream updated.
-class ChatMessagesUpdated extends ChatEvent {
-  final List<Message> messages;
-  const ChatMessagesUpdated(this.messages);
+/// Internal: streaming text delta received.
+class ChatStreamDelta extends ChatEvent {
+  final String text;
+  const ChatStreamDelta(this.text);
 
   @override
-  List<Object?> get props => [messages];
+  List<Object?> get props => [text];
+}
+
+/// Internal: stream completed.
+class ChatStreamDone extends ChatEvent {
+  final String fullText;
+  const ChatStreamDone(this.fullText);
+
+  @override
+  List<Object?> get props => [fullText];
 }

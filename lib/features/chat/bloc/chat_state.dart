@@ -20,12 +20,14 @@ class ChatLoading extends ChatState {
 class ChatReady extends ChatState {
   final List<Message> messages;
   final bool isAiTyping;
+  final String streamingText;
   final String? conversationId;
   final String? error;
 
   const ChatReady({
     this.messages = const [],
     this.isAiTyping = false,
+    this.streamingText = '',
     this.conversationId,
     this.error,
   });
@@ -33,6 +35,7 @@ class ChatReady extends ChatState {
   ChatReady copyWith({
     List<Message>? messages,
     bool? isAiTyping,
+    String? streamingText,
     String? conversationId,
     String? error,
     bool clearError = false,
@@ -40,11 +43,13 @@ class ChatReady extends ChatState {
     return ChatReady(
       messages: messages ?? this.messages,
       isAiTyping: isAiTyping ?? this.isAiTyping,
+      streamingText: streamingText ?? this.streamingText,
       conversationId: conversationId ?? this.conversationId,
       error: clearError ? null : (error ?? this.error),
     );
   }
 
   @override
-  List<Object?> get props => [messages, isAiTyping, conversationId, error];
+  List<Object?> get props =>
+      [messages, isAiTyping, streamingText, conversationId, error];
 }
