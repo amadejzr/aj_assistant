@@ -397,11 +397,19 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     }
 
     // Pre-populate form for edit mode
-    _prePopulateForm(module, screenParams);
+    _prePopulateForm(module, screenId, screenParams);
+
+    // Hydrate schedule_notification fields from capabilities (runs independently
+    // of _prePopulateForm since that may bail if schemaKey doesn't match).
+    final entryId = screenParams['_entryId'] as String?;
+    if (entryId != null) {
+      _hydrateScheduleNotificationFields(module, screenId, entryId);
+    }
   }
 
   Future<void> _prePopulateForm(
     Module module,
+    String screenId,
     Map<String, dynamic> screenParams,
   ) async {
     final entryId = screenParams['_entryId'] as String?;
@@ -424,6 +432,39 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       }
     } catch (e) {
       Log.e('Failed to pre-populate form', tag: 'ModuleViewer', error: e);
+    }
+  }
+
+  /// Loads existing [ScheduledReminder] capabilities for `schedule_notification`
+  /// fields and fires form value events so the widget pre-populates.
+  Future<void> _hydrateScheduleNotificationFields(
+    Module module,
+    String screenId,
+    String entryId,
+  ) async {
+    if (capabilityRepository == null) return;
+
+    final screenJson = module.screens[screenId];
+    if (screenJson == null) return;
+
+    final nodes = _findScheduleNotificationNodes(screenJson);
+    if (nodes.isEmpty) return;
+
+    for (final node in nodes) {
+      final fieldKey = node['fieldKey'] as String?;
+      if (fieldKey == null) continue;
+
+      final capabilityId = '${module.id}_${entryId}_$fieldKey';
+      final capability = await capabilityRepository!.getCapability(capabilityId);
+
+      if (capability is ScheduledReminder && capability.enabled) {
+        add(ModuleViewerFormValueChanged(fieldKey, {
+          'enabled': true,
+          'date': capability.scheduledDate?.millisecondsSinceEpoch,
+          'hour': capability.hour,
+          'minute': capability.minute,
+        }));
+      }
     }
   }
 

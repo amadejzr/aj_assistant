@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/widgets/paper_background.dart';
+import '../../engine/action_dispatcher.dart';
 import '../../renderer/blueprint_node.dart';
 import '../../renderer/render_context.dart';
 import '../../renderer/widget_registry.dart';
+import '../../utils/icon_resolver.dart';
 
 /// Renders a full-screen scaffold with an app bar, paper background, and optional FAB.
 ///
@@ -98,9 +102,17 @@ AppBar buildBlueprintAppBar({
 
   List<Widget> actions;
   if (customActions != null && customActions.isNotEmpty) {
-    actions = [
-      for (final action in customActions) registry.build(action, ctx),
-    ];
+    if (customActions.length <= 2) {
+      actions = [
+        for (final action in customActions) registry.build(action, ctx),
+      ];
+    } else {
+      // Keep first action as icon button, collapse rest into overflow menu
+      actions = [
+        registry.build(customActions.first, ctx),
+        _buildOverflowMenu(customActions.skip(1).toList(), ctx, colors),
+      ];
+    }
   } else {
     actions = [
       IconButton(
@@ -149,6 +161,84 @@ AppBar buildBlueprintAppBar({
     iconTheme: IconThemeData(color: colors.onBackground),
     actions: actions,
   );
+}
+
+/// Builds a PopupMenuButton from overflow [BlueprintNode] actions.
+Widget _buildOverflowMenu(
+  List<BlueprintNode> nodes,
+  RenderContext ctx,
+  dynamic colors,
+) {
+  final items = <_OverflowItem>[];
+  for (final node in nodes) {
+    if (node is IconButtonNode) {
+      items.add(_OverflowItem(
+        label: node.tooltip ?? node.icon,
+        icon: resolveIcon(node.icon) ??
+            PhosphorIcons.circle(PhosphorIconsStyle.regular),
+        action: node.action,
+      ));
+    }
+  }
+
+  return _OverflowMenuButton(items: items, ctx: ctx);
+}
+
+class _OverflowItem {
+  final String label;
+  final IconData icon;
+  final Map<String, dynamic> action;
+  const _OverflowItem({
+    required this.label,
+    required this.icon,
+    required this.action,
+  });
+}
+
+class _OverflowMenuButton extends StatelessWidget {
+  final List<_OverflowItem> items;
+  final RenderContext ctx;
+
+  const _OverflowMenuButton({required this.items, required this.ctx});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return PopupMenuButton<int>(
+      icon: Icon(
+        PhosphorIcons.dotsThreeVertical(PhosphorIconsStyle.regular),
+        color: colors.onBackground,
+      ),
+      color: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colors.border),
+      ),
+      itemBuilder: (_) => [
+        for (var i = 0; i < items.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: Row(
+              children: [
+                Icon(items[i].icon, size: 18, color: colors.onBackground),
+                const SizedBox(width: 12),
+                Text(
+                  items[i].label,
+                  style: TextStyle(
+                    fontFamily: 'Karla',
+                    fontSize: 14,
+                    color: colors.onBackground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      onSelected: (index) {
+        BlueprintActionDispatcher.dispatch(items[index].action, ctx, context);
+      },
+    );
+  }
 }
 
 String _interpolateTitle(String template, RenderContext ctx) {

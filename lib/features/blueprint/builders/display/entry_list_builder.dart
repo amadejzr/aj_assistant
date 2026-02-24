@@ -651,17 +651,12 @@ class _EntryListWidgetState extends State<_EntryListWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasFilters) _buildFilterBar(),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          itemCount: entries.length,
-          itemBuilder: (context, index) {
-            final child = WidgetRegistry.instance
-                .build(itemLayout, _entryContext(entries[index]));
-            return _buildAnimatedItem(child, index);
-          },
-        ),
+        for (var i = 0; i < entries.length; i++)
+          _buildAnimatedItem(
+            WidgetRegistry.instance
+                .build(itemLayout, _entryContext(entries[i])),
+            i,
+          ),
       ],
     );
   }

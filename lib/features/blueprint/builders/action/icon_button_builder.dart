@@ -34,6 +34,7 @@ class _IconButtonWidget extends StatelessWidget {
       'edit' || 'pencil' => PhosphorIcons.pencilSimple(PhosphorIconsStyle.regular),
       'delete' || 'trash' => PhosphorIcons.trash(PhosphorIconsStyle.regular),
       'check' => PhosphorIcons.check(PhosphorIconsStyle.regular),
+      'check-circle' => PhosphorIcons.checkCircle(PhosphorIconsStyle.regular),
       'settings' || 'gear' => PhosphorIcons.gear(PhosphorIconsStyle.regular),
       'share' => PhosphorIcons.shareFat(PhosphorIconsStyle.regular),
       'close' || 'x' => PhosphorIcons.x(PhosphorIconsStyle.regular),

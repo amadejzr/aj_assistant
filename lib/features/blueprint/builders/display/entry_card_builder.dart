@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:intl/intl.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -174,14 +173,6 @@ class _EntryCardWidget extends StatelessWidget {
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
-                    if (hasTap) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      Icon(
-                        PhosphorIcons.caretRight(PhosphorIconsStyle.regular),
-                        size: 16,
-                        color: colors.onBackgroundMuted,
-                      ),
-                    ],
                   ],
                 ),
               ),

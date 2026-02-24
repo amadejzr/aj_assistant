@@ -25,7 +25,16 @@ IconData? resolveIcon(String? iconName) {
 
     // Status
     'check_circle' => PhosphorIcons.checkCircle(PhosphorIconsStyle.regular),
+    'check-circle' => PhosphorIcons.checkCircle(PhosphorIconsStyle.regular),
+    'check' => PhosphorIcons.check(PhosphorIconsStyle.regular),
     'compass' => PhosphorIcons.compass(PhosphorIconsStyle.regular),
+
+    // Actions
+    'add' || 'plus' => PhosphorIcons.plus(PhosphorIconsStyle.regular),
+    'edit' || 'pencil' => PhosphorIcons.pencilSimple(PhosphorIconsStyle.regular),
+    'delete' || 'trash' => PhosphorIcons.trash(PhosphorIconsStyle.regular),
+    'close' || 'x' => PhosphorIcons.x(PhosphorIconsStyle.regular),
+    'share' => PhosphorIcons.shareFat(PhosphorIconsStyle.regular),
 
     // Finance
     'piggy_bank' => PhosphorIcons.piggyBank(PhosphorIconsStyle.regular),
