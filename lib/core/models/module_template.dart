@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
@@ -44,62 +43,6 @@ class ModuleTemplate extends Equatable {
     this.database,
   });
 
-  factory ModuleTemplate.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data() ?? {};
-    return ModuleTemplate(
-      id: doc.id,
-      name: data['name'] as String? ?? '',
-      description: data['description'] as String? ?? '',
-      longDescription: data['longDescription'] as String? ?? '',
-      icon: data['icon'] as String? ?? 'cube',
-      color: data['color'] as String? ?? '#D94E33',
-      category: data['category'] as String? ?? 'Productivity',
-      tags: (data['tags'] as List?)?.cast<String>() ?? [],
-      featured: data['featured'] as bool? ?? false,
-      sortOrder: data['sortOrder'] as int? ?? 0,
-      installCount: data['installCount'] as int? ?? 0,
-      version: data['version'] as int? ?? 1,
-      screens: _parseScreens(data['screens']),
-      settings: Map<String, dynamic>.from(data['settings'] as Map? ?? {}),
-      guide: (data['guide'] as List?)
-              ?.cast<Map>()
-              .map((m) => Map<String, String>.from(m))
-              .toList() ??
-          [],
-      navigation: data['navigation'] != null
-          ? ModuleNavigation.fromJson(
-              Map<String, dynamic>.from(data['navigation'] as Map))
-          : null,
-      database: data['database'] != null
-          ? ModuleDatabase.fromJson(
-              Map<String, dynamic>.from(data['database'] as Map))
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'name': name,
-      'description': description,
-      'longDescription': longDescription,
-      'icon': icon,
-      'color': color,
-      'category': category,
-      'tags': tags,
-      'featured': featured,
-      'sortOrder': sortOrder,
-      'installCount': installCount,
-      'version': version,
-      'screens': screens,
-      'settings': settings,
-      'guide': guide,
-      if (navigation != null) 'navigation': navigation!.toJson(),
-      if (database != null) 'database': database!.toJson(),
-    };
-  }
-
   /// Converts this template into a user-owned [Module] with the given [newId].
   Module toModule(String newId) {
     return Module(
@@ -115,17 +58,6 @@ class ModuleTemplate extends Equatable {
       version: version,
       navigation: navigation,
       database: database,
-    );
-  }
-
-  static Map<String, Map<String, dynamic>> _parseScreens(dynamic raw) {
-    if (raw == null) return {};
-    final map = Map<String, dynamic>.from(raw as Map);
-    return map.map(
-      (key, value) => MapEntry(
-        key,
-        Map<String, dynamic>.from(value as Map),
-      ),
     );
   }
 

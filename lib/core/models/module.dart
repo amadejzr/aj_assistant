@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../features/blueprint/navigation/module_navigation.dart';
@@ -77,75 +76,6 @@ class Module extends Equatable {
       navigation: navigation ?? this.navigation,
       database: database ?? this.database,
       fieldSets: fieldSets ?? this.fieldSets,
-    );
-  }
-
-  factory Module.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
-    return Module(
-      id: doc.id,
-      name: data['name'] as String? ?? '',
-      description: data['description'] as String? ?? '',
-      icon: data['icon'] as String? ?? 'cube',
-      color: data['color'] as String? ?? '#D94E33',
-      sortOrder: data['sortOrder'] as int? ?? 0,
-      screens: _parseScreens(data['screens']),
-      settings: Map<String, dynamic>.from(data['settings'] as Map? ?? {}),
-      guide: (data['guide'] as List?)
-              ?.cast<Map>()
-              .map((m) => Map<String, String>.from(m))
-              .toList() ??
-          [],
-      version: data['version'] as int? ?? 1,
-      navigation: data['navigation'] != null
-          ? ModuleNavigation.fromJson(
-              Map<String, dynamic>.from(data['navigation'] as Map))
-          : null,
-      database: data['database'] != null
-          ? ModuleDatabase.fromJson(
-              Map<String, dynamic>.from(data['database'] as Map))
-          : null,
-      fieldSets: _parseFieldSets(data['fieldSets']),
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'name': name,
-      'description': description,
-      'icon': icon,
-      'color': color,
-      'sortOrder': sortOrder,
-      'screens': screens,
-      'settings': settings,
-      'guide': guide,
-      'version': version,
-      if (navigation != null) 'navigation': navigation!.toJson(),
-      if (database != null) 'database': database!.toJson(),
-      if (fieldSets.isNotEmpty) 'fieldSets': fieldSets,
-    };
-  }
-
-  static Map<String, List<Map<String, dynamic>>> _parseFieldSets(dynamic raw) {
-    if (raw == null) return const {};
-    final map = Map<String, dynamic>.from(raw as Map);
-    return map.map((key, value) {
-      final list = (value as List)
-          .cast<Map>()
-          .map((m) => Map<String, dynamic>.from(m))
-          .toList();
-      return MapEntry(key, list);
-    });
-  }
-
-  static Map<String, Map<String, dynamic>> _parseScreens(dynamic raw) {
-    if (raw == null) return {};
-    final map = Map<String, dynamic>.from(raw as Map);
-    return map.map(
-      (key, value) => MapEntry(
-        key,
-        Map<String, dynamic>.from(value as Map),
-      ),
     );
   }
 

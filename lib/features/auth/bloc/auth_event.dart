@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 sealed class AuthEvent extends Equatable {
   const AuthEvent();
@@ -12,40 +11,15 @@ class AuthCheckRequested extends AuthEvent {
   const AuthCheckRequested();
 }
 
-class AuthLoginWithEmail extends AuthEvent {
-  final String email;
-  final String password;
+class AuthLoginWithName extends AuthEvent {
+  final String name;
 
-  const AuthLoginWithEmail({required this.email, required this.password});
-
-  @override
-  List<Object?> get props => [email];
-}
-
-class AuthSignUpWithEmail extends AuthEvent {
-  final String email;
-  final String password;
-  final String? displayName;
-
-  const AuthSignUpWithEmail({
-    required this.email,
-    required this.password,
-    this.displayName,
-  });
+  const AuthLoginWithName(this.name);
 
   @override
-  List<Object?> get props => [email, displayName];
+  List<Object?> get props => [name];
 }
 
 class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
-}
-
-class AuthUserChanged extends AuthEvent {
-  final User? user;
-
-  const AuthUserChanged(this.user);
-
-  @override
-  List<Object?> get props => [user];
 }

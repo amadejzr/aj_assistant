@@ -44,6 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# iOS
+ios/build/
+ios/Pods/
+
 # Service account keys
 **/service-account.json
 

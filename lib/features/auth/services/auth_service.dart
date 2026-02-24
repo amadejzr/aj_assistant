@@ -1,26 +1,21 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import '../models/app_user.dart';
 
 class AuthService {
-  final FirebaseAuth _auth;
+  AppUser? _currentUser;
 
-  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+  AppUser? get currentUser => _currentUser;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  User? get currentUser => _auth.currentUser;
-
-  Future<UserCredential> signInWithEmail(String email, String password) {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<UserCredential> signUpWithEmail(String email, String password) {
-    return _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
+  /// Log in with a display name — creates a local-only user.
+  AppUser login(String name) {
+    _currentUser = AppUser(
+      uid: 'local_user',
+      email: 'local@device',
+      displayName: name,
     );
+    return _currentUser!;
   }
 
-  Future<void> signOut() {
-    return _auth.signOut();
+  void signOut() {
+    _currentUser = null;
   }
 }

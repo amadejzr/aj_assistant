@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
@@ -18,10 +17,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
 
   late AnimationController _staggerController;
 
@@ -29,12 +26,9 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _sealFade;
   late Animation<double> _headingSlide;
   late Animation<double> _headingFade;
-  late Animation<double> _emailSlide;
-  late Animation<double> _emailFade;
-  late Animation<double> _passwordSlide;
-  late Animation<double> _passwordFade;
+  late Animation<double> _fieldSlide;
+  late Animation<double> _fieldFade;
   late Animation<double> _buttonFade;
-  late Animation<double> _linkFade;
 
   @override
   void initState() {
@@ -42,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     _staggerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
 
     // Seal stamps in with a scale bounce
@@ -65,36 +59,20 @@ class _LoginScreenState extends State<LoginScreen>
       curve: const Interval(0.12, 0.32, curve: Curves.easeOut),
     );
 
-    // Email
-    _emailSlide = Tween(begin: 14.0, end: 0.0).animate(CurvedAnimation(
+    // Name field
+    _fieldSlide = Tween(begin: 14.0, end: 0.0).animate(CurvedAnimation(
       parent: _staggerController,
-      curve: const Interval(0.22, 0.52, curve: Curves.easeOutCubic),
+      curve: const Interval(0.25, 0.55, curve: Curves.easeOutCubic),
     ));
-    _emailFade = CurvedAnimation(
+    _fieldFade = CurvedAnimation(
       parent: _staggerController,
-      curve: const Interval(0.22, 0.44, curve: Curves.easeOut),
-    );
-
-    // Password
-    _passwordSlide = Tween(begin: 14.0, end: 0.0).animate(CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.32, 0.6, curve: Curves.easeOutCubic),
-    ));
-    _passwordFade = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.32, 0.52, curve: Curves.easeOut),
+      curve: const Interval(0.25, 0.47, curve: Curves.easeOut),
     );
 
     // Button
     _buttonFade = CurvedAnimation(
       parent: _staggerController,
-      curve: const Interval(0.42, 0.65, curve: Curves.easeOut),
-    );
-
-    // Link
-    _linkFade = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.5, 0.75, curve: Curves.easeOut),
+      curve: const Interval(0.4, 0.65, curve: Curves.easeOut),
     );
 
     _staggerController.forward();
@@ -102,19 +80,15 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _nameController.dispose();
     _staggerController.dispose();
     super.dispose();
   }
 
-  void _onSignIn() {
+  void _onContinue() {
     if (!_formKey.currentState!.validate()) return;
     context.read<AuthBloc>().add(
-          AuthLoginWithEmail(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          ),
+          AuthLoginWithName(_nameController.text.trim()),
         );
   }
 
@@ -165,76 +139,32 @@ class _LoginScreenState extends State<LoginScreen>
                             offset: Offset(0, _headingSlide.value),
                             child: Opacity(
                               opacity: _headingFade.value,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Welcome back',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge,
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'Sign in to continue',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium,
-                                  ),
-                                ],
+                              child: Text(
+                                'What should we\ncall you?',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayLarge,
                               ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xxl),
 
-                          // Email
+                          // Name field
                           Transform.translate(
-                            offset: Offset(0, _emailSlide.value),
+                            offset: Offset(0, _fieldSlide.value),
                             child: Opacity(
-                              opacity: _emailFade.value,
+                              opacity: _fieldFade.value,
                               child: AuthTextField(
-                                controller: _emailController,
-                                label: 'Email',
-                                hint: 'you@example.com',
-                                keyboardType: TextInputType.emailAddress,
+                                controller: _nameController,
+                                label: 'Name',
+                                hint: 'Your name or nickname',
+                                textCapitalization:
+                                    TextCapitalization.words,
                                 style: AuthTextFieldStyle.login,
                                 validator: (value) {
                                   if (value == null ||
                                       value.trim().isEmpty) {
-                                    return 'Email is required';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Enter a valid email';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-
-                          // Password
-                          Transform.translate(
-                            offset: Offset(0, _passwordSlide.value),
-                            child: Opacity(
-                              opacity: _passwordFade.value,
-                              child: AuthTextField(
-                                controller: _passwordController,
-                                label: 'Password',
-                                hint:
-                                    '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
-                                obscureText: _obscurePassword,
-                                style: AuthTextFieldStyle.login,
-                                suffixIcon: PasswordVisibilityToggle(
-                                  obscured: _obscurePassword,
-                                  onToggle: () => setState(
-                                    () =>
-                                        _obscurePassword = !_obscurePassword,
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Password is required';
+                                    return 'A name is required';
                                   }
                                   return null;
                                 },
@@ -243,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           const SizedBox(height: AppSpacing.xl),
 
-                          // Sign In button
+                          // Continue button
                           Opacity(
                             opacity: _buttonFade.value,
                             child: BlocBuilder<AuthBloc, AuthState>(
@@ -253,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   height: 52,
                                   child: ElevatedButton(
                                     onPressed:
-                                        isLoading ? null : _onSignIn,
+                                        isLoading ? null : _onContinue,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: colors.accent,
                                       foregroundColor: colors.background,
@@ -280,39 +210,10 @@ class _LoginScreenState extends State<LoginScreen>
                                               color: colors.background,
                                             ),
                                           )
-                                        : const Text('Sign In'),
+                                        : const Text('Continue'),
                                   ),
                                 );
                               },
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-
-                          // Sign up link
-                          Opacity(
-                            opacity: _linkFade.value,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium,
-                                ),
-                                GestureDetector(
-                                  onTap: () => context.go('/signup'),
-                                  child: Text(
-                                    'Sign up',
-                                    style: TextStyle(
-                                      fontFamily: 'Karla',
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: colors.accent,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xxl),
@@ -328,5 +229,4 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-
 }

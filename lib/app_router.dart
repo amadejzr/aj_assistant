@@ -7,7 +7,6 @@ import 'core/logging/log.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/signup_screen.dart';
 import 'features/shell/screens/home_screen.dart';
 import 'features/marketplace/screens/marketplace_screen.dart';
 import 'features/marketplace/screens/template_detail_screen.dart';
@@ -31,8 +30,7 @@ GoRouter createRouter(AuthBloc authBloc) {
 
       final isResolving = authState is AuthInitial;
       final isAuthenticated = authState is AuthAuthenticated;
-      final isOnAuth =
-          location == '/login' || location == '/signup';
+      final isOnAuth = location == '/login';
       final isOnSplash = location == '/splash';
 
       // Still resolving and not on splash → send to splash
@@ -68,13 +66,6 @@ GoRouter createRouter(AuthBloc authBloc) {
         pageBuilder: (context, state) => _pageFadeSlide(
           key: state.pageKey,
           child: const LoginScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/signup',
-        pageBuilder: (context, state) => _pageFadeSlide(
-          key: state.pageKey,
-          child: const SignupScreen(),
         ),
       ),
       ShellRoute(

@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +11,7 @@ import 'core/database/app_database.dart';
 import 'core/repositories/drift_module_repository.dart';
 import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
+import 'features/auth/bloc/auth_event.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/user_service.dart';
 import 'features/blueprint/renderer/widget_registry.dart';
@@ -23,7 +23,6 @@ import 'features/chat/cubit/model_cubit.dart';
 import 'features/chat/repositories/chat_repository.dart';
 import 'features/chat/repositories/drift_chat_repository.dart';
 import 'features/settings/cubit/theme_cubit.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,11 +34,8 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
   );
+  Log.i('App initialized', tag: 'App');
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Log.i('Firebase initialized', tag: 'App');
-
-  // Register all blueprint widget builders
   WidgetRegistry.instance.registerDefaults();
 
   final authService = AuthService();
@@ -51,7 +47,7 @@ void main() async {
   final themeCubit = ThemeCubit()..init();
   final modelCubit = ModelCubit()..init();
   final chatRepository = DriftChatRepository(db);
-  final marketplaceRepository = FirestoreMarketplaceRepository();
+  final marketplaceRepository = StubMarketplaceRepository();
 
   // Initialize notification scheduler
   final notificationScheduler = NotificationScheduler(capabilityRepository);
@@ -82,7 +78,7 @@ void main() async {
           BlocProvider(
             create: (_) =>
                 AuthBloc(authService: authService, userService: userService)
-                  ..startListening(),
+                  ..add(const AuthCheckRequested()),
           ),
           BlocProvider.value(value: themeCubit),
           BlocProvider.value(value: modelCubit),

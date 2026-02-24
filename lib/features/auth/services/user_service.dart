@@ -1,34 +1,30 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/app_user.dart';
 
 class UserService {
-  final FirebaseFirestore _firestore;
+  static const _keyUid = 'user_uid';
+  static const _keyName = 'user_name';
 
-  UserService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  final FlutterSecureStorage _storage;
 
-  CollectionReference<Map<String, dynamic>> get _usersRef =>
-      _firestore.collection('users');
+  UserService({FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage();
 
-  Future<AppUser?> getUser(String uid) async {
-    final doc = await _usersRef.doc(uid).get();
-    if (!doc.exists) return null;
-    return AppUser.fromFirestore(doc);
+  Future<AppUser?> getUser() async {
+    final uid = await _storage.read(key: _keyUid);
+    final name = await _storage.read(key: _keyName);
+    if (uid == null || name == null) return null;
+    return AppUser(uid: uid, email: 'local@device', displayName: name);
   }
 
-  Future<void> createUser(AppUser user) {
-    return _usersRef.doc(user.uid).set(user.toFirestore());
+  Future<void> createUser(AppUser user) async {
+    await _storage.write(key: _keyUid, value: user.uid);
+    await _storage.write(key: _keyName, value: user.displayName ?? 'User');
   }
 
-  Future<void> updateUser(String uid, Map<String, dynamic> fields) {
-    return _usersRef.doc(uid).update(fields);
-  }
-
-  Stream<AppUser?> watchUser(String uid) {
-    return _usersRef.doc(uid).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return AppUser.fromFirestore(doc);
-    });
+  Future<void> deleteUser() async {
+    await _storage.delete(key: _keyUid);
+    await _storage.delete(key: _keyName);
   }
 }
