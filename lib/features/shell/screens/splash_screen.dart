@@ -216,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Opacity(
                         opacity: _titleOpacity.value,
                         child: Text(
-                          'bower',
+                          'BowerLab',
                           style: TextStyle(
                             fontFamily: 'CormorantGaramond',
                             fontSize: 26,
@@ -233,7 +233,7 @@ class _SplashScreenState extends State<SplashScreen>
                     Opacity(
                       opacity: _subtitleOpacity.value,
                       child: Text(
-                        'your personal notebook',
+                        'your personal assistant',
                         style: TextStyle(
                           fontFamily: 'Karla',
                           fontSize: 12,

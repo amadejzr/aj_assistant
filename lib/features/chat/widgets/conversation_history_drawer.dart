@@ -39,7 +39,7 @@ class ConversationHistoryDrawer extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Text(
-        'Bower',
+        'BowerLab',
         style: TextStyle(
           fontFamily: 'CormorantGaramond',
           fontSize: 28,

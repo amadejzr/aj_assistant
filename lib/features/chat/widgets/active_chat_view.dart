@@ -64,7 +64,7 @@ class ActiveChatView extends StatelessWidget {
             ),
           ),
           Text(
-            'Bower',
+            'BowerLab',
             style: TextStyle(
               fontFamily: 'CormorantGaramond',
               fontSize: 22,
@@ -305,7 +305,7 @@ class _ChatInputState extends State<_ChatInput> {
                 color: colors.onBackground,
               ),
               decoration: InputDecoration(
-                hintText: 'Message Bower...',
+                hintText: 'Message BowerLab...',
                 fillColor: colors.background,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,

@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="assets/app_icon.png" width="120" alt="Bower logo" />
+  <img src="assets/app_icon.png" width="120" alt="BowerLab logo" />
 </p>
 
-<h1 align="center">Bower</h1>
+<h1 align="center">BowerLab</h1>
 
 <p align="center">
-  <em>your personal notebook</em>
+  <em>your modular personal assistant</em>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="#what-is-bower">What is Bower</a> &middot;
+  <a href="#what-is-bowerlab">What is BowerLab</a> &middot;
   <a href="#how-it-works">How it works</a> &middot;
   <a href="#features">Features</a> &middot;
   <a href="#roadmap">Roadmap</a> &middot;
@@ -27,17 +27,17 @@
 
 ---
 
-## What is Bower
+## What is BowerLab
 
-Bower is a modular personal notebook app. It uses a blueprint system and a local SQLite database to build modules — expense trackers, fitness logs, budgets, or anything you can think of. You define the schema, Bower renders the screens. You can also add entries to your modules through the AI chat. Full AI-powered module creation — where the chat designs schemas and screens for you — is planned for a future release.
+BowerLab is a modular personal assistant. You talk to the AI, and it builds modules for you — expense trackers, fitness logs, habit trackers, budgets, or anything you can think of. Each module is a mini-app with its own schema, screens, and data. The app starts empty — you and the AI build everything together through conversation.
 
 ## How it works
 
-1. **Pick a module** — browse the marketplace and install a pre-made template
-2. **Each module is a JSON blueprint** — it defines a SQLite schema (tables, indexes, triggers), navigation, and screens built from composable widgets like stat cards, forms, lists, and charts
+1. **Start a conversation** — tell the AI what you want to track or manage
+2. **The AI builds a module** — it designs a schema, screens, and navigation as a JSON blueprint
 3. **The blueprint engine renders native screens** — JSON is parsed into a Flutter widget tree at runtime, no custom code needed
 4. **Data stays on your device** — all entries live in SQLite via Drift, locally
-5. **Chat with the AI** — add entries, query your data, and interact with your modules through conversation
+5. **Keep chatting** — add entries, query your data, and manage your modules through conversation
 
 ## Features
 
@@ -46,26 +46,25 @@ Bower is a modular personal notebook app. It uses a blueprint system and a local
 - **Dynamic module tables** — each module generates its own SQLite tables from its schema definition
 - **Composable builders** — layout, display, input, and action builders that snap together into full screens
 - **Module capabilities** — modules can opt into built-in capabilities like reminders
-- **AI chat** — add entries to your modules through conversation with Claude
-- **Module marketplace** — browse, search, and install pre-made module templates
-
+- **AI chat** — create modules, add entries, and query your data through conversation with Claude
+- **Bundled templates** — get started quickly with pre-made module templates
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/showcase.png" width="800" alt="Bower showcase" />
+  <img src="docs/screenshots/showcase.png" width="800" alt="BowerLab showcase" />
 </p>
 
 ## Roadmap
 
-Bower is in active development. The architecture and approach are still evolving — contributions and ideas are welcome.
+BowerLab is in active development. The architecture and approach are still evolving — contributions and ideas are welcome.
 
-- [ ] AI-powered module creation — design schemas and screens through conversation
-- [ ] More capabilities — user-configured integrations like calendar sync, webhooks, cloud backup, and external APIs
+- [ ] AI-powered module creation — full creation flow where the AI designs schemas and screens through conversation
+- [ ] Cloud marketplace — a remote marketplace for community-created module blueprints, no need to bundle templates in the app
+- [ ] AI capabilities — let the AI fetch data from APIs, browse the web, and auto-fill module entries
+- [ ] More built-in capabilities — calendar sync, webhooks, cloud backup, and other integrations
 - [ ] Data export — CSV, JSON
 - [ ] More blueprint widgets — richer ways to display and visualize your data
-- [ ] Remove Firebase dependency — no login required, modules and marketplace work offline
-- [ ] Local AI chat — runs on-device with your own API key, no cloud functions
 - [ ] Multiple AI providers — support for different LLM backends beyond Claude
 
 ## Getting started
@@ -73,55 +72,27 @@ Bower is in active development. The architecture and approach are still evolving
 ### Prerequisites
 
 - [Flutter](https://flutter.dev/docs/get-started/install) 3.38+
-- [Firebase CLI](https://firebase.google.com/docs/cli) and [FlutterFire CLI](https://firebase.flutter.dev/docs/cli)
-- A Firebase project
 - An [Anthropic API key](https://console.anthropic.com/) (for AI chat)
 
 ### Setup
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/amadejzr/bower.git
-   cd bower
+   git clone https://github.com/amadejzr/bowerlab.git
+   cd bowerlab
    ```
 
-2. **Generate Firebase config files**
-   ```bash
-   flutterfire configure
-   ```
-   This creates `lib/firebase_options.dart`, `ios/Runner/GoogleService-Info.plist`, and `android/app/google-services.json`. These files are gitignored — each contributor generates their own from their Firebase project.
-
-3. **Install Flutter dependencies**
+2. **Install dependencies**
    ```bash
    flutter pub get
    ```
 
-4. **Set up Cloud Functions**
-   ```bash
-   cd functions
-   npm install
-   ```
-
-5. **Configure the Anthropic API key** as a Firebase secret:
-   ```bash
-   firebase functions:secrets:set ANTHROPIC_API_KEY
-   ```
-
-6. **Deploy Cloud Functions**
-   ```bash
-   firebase deploy --only functions
-   ```
-
-7. **Seed the marketplace** (optional — populates module templates in Firestore):
-   ```bash
-   dart run scripts/seed_marketplace.dart
-   ```
-   This requires a Firebase service account key at `scripts/service-account.json`. Generate one from Firebase Console → Project Settings → Service Accounts.
-
-8. **Run the app**
+3. **Run the app**
    ```bash
    flutter run
    ```
+
+4. **Add your API key** — open Settings in the app and enter your Anthropic API key to enable AI chat
 
 ## Tech stack
 

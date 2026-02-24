@@ -34,7 +34,7 @@ class _AJAssistantAppState extends State<AJAssistantApp> {
     return BlocBuilder<ThemeCubit, ThemeMode>(
       builder: (context, themeMode) {
         return MaterialApp.router(
-          title: 'Bower',
+          title: 'BowerLab',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
