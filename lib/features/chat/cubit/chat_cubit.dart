@@ -130,7 +130,10 @@ class ChatCubit extends Cubit<ChatState> {
           .map((m) => m.toApiMessage())
           .toList();
 
-      await _runToolLoop(systemPrompt, apiMessages, modules);
+      final tools = getToolDefinitions(
+        includeModuleCreation: modules.length < 5,
+      );
+      await _runToolLoop(systemPrompt, apiMessages, modules, tools);
     } catch (e) {
       Log.e('sendMessage failed: $e', tag: _tag);
       emit(state.copyWith(
@@ -208,6 +211,7 @@ class ChatCubit extends Cubit<ChatState> {
     String systemPrompt,
     List<Map<String, dynamic>> messages,
     List<Module> modules,
+    List<Map<String, dynamic>> tools,
   ) async {
     final apiMessages = List<Map<String, dynamic>>.from(messages);
 
@@ -220,7 +224,7 @@ class ChatCubit extends Cubit<ChatState> {
       await for (final event in _claude.stream(
         systemPrompt: systemPrompt,
         messages: apiMessages,
-        tools: toolDefinitions,
+        tools: tools,
         model: _model,
       )) {
         switch (event) {

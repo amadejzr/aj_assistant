@@ -3,12 +3,27 @@ import 'package:aj_assistant/core/ai/tool_definitions.dart';
 
 void main() {
   group('toolDefinitions', () {
-    test('contains exactly 7 tools', () {
-      expect(toolDefinitions, hasLength(7));
+    test('core tools contains 7 tools (no createModule)', () {
+      expect(coreToolDefinitions, hasLength(7));
+      final names = coreToolDefinitions.map((t) => t['name']).toSet();
+      expect(names, isNot(contains('createModule')));
+    });
+
+    test('getToolDefinitions with module creation includes all 8', () {
+      final all = getToolDefinitions(includeModuleCreation: true);
+      expect(all, hasLength(8));
+    });
+
+    test('getToolDefinitions without module creation has 7', () {
+      final core = getToolDefinitions(includeModuleCreation: false);
+      expect(core, hasLength(7));
+      final names = core.map((t) => t['name']).toSet();
+      expect(names, isNot(contains('createModule')));
     });
 
     test('all tools have required fields', () {
-      for (final tool in toolDefinitions) {
+      final all = getToolDefinitions();
+      for (final tool in all) {
         expect(tool['name'], isA<String>());
         expect(tool['description'], isA<String>());
         expect(tool['input_schema'], isA<Map>());
@@ -17,7 +32,7 @@ void main() {
     });
 
     test('tool names match expected set', () {
-      final names = toolDefinitions.map((t) => t['name']).toSet();
+      final names = getToolDefinitions().map((t) => t['name']).toSet();
       expect(names, {
         'createEntry',
         'createEntries',
@@ -25,6 +40,7 @@ void main() {
         'updateEntry',
         'updateEntries',
         'getModuleSummary',
+        'runQuery',
         'createModule',
       });
     });

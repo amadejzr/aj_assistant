@@ -1,3 +1,5 @@
+import 'prompts/blueprint_reference.dart';
+
 const toolsRequiringApproval = {
   'createEntry',
   'createEntries',
@@ -6,13 +8,31 @@ const toolsRequiringApproval = {
   'createModule',
 };
 
-const toolDefinitions = <Map<String, dynamic>>[
+/// Returns the tool definitions appropriate for the current context.
+///
+/// [includeModuleCreation] controls whether the `createModule` tool (with its
+/// large blueprint reference) is included. Pass `false` when the user already
+/// has modules and the message doesn't suggest creating one — this saves
+/// significant tokens per API call.
+List<Map<String, dynamic>> getToolDefinitions({
+  bool includeModuleCreation = true,
+}) {
+  return [
+    ...coreToolDefinitions,
+    if (includeModuleCreation) createModuleToolDefinition,
+  ];
+}
+
+/// All tools that are always included regardless of context.
+final coreToolDefinitions = <Map<String, dynamic>>[
   {
     'name': 'createEntry',
     'description':
         'Create a new data entry in a module. Use this when the user wants '
             'to add, log, or record something (an expense, a workout, a habit '
-            'check-in, etc.). Always confirm the module and data before creating.',
+            'check-in, etc.). Call this tool directly — the app shows the user '
+            'an approval card before anything is saved. Do NOT include id, '
+            'created_at, or updated_at in data — they are auto-generated.',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -41,7 +61,8 @@ const toolDefinitions = <Map<String, dynamic>>[
     'description':
         'Create multiple entries in a module at once. Use this instead of '
             'createEntry when the user wants to add several items in one go. '
-            'All entries use the same schema. Maximum 50 entries per call.',
+            'All entries use the same schema. Maximum 50 entries per call. '
+            'Do NOT include id, created_at, or updated_at — they are auto-generated.',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -74,8 +95,9 @@ const toolDefinitions = <Map<String, dynamic>>[
   {
     'name': 'queryEntries',
     'description':
-        'Query and read entries from a module. Use this to look up, search, '
-            'list, or check existing data. Returns entries matching the filters.',
+        'Query and read entries from a module. Best for simple lookups: '
+            'list recent entries, find by field value, check if something exists. '
+            'For statistics, aggregations, GROUP BY, or date ranges use runQuery instead.',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -108,6 +130,11 @@ const toolDefinitions = <Map<String, dynamic>>[
           'type': 'string',
           'description':
               'Field key to order results by. Defaults to created_at.',
+        },
+        'orderDirection': {
+          'type': 'string',
+          'enum': ['ASC', 'DESC'],
+          'description': 'Sort direction. Defaults to DESC (newest first).',
         },
         'limit': {
           'type': 'number',
@@ -179,7 +206,9 @@ const toolDefinitions = <Map<String, dynamic>>[
     'name': 'getModuleSummary',
     'description':
         'Get an overview of a module\'s data without fetching every entry. '
-            'Returns entry counts, recent entries, and numeric field aggregates.',
+            'Returns column schema (names and types), entry count, and the 5 '
+            'most recent entries. Use this to understand a module\'s structure '
+            'before querying or to display a quick summary.',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -196,32 +225,53 @@ const toolDefinitions = <Map<String, dynamic>>[
     },
   },
   {
-    'name': 'createModule',
+    'name': 'runQuery',
     'description':
-        'Create a new module with database tables and blueprint screens. '
-            'See the BLUEPRINT REFERENCE section in your system prompt for '
-            'exact widget specs. Follow those specs precisely.\n\n'
-            'TABLE RULES:\n'
-            '- Provide structured column definitions in "tables" — '
-            'CREATE TABLE, DROP TABLE, and all mutations are auto-generated\n'
-            '- Column types use FieldType names (text, number, boolean, '
-            'datetime, enumType, currency, etc.)\n'
-            '- Do NOT write raw SQL for table creation or mutations\n\n'
-            'SCREEN RULES:\n'
-            '- Every module needs a "main" screen\n'
-            '- Root screen type must be "screen", "form_screen", or '
-            '"tab_screen"\n'
-            '- All input widgets use "fieldKey" (NOT "key") to bind to '
-            'database columns\n'
-            '- Use {{fieldName}} templates in entry_card title/subtitle/trailing\n'
-            '- form_screen uses "table" to specify its target schema key — '
-            'mutations are auto-generated\n\n'
-            'DATA ACCESS:\n'
-            '- Every screen that DISPLAYS data needs a "queries" map with '
-            'SQL SELECT statements using {{schemaKey}} placeholders\n'
-            '- Do NOT write mutations — they are auto-generated from '
-            'form_screen "table" property\n'
-            '- See BLUEPRINT REFERENCE in system prompt for exact format',
+        'Run a custom read-only SQL SELECT query against a module\'s table. '
+            'Use this for statistics, aggregations, date ranges, GROUP BY, '
+            'text search (LIKE), JOINs, and anything queryEntries can\'t do. '
+            'Prefer this over queryEntries for any analytical question.\n\n'
+            'The placeholder {{table}} is replaced with the actual table name.\n\n'
+            'Examples:\n'
+            '- Total spent: SELECT SUM(amount) as total FROM {{table}}\n'
+            '- This month: SELECT SUM(amount) as total FROM {{table}} '
+            'WHERE date >= strftime(\'%s\', date(\'now\',\'start of month\')) * 1000\n'
+            '- By category: SELECT category, SUM(amount) as total FROM '
+            '{{table}} GROUP BY category ORDER BY total DESC\n'
+            '- Count: SELECT COUNT(*) as count FROM {{table}} WHERE completed = 1',
+    'input_schema': {
+      'type': 'object',
+      'properties': {
+        'moduleId': {
+          'type': 'string',
+          'description': 'The ID of the module to query.',
+        },
+        'schemaKey': {
+          'type': 'string',
+          'description':
+              'Schema key within the module (default: "default").',
+        },
+        'sql': {
+          'type': 'string',
+          'description':
+              'A SELECT query using {{table}} as the table placeholder. '
+                  'Only SELECT is allowed.',
+        },
+      },
+      'required': ['moduleId', 'sql'],
+    },
+  },
+];
+
+/// The createModule tool with full blueprint reference.
+/// Separated because the blueprint reference is ~4k tokens — only include
+/// when module creation is relevant.
+final createModuleToolDefinition = <String, dynamic>{
+  'name': 'createModule',
+  'description':
+      'Create a new module with database tables and blueprint screens. '
+          'Follow the BLUEPRINT REFERENCE below precisely.\n\n'
+          '$blueprintReference',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -395,8 +445,7 @@ const toolDefinitions = <Map<String, dynamic>>[
       },
       'required': ['name', 'description', 'tables', 'screens'],
     },
-  },
-];
+  };
 
 String describeAction(String name, Map<String, dynamic> input) {
   switch (name) {

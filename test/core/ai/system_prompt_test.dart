@@ -7,13 +7,13 @@ void main() {
   group('buildSystemPrompt', () {
     test('includes base instructions', () {
       final prompt = buildSystemPrompt([]);
-      expect(prompt, contains('You are AJ'));
+      expect(prompt, contains('You are Bower'));
       expect(prompt, contains('personal assistant'));
     });
 
-    test('includes today date', () {
+    test('includes current date and time', () {
       final prompt = buildSystemPrompt([]);
-      expect(prompt, matches(RegExp(r'\d{4}-\d{2}-\d{2}')));
+      expect(prompt, matches(RegExp(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}')));
     });
 
     test('shows no modules message when empty', () {

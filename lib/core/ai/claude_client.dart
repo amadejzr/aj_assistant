@@ -80,6 +80,10 @@ class ClaudeClient {
 
   /// Streams a single Claude API call. Handles SSE parsing, text deltas,
   /// and tool_use block accumulation.
+  ///
+  /// Uses Anthropic prompt caching: the system prompt and last tool definition
+  /// are marked with `cache_control` to avoid re-processing on every call.
+  /// This reduces latency and cost by ~90% for the cached portions.
   Stream<ChatEvent> stream({
     required String systemPrompt,
     required List<Map<String, dynamic>> messages,
@@ -87,12 +91,24 @@ class ClaudeClient {
     String? model,
     int? maxTokens,
   }) async* {
+    // Format system prompt as array with cache_control on the text block
+    final systemBlocks = [
+      {
+        'type': 'text',
+        'text': systemPrompt,
+        'cache_control': {'type': 'ephemeral'},
+      },
+    ];
+
+    // Add cache_control to the last tool so the full tool list is cached
+    final cachedTools = _withCacheControlOnLast(tools);
+
     final body = jsonEncode({
       'model': model ?? _defaultModel,
       'max_tokens': maxTokens ?? _defaultMaxTokens,
-      'system': systemPrompt,
+      'system': systemBlocks,
       'messages': messages,
-      'tools': tools,
+      'tools': cachedTools,
       'stream': true,
     });
 
@@ -202,6 +218,20 @@ class ClaudeClient {
     }
 
     yield ChatDone(fullText);
+  }
+
+  /// Returns a copy of [tools] with `cache_control` added to the last item.
+  List<Map<String, dynamic>> _withCacheControlOnLast(
+    List<Map<String, dynamic>> tools,
+  ) {
+    if (tools.isEmpty) return tools;
+    return [
+      ...tools.sublist(0, tools.length - 1),
+      {
+        ...tools.last,
+        'cache_control': {'type': 'ephemeral'},
+      },
+    ];
   }
 
   void close() {

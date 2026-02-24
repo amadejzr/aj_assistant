@@ -36,6 +36,8 @@ class ToolExecutor {
           return _queryEntries(input);
         case 'getModuleSummary':
           return _getModuleSummary(input);
+        case 'runQuery':
+          return _runQuery(input);
         default:
           return jsonEncode({'error': 'Unknown read-only tool: $toolName'});
       }
@@ -68,6 +70,10 @@ class ToolExecutor {
     final filters =
         (input['filters'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final orderBy = input['orderBy'] as String? ?? 'created_at';
+    final orderDir =
+        (input['orderDirection'] as String?)?.toUpperCase() == 'ASC'
+            ? 'ASC'
+            : 'DESC';
     final limit = (input['limit'] as num?)?.toInt().clamp(1, 50) ?? 20;
 
     var sql = 'SELECT * FROM "$tableName"';
@@ -84,7 +90,7 @@ class ToolExecutor {
       sql += ' WHERE ${clauses.join(' AND ')}';
     }
 
-    sql += ' ORDER BY "$orderBy" DESC LIMIT ?';
+    sql += ' ORDER BY "$orderBy" $orderDir LIMIT ?';
     variables.add(Variable(limit));
 
     final rows = await _db.customSelect(sql, variables: variables).get();
@@ -106,6 +112,18 @@ class ToolExecutor {
       return jsonEncode({'error': 'Could not resolve table name'});
     }
 
+    // Column schema (so AI knows types for formatting)
+    final pragmaRows = await _db
+        .customSelect('PRAGMA table_info("$tableName")')
+        .get();
+    final columns = pragmaRows
+        .map((r) => {
+              'name': r.data['name'],
+              'type': r.data['type'],
+              'notnull': r.data['notnull'],
+            })
+        .toList();
+
     // Total count
     final countResult = await _db
         .customSelect('SELECT COUNT(*) as cnt FROM "$tableName"')
@@ -120,8 +138,71 @@ class ToolExecutor {
     final recentEntries = recentRows.map((r) => r.data).toList();
 
     return jsonEncode({
+      'columns': columns,
       'totalEntries': totalEntries,
       'recentEntries': recentEntries,
+    });
+  }
+
+  /// Returns an error message if [sql] is not a safe read-only SELECT,
+  /// or null if it passes validation.
+  static String? _validateSelectOnly(String sql) {
+    if (sql.isEmpty) return 'SQL query is empty.';
+    if (!sql.toUpperCase().startsWith('SELECT')) {
+      return 'Only SELECT queries are allowed.';
+    }
+    // Reject multiple statements
+    if (sql.contains(';')) {
+      return 'Multiple statements are not allowed. Remove semicolons.';
+    }
+    // Reject DDL/DML keywords anywhere in the query
+    final upper = sql.toUpperCase();
+    const forbidden = [
+      'INSERT ',
+      'UPDATE ',
+      'DELETE ',
+      'DROP ',
+      'ALTER ',
+      'CREATE ',
+      'REPLACE ',
+      'ATTACH ',
+      'DETACH ',
+      'PRAGMA ',
+    ];
+    for (final keyword in forbidden) {
+      if (upper.contains(keyword)) {
+        return 'Query contains forbidden keyword: ${keyword.trim()}.';
+      }
+    }
+    return null;
+  }
+
+  Future<String> _runQuery(Map<String, dynamic> input) async {
+    final sql = (input['sql'] as String?)?.trim() ?? '';
+
+    final rejection = _validateSelectOnly(sql);
+    if (rejection != null) {
+      return jsonEncode({'error': rejection});
+    }
+
+    final tableName = input['tableName'] as String? ??
+        await resolveTableName(
+          input['moduleId'] as String,
+          input['schemaKey'] as String?,
+        );
+    if (tableName == null) {
+      return jsonEncode({'error': 'Could not resolve table name'});
+    }
+
+    // Replace {{table}} placeholder with actual table name
+    final resolvedSql = sql.replaceAll('{{table}}', '"$tableName"');
+
+    final rows = await _db.customSelect(resolvedSql).get();
+    final results = rows.map((r) => r.data).toList();
+
+    return jsonEncode({
+      'count': results.length,
+      'results': results,
     });
   }
 }
