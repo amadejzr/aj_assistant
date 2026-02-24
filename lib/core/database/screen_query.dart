@@ -138,9 +138,10 @@ class ScreenMutations extends Equatable {
   const ScreenMutations({this.create, this.update, this.delete});
 
   factory ScreenMutations.fromJson(Map<String, dynamic> json) {
+    final createJson = json['create'] ?? json['insert'];
     return ScreenMutations(
       create:
-          json['create'] != null ? ScreenMutation.fromJson(json['create']) : null,
+          createJson != null ? ScreenMutation.fromJson(createJson) : null,
       update:
           json['update'] != null ? ScreenMutation.fromJson(json['update']) : null,
       delete:

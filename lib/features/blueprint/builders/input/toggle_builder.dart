@@ -28,7 +28,8 @@ class _ToggleWidget extends StatelessWidget {
     final colors = context.colors;
     final meta = ctx.resolveFieldMeta(input.fieldKey, input.properties);
     final label = meta.label;
-    final currentValue = ctx.getFormValue(input.fieldKey) as bool? ?? false;
+    final raw = ctx.getFormValue(input.fieldKey);
+    final currentValue = raw is bool ? raw : (raw == 1 || raw == true);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),

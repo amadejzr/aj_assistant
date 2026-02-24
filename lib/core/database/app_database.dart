@@ -17,7 +17,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -51,6 +51,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         await m.createTable(conversations);
         await m.createTable(chatMessages);
+      }
+      if (from < 7) {
+        await customStatement(
+          'ALTER TABLE conversations ADD COLUMN title TEXT',
+        );
       }
     },
   );

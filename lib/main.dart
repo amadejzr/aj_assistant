@@ -19,6 +19,9 @@ import 'features/capabilities/repositories/capability_repository.dart';
 import 'features/capabilities/repositories/drift_capability_repository.dart';
 import 'features/capabilities/services/notification_scheduler.dart';
 import 'core/ai/api_key_service.dart';
+import 'features/chat/cubit/model_cubit.dart';
+import 'features/chat/repositories/chat_repository.dart';
+import 'features/chat/repositories/drift_chat_repository.dart';
 import 'features/settings/cubit/theme_cubit.dart';
 import 'firebase_options.dart';
 
@@ -46,6 +49,8 @@ void main() async {
   final capabilityRepository = DriftCapabilityRepository(db);
   final apiKeyService = ApiKeyService();
   final themeCubit = ThemeCubit()..init();
+  final modelCubit = ModelCubit()..init();
+  final chatRepository = DriftChatRepository(db);
   final marketplaceRepository = FirestoreMarketplaceRepository();
 
   // Initialize notification scheduler
@@ -64,6 +69,7 @@ void main() async {
           value: capabilityRepository,
         ),
         RepositoryProvider<ApiKeyService>.value(value: apiKeyService),
+        RepositoryProvider<ChatRepository>.value(value: chatRepository),
         RepositoryProvider<MarketplaceRepository>.value(
           value: marketplaceRepository,
         ),
@@ -79,6 +85,7 @@ void main() async {
                   ..startListening(),
           ),
           BlocProvider.value(value: themeCubit),
+          BlocProvider.value(value: modelCubit),
         ],
         child: const AJAssistantApp(),
       ),

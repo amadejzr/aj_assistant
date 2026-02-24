@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../bloc/chat_bloc.dart';
-import '../bloc/chat_event.dart';
+import '../cubit/chat_cubit.dart';
 import '../models/message.dart';
 
 class ApprovalCard extends StatelessWidget {
@@ -106,7 +105,7 @@ class ApprovalCard extends StatelessWidget {
       children: [
         TextButton(
           onPressed: () {
-            context.read<ChatBloc>().add(const ChatActionRejected());
+            context.read<ChatCubit>().rejectActions();
           },
           child: Text(
             'Reject',
@@ -121,7 +120,7 @@ class ApprovalCard extends StatelessWidget {
         const SizedBox(width: 8),
         FilledButton(
           onPressed: () {
-            context.read<ChatBloc>().add(const ChatActionApproved());
+            context.read<ChatCubit>().approveActions();
           },
           style: FilledButton.styleFrom(
             backgroundColor: colors.accent,

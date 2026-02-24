@@ -48,6 +48,7 @@ class Capabilities extends Table {
 @DataClassName('Conversation')
 class Conversations extends Table {
   TextColumn get id => text()();
+  TextColumn get title => text().nullable()();
   IntColumn get createdAt => integer()();
   IntColumn get lastMessageAt => integer()();
 

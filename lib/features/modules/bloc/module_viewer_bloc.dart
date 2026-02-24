@@ -188,14 +188,26 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
       // SQL mutation path
       if (_mutationExecutor != null && _currentMutations != null) {
-        final ScreenMutation mutation;
+        final isEdit = entryId != null && entryId.isNotEmpty;
+        final mutation = isEdit
+            ? _currentMutations!.update
+            : _currentMutations!.create;
+
+        if (mutation == null) {
+          emit(current.copyWith(
+            isSubmitting: false,
+            submitError: isEdit
+                ? 'This screen does not support editing.'
+                : 'This screen does not support creating entries.',
+          ));
+          return;
+        }
+
         final String resolvedEntryId;
-        if (entryId != null && entryId.isNotEmpty) {
-          mutation = _currentMutations!.update!;
+        if (isEdit) {
           await _mutationExecutor!.update(mutation, entryId, data);
           resolvedEntryId = entryId;
         } else {
-          mutation = _currentMutations!.create!;
           resolvedEntryId = await _mutationExecutor!.create(mutation, data);
         }
 

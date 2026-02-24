@@ -6,7 +6,7 @@ import '../logging/log.dart';
 
 const _tag = 'ClaudeClient';
 const _apiUrl = 'https://api.anthropic.com/v1/messages';
-const _defaultModel = 'claude-opus-4-6';
+const _defaultModel = 'claude-sonnet-4-6';
 const _defaultMaxTokens = 16384;
 const _apiVersion = '2023-06-01';
 
