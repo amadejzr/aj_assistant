@@ -3,6 +3,7 @@ const toolsRequiringApproval = {
   'createEntries',
   'updateEntry',
   'updateEntries',
+  'createModule',
 };
 
 const toolDefinitions = <Map<String, dynamic>>[
@@ -194,6 +195,194 @@ const toolDefinitions = <Map<String, dynamic>>[
       'required': ['moduleId'],
     },
   },
+  {
+    'name': 'createModule',
+    'description':
+        'Create a new module with database tables and blueprint screens. '
+            'See the BLUEPRINT REFERENCE section in your system prompt for '
+            'exact widget specs. Follow those specs precisely.\n\n'
+            'DATABASE RULES:\n'
+            '- Table names: m_{snake_module_name}_{schema_key}\n'
+            '- All CREATE statements MUST use IF NOT EXISTS\n'
+            '- Every table MUST have: id TEXT PRIMARY KEY, '
+            'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL\n\n'
+            'SCREEN RULES:\n'
+            '- Every module needs a "main" screen\n'
+            '- Root screen type must be "screen", "form_screen", or '
+            '"tab_screen"\n'
+            '- All input widgets use "fieldKey" (NOT "key") to bind to '
+            'database columns\n'
+            '- Use {{fieldName}} templates in entry_card title/subtitle/trailing\n'
+            '- form_screen needs an "add_" prefixed screen ID to create entries\n\n'
+            'DATA ACCESS (CRITICAL — screens will NOT work without this):\n'
+            '- Every screen that DISPLAYS data needs a "queries" map with SQL SELECT statements\n'
+            '- Every form_screen that SAVES data needs a "mutations" map with create/update/delete SQL\n'
+            '- The main screen should also have mutations if it has swipe-to-delete or inline updates\n'
+            '- See BLUEPRINT REFERENCE in system prompt for exact format and examples',
+    'input_schema': {
+      'type': 'object',
+      'properties': {
+        'name': {
+          'type': 'string',
+          'description': 'Display name for the module.',
+        },
+        'description': {
+          'type': 'string',
+          'description': 'Short description of what the module tracks.',
+        },
+        'icon': {
+          'type': 'string',
+          'description':
+              'Phosphor icon name (e.g. "wallet", "barbell", "check-circle").',
+        },
+        'color': {
+          'type': 'string',
+          'description': 'Hex color for the module accent, e.g. "#D94E33".',
+        },
+        'database': {
+          'type': 'object',
+          'description': 'Database schema definition.',
+          'properties': {
+            'tableNames': {
+              'type': 'object',
+              'description':
+                  'Map of schema key → SQLite table name. '
+                      'e.g. { "default": "m_water_log_default" } for '
+                      'single-table, or { "account": "m_budget_accounts", '
+                      '"expense": "m_budget_expenses" } for multi-table.',
+            },
+            'setup': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  'CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS '
+                      'statements, executed in order.',
+            },
+            'teardown': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  'DROP TABLE IF EXISTS statements, one per table.',
+            },
+          },
+          'required': ['tableNames', 'setup', 'teardown'],
+        },
+        'screens': {
+          'type': 'object',
+          'description':
+              'Map of screen ID → blueprint JSON. Must include "main". '
+                  'Add screens use "add_entry" or "add_{schemaKey}" IDs. '
+                  'Each screen is a JSON object with "type" as root widget. '
+                  'See BLUEPRINT REFERENCE for exact widget specs.',
+          'additionalProperties': {
+            'type': 'object',
+            'description': 'A blueprint screen definition.',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['screen', 'form_screen', 'tab_screen'],
+                'description': 'Root widget type for this screen.',
+              },
+              'title': {
+                'type': 'string',
+                'description': 'Screen title shown in the app bar.',
+              },
+              'children': {
+                'type': 'array',
+                'description':
+                    'Child widgets. For screen/form_screen, array of widget '
+                        'objects. Each widget has "type" and type-specific fields.',
+              },
+              'fab': {
+                'type': 'object',
+                'description':
+                    'Floating action button. '
+                        '{ "type": "fab", "icon": "plus", '
+                        '"action": { "type": "navigate", "screen": "add_entry" } }',
+              },
+              'submitLabel': {
+                'type': 'string',
+                'description': 'form_screen only. Button label, default "Save".',
+              },
+              'defaults': {
+                'type': 'object',
+                'description':
+                    'form_screen only. Default field values for new entries.',
+              },
+              'tabs': {
+                'type': 'array',
+                'description':
+                    'tab_screen only. Array of { label, icon, content } '
+                        'where content is a widget tree (usually scroll_column).',
+              },
+              'queries': {
+                'type': 'object',
+                'description':
+                    'REQUIRED for screens that display data. Map of query name '
+                        '→ { "sql": "SELECT ..." }. Example: '
+                        '{ "entries": { "sql": "SELECT id, name, amount FROM '
+                        '"m_expenses_default" ORDER BY created_at DESC" } }. '
+                        'Always quote table names with double quotes in SQL.',
+              },
+              'mutations': {
+                'type': 'object',
+                'description':
+                    'REQUIRED for form screens that save data. '
+                        '{ "create": "INSERT INTO ...", '
+                        '"update": "UPDATE ... WHERE id = :id", '
+                        '"delete": "DELETE FROM ... WHERE id = :id" }. '
+                        'Use :paramName for named params. :id, :created_at, '
+                        ':updated_at are auto-generated. Use COALESCE(:field, field) '
+                        'in UPDATE for partial updates.',
+              },
+            },
+            'required': ['type'],
+          },
+        },
+        'navigation': {
+          'type': 'object',
+          'description':
+              'Optional. For multi-screen modules with bottom navigation.\n'
+                  'Format: { "bottomNav": { "items": [ '
+                  '{ "label": "Home", "icon": "house", "screenId": "main" }, '
+                  '{ "label": "Stats", "icon": "chart-bar", "screenId": "stats" } '
+                  '] } }',
+          'properties': {
+            'bottomNav': {
+              'type': 'object',
+              'properties': {
+                'items': {
+                  'type': 'array',
+                  'items': {
+                    'type': 'object',
+                    'properties': {
+                      'label': {'type': 'string'},
+                      'icon': {'type': 'string'},
+                      'screenId': {'type': 'string'},
+                    },
+                    'required': ['label', 'icon', 'screenId'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        'guide': {
+          'type': 'array',
+          'description':
+              'Optional onboarding guide. Array of { title, body } objects.',
+          'items': {
+            'type': 'object',
+            'properties': {
+              'title': {'type': 'string'},
+              'body': {'type': 'string'},
+            },
+          },
+        },
+      },
+      'required': ['name', 'description', 'database', 'screens'],
+    },
+  },
 ];
 
 String describeAction(String name, Map<String, dynamic> input) {
@@ -212,6 +401,15 @@ String describeAction(String name, Map<String, dynamic> input) {
     case 'updateEntries':
       final entries = input['entries'] as List? ?? [];
       return 'Update ${entries.length} entries in module';
+    case 'createModule':
+      final name = input['name'] as String? ?? 'Unknown';
+      final db = input['database'] as Map? ?? {};
+      final setup = db['setup'] as List? ?? [];
+      final tableCount =
+          setup.where((s) => (s as String).toUpperCase().startsWith('CREATE TABLE')).length;
+      final screens = input['screens'] as Map? ?? {};
+      return 'Create module "$name" ($tableCount table${tableCount == 1 ? '' : 's'}, '
+          '${screens.length} screen${screens.length == 1 ? '' : 's'})';
     default:
       return '$name($input)';
   }

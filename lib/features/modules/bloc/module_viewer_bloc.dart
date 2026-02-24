@@ -113,6 +113,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
       screenStack: updatedStack,
       formValues: {},
       resolvedExpressions: resolved,
+      paginationOffsets: {},
     ));
 
     if (_queryExecutor != null) {
@@ -128,15 +129,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
     if (current is! ModuleViewerLoaded) return;
     if (current.screenStack.isEmpty) return;
 
-    final stack = List<ScreenEntry>.from(current.screenStack);
-    final previous = stack.removeLast();
-
-    emit(current.copyWith(
-      currentScreenId: previous.screenId,
-      screenParams: previous.params,
-      screenStack: stack,
-      formValues: {},
-    ));
+    _popScreenStack(emit);
   }
 
   void _onFormValueChanged(
@@ -187,19 +180,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         final updatedModule = current.module.copyWith(settings: updatedSettings);
         await moduleRepository.updateModule(userId, updatedModule);
 
-        final stack = List<ScreenEntry>.from(current.screenStack);
-        final previous = stack.isNotEmpty
-            ? stack.removeLast()
-            : const ScreenEntry('main');
-
-        emit(current.copyWith(
-          module: updatedModule,
-          currentScreenId: previous.screenId,
-          screenParams: previous.params,
-          screenStack: stack,
-          formValues: {},
-          isSubmitting: false,
-        ));
+        _popScreenStack(emit, updatedModule: updatedModule, isSubmitting: false);
         return;
       }
 
@@ -243,22 +224,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
         final successMessage = mutation.onSuccess?['message'] as String?;
 
-        final stack = List<ScreenEntry>.from(current.screenStack);
-        final previous = stack.isNotEmpty
-            ? stack.removeLast()
-            : const ScreenEntry('main');
-
-        emit(current.copyWith(
-          currentScreenId: previous.screenId,
-          screenParams: previous.params,
-          screenStack: stack,
-          formValues: {},
-          isSubmitting: false,
-          submitSuccess: successMessage,
-        ));
-
-        // Re-subscribe to the previous screen's queries
-        _subscribeToScreen(current.module, previous.screenId, previous.params);
+        _popScreenStack(emit, isSubmitting: false, submitSuccess: successMessage);
         return;
       }
 
@@ -306,15 +272,7 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
         final currentEntryId = current.screenParams['_entryId'] as String?;
         if (currentEntryId == event.entryId &&
             current.screenStack.isNotEmpty) {
-          final stack = List<ScreenEntry>.from(current.screenStack);
-          final previous = stack.removeLast();
-          emit(current.copyWith(
-            currentScreenId: previous.screenId,
-            screenParams: previous.params,
-            screenStack: stack,
-            formValues: {},
-            submitSuccess: successMessage,
-          ));
+          _popScreenStack(emit, submitSuccess: successMessage);
         } else if (successMessage != null) {
           emit(current.copyWith(submitSuccess: successMessage));
         }
@@ -360,6 +318,42 @@ class ModuleViewerBloc extends Bloc<ModuleViewerEvent, ModuleViewerState> {
 
     if (_queryExecutor != null) {
       _subscribeToScreen(current.module, current.currentScreenId, updated);
+    }
+  }
+
+  // ─── Navigation helpers ───
+
+  void _popScreenStack(
+    Emitter<ModuleViewerState> emit, {
+    Module? updatedModule,
+    bool isSubmitting = false,
+    String? submitSuccess,
+  }) {
+    final current = state;
+    if (current is! ModuleViewerLoaded) return;
+
+    final stack = List<ScreenEntry>.from(current.screenStack);
+    final previous = stack.isNotEmpty
+        ? stack.removeLast()
+        : const ScreenEntry('main');
+
+    final effectiveModule = updatedModule ?? current.module;
+    final resolved = _resolveExpressions(effectiveModule, previous.screenId);
+
+    emit(current.copyWith(
+      module: updatedModule,
+      currentScreenId: previous.screenId,
+      screenParams: previous.params,
+      screenStack: stack,
+      formValues: {},
+      resolvedExpressions: resolved,
+      paginationOffsets: {},
+      isSubmitting: isSubmitting,
+      submitSuccess: submitSuccess,
+    ));
+
+    if (_queryExecutor != null) {
+      _subscribeToScreen(effectiveModule, previous.screenId, previous.params);
     }
   }
 

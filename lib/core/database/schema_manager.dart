@@ -20,8 +20,17 @@ class SchemaManager {
     await _db.customStatement('PRAGMA foreign_keys = ON');
 
     for (final sql in database.setup) {
-      await _db.customStatement(sql);
+      await _db.customStatement(_ensureIfNotExists(sql));
     }
+  }
+
+  /// Normalizes CREATE statements to include IF NOT EXISTS so that
+  /// install is idempotent even if the AI omits the clause.
+  static String _ensureIfNotExists(String sql) {
+    return sql.replaceAllMapped(
+      RegExp(r'CREATE\s+(TABLE|INDEX|TRIGGER)\s+(?!IF\s+NOT\s+EXISTS\b)', caseSensitive: false),
+      (m) => 'CREATE ${m[1]} IF NOT EXISTS ',
+    );
   }
 
   /// Uninstalls a module's database — runs all teardown SQL in order.
@@ -30,8 +39,16 @@ class SchemaManager {
     if (database == null) return;
 
     for (final sql in database.teardown) {
-      await _db.customStatement(sql);
+      await _db.customStatement(_ensureIfExists(sql));
     }
+  }
+
+  /// Normalizes DROP statements to include IF EXISTS.
+  static String _ensureIfExists(String sql) {
+    return sql.replaceAllMapped(
+      RegExp(r'DROP\s+(TABLE|INDEX|TRIGGER)\s+(?!IF\s+EXISTS\b)', caseSensitive: false),
+      (m) => 'DROP ${m[1]} IF EXISTS ',
+    );
   }
 
   /// Looks up which table to query for a given schema key.

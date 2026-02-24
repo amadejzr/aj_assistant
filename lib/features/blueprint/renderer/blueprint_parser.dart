@@ -265,8 +265,12 @@ class BlueprintParser {
   }
 
   EntryListNode _parseEntryList(Map<String, dynamic> json) {
+    final rawQuery = json['query'];
+    final query = rawQuery is Map
+        ? Map<String, dynamic>.from(rawQuery)
+        : <String, dynamic>{};
     return EntryListNode(
-      query: Map<String, dynamic>.from(json['query'] as Map? ?? {}),
+      query: query,
       filter: json['filter'] ?? const <String, dynamic>{},
       itemLayout: _parseChild(json['itemLayout']),
       title: json['title'] as String?,

@@ -6,8 +6,8 @@ import '../logging/log.dart';
 
 const _tag = 'ClaudeClient';
 const _apiUrl = 'https://api.anthropic.com/v1/messages';
-const _model = 'claude-sonnet-4-5-20250929';
-const _maxTokens = 4096;
+const _defaultModel = 'claude-opus-4-6';
+const _defaultMaxTokens = 16384;
 const _apiVersion = '2023-06-01';
 
 // ─── Chat Events ───
@@ -84,10 +84,12 @@ class ClaudeClient {
     required String systemPrompt,
     required List<Map<String, dynamic>> messages,
     required List<Map<String, dynamic>> tools,
+    String? model,
+    int? maxTokens,
   }) async* {
     final body = jsonEncode({
-      'model': _model,
-      'max_tokens': _maxTokens,
+      'model': model ?? _defaultModel,
+      'max_tokens': maxTokens ?? _defaultMaxTokens,
       'system': systemPrompt,
       'messages': messages,
       'tools': tools,
@@ -106,7 +108,7 @@ class ClaudeClient {
     request.headers.set('Content-Type', 'application/json');
     request.headers.set('x-api-key', apiKey);
     request.headers.set('anthropic-version', _apiVersion);
-    request.write(body);
+    request.add(utf8.encode(body));
 
     HttpClientResponse response;
     try {

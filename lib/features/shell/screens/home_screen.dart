@@ -12,7 +12,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/module_display_utils.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../auth/bloc/auth_bloc.dart';
-import '../../auth/bloc/auth_event.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/widgets/paper_background.dart';
 import '../../modules/bloc/modules_list_bloc.dart';
@@ -175,15 +174,6 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
             color: colors.onBackgroundMuted,
           ),
         ),
-        IconButton(
-          onPressed: () {
-            context.read<AuthBloc>().add(const AuthLogoutRequested());
-          },
-          icon: Icon(
-            PhosphorIcons.signOut(PhosphorIconsStyle.light),
-            color: colors.onBackgroundMuted,
-          ),
-        ),
       ],
     );
   }
@@ -267,7 +257,6 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(child: Text('NOTIFICATIONS')),
               Icon(
                 PhosphorIcons.notebook(PhosphorIconsStyle.light),
                 size: 56,
