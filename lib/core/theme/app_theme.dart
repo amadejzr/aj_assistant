@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_typography.dart';
@@ -36,9 +37,18 @@ abstract final class AppTheme {
   static ThemeData _buildTheme(AppColors colors, Brightness brightness) {
     final textTheme = AppTypography.textTheme(colors);
 
+    final statusBarStyle = brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
+
     return ThemeData(
       brightness: brightness,
       scaffoldBackgroundColor: colors.background,
+      appBarTheme: AppBarTheme(
+        systemOverlayStyle: statusBarStyle,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: colors.accent,

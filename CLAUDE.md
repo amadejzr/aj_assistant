@@ -1,4 +1,6 @@
-# AJ Assistant
+# BowerLab — Development Guide
+
+> This file is the project's AI-assisted development guide. It documents architecture decisions, design conventions, and coding standards used when building BowerLab with Claude Code. It doubles as useful documentation for human contributors too.
 
 Chat-first personal assistant. The user talks to Claude, Claude creates modules (expense trackers, fitness logs, habit trackers, budgets) through natural language. Each module is a mini-app with its own schema, screens, and data. The app starts empty — the AI and user build everything together.
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'app.dart';
@@ -31,9 +30,6 @@ void main() async {
   Log.addBackend(const ConsoleLogBackend());
   Bloc.observer = const AppBlocObserver();
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
-  );
   Log.i('App initialized', tag: 'App');
 
   WidgetRegistry.instance.registerDefaults();

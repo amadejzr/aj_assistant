@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.1-blue?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/flutter-3.38-02569B?style=flat-square&logo=flutter" alt="Flutter" />
   <img src="https://img.shields.io/badge/dart-3.10-0175C2?style=flat-square&logo=dart" alt="Dart" />
-  <img src="https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/platform-iOS-lightgrey?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
 </p>
 
@@ -20,6 +20,7 @@
   <a href="#what-is-bowerlab">What is BowerLab</a> &middot;
   <a href="#how-it-works">How it works</a> &middot;
   <a href="#features">Features</a> &middot;
+  <a href="#architecture">Architecture</a> &middot;
   <a href="#roadmap">Roadmap</a> &middot;
   <a href="#tech-stack">Tech stack</a> &middot;
   <a href="#license">License</a>
@@ -54,6 +55,24 @@ BowerLab is a modular personal assistant. You talk to the AI, and it builds modu
 <p align="center">
   <img src="docs/screenshots/showcase.png" width="800" alt="BowerLab showcase" />
 </p>
+
+<!-- TODO: Add a GIF/video demo showing: open app → chat with Claude → AI creates a module → module renders -->
+
+## Architecture
+
+BowerLab uses a **server-driven UI architecture**. Claude generates JSON blueprints describing screen layouts, and a custom rendering engine with 40+ widget builders turns them into native Flutter screens at runtime. No hardcoded screens — every module UI is defined by data.
+
+```
+Chat with Claude  →  JSON Blueprint  →  BlueprintParser  →  Widget Tree  →  Native UI
+```
+
+The engine supports four builder categories:
+- **Layout** — screen, form_screen, scroll_column, row, section, tabs
+- **Display** — stat_card, entry_list, chart, progress_bar, empty_state
+- **Input** — text, number, currency, date, enum, toggle, slider, rating
+- **Action** — button, fab, icon_button, action_menu
+
+`RenderContext` carries module data, resolved expressions, theme, and navigation callbacks through the tree. See [`lib/features/blueprint/`](lib/features/blueprint/) for the full implementation.
 
 ## Roadmap
 
@@ -98,7 +117,7 @@ BowerLab is in active development. The architecture and approach are still evolv
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Flutter (iOS + Android) |
+| Framework | Flutter (iOS) |
 | State management | flutter_bloc |
 | Local database | Drift (SQLite) |
 | Routing | GoRouter |
