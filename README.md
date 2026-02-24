@@ -50,13 +50,18 @@ BowerLab is a modular personal assistant. You talk to the AI, and it builds modu
 - **AI chat** — create modules, add entries, and query your data through conversation with Claude
 - **Bundled templates** — get started quickly with pre-made module templates
 
-## Screenshots
+## Demo
+
+https://github.com/amadejzr/bowerlab/raw/main/docs/demo.mp4
+
+<details>
+<summary>Screenshots</summary>
 
 <p align="center">
   <img src="docs/screenshots/showcase.png" width="800" alt="BowerLab showcase" />
 </p>
 
-<!-- TODO: Add a GIF/video demo showing: open app → chat with Claude → AI creates a module → module renders -->
+</details>
 
 ## Architecture
 

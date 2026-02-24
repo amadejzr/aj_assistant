@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/database/app_database.dart';
+import '../../../core/database/schema_manager.dart';
 import '../../../core/logging/log.dart';
 import '../../../core/models/module_template.dart';
 import '../../../core/repositories/marketplace_repository.dart';
@@ -12,11 +14,13 @@ const _tag = 'MarketplaceBloc';
 class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   final MarketplaceRepository marketplaceRepository;
   final ModuleRepository moduleRepository;
+  final AppDatabase db;
   final String userId;
 
   MarketplaceBloc({
     required this.marketplaceRepository,
     required this.moduleRepository,
+    required this.db,
     required this.userId,
   }) : super(const MarketplaceInitial()) {
     on<MarketplaceStarted>(_onStarted);
@@ -108,6 +112,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       final module = template.toModule(event.templateId);
 
       await moduleRepository.createModule(userId, module);
+      await SchemaManager(db: db).installModule(module);
 
       await marketplaceRepository.incrementInstallCount(event.templateId);
 

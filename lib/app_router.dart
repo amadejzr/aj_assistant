@@ -15,6 +15,7 @@ import 'features/marketplace/screens/template_detail_screen.dart';
 import 'features/capabilities/screens/reminders_screen.dart';
 import 'features/modules/screens/module_info_screen.dart';
 import 'features/modules/screens/module_viewer_screen.dart';
+import 'features/shell/screens/db_test_screen.dart';
 import 'features/shell/screens/shell_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/shell/screens/splash_screen.dart';
@@ -81,6 +82,14 @@ GoRouter createRouter(AuthBloc authBloc) {
             ),
           ),
         ],
+      ),
+      // DB test — full-screen, outside the shell
+      GoRoute(
+        path: '/db-test',
+        pageBuilder: (context, state) => _pageFadeSlide(
+          key: state.pageKey,
+          child: const DbTestScreen(),
+        ),
       ),
       // Marketplace — full-screen, outside the shell
       GoRoute(

@@ -7,6 +7,7 @@ import 'core/logging/console_log_backend.dart';
 import 'core/logging/log.dart';
 import 'core/repositories/marketplace_repository.dart';
 import 'core/database/app_database.dart';
+import 'core/database/schema_manager.dart';
 import 'core/repositories/drift_module_repository.dart';
 import 'core/repositories/module_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -38,6 +39,14 @@ void main() async {
   final userService = UserService();
   final db = AppDatabase();
   final moduleRepository = DriftModuleRepository(db);
+
+  // Ensure all dynamic module tables exist — Drift only manages its own
+  // static tables, so m_* tables need explicit recreation on startup.
+  final schemaManager = SchemaManager(db: db);
+  for (final module in await moduleRepository.getModules('')) {
+    await schemaManager.installModule(module);
+  }
+
   final capabilityRepository = DriftCapabilityRepository(db);
   final apiKeyService = ApiKeyService();
   final themeCubit = ThemeCubit()..init();

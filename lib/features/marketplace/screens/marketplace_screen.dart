@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/models/module_template.dart';
 import '../../../core/repositories/marketplace_repository.dart';
 import '../../../core/repositories/module_repository.dart';
@@ -29,6 +30,7 @@ class MarketplaceScreen extends StatelessWidget {
       create: (context) => MarketplaceBloc(
         marketplaceRepository: context.read<MarketplaceRepository>(),
         moduleRepository: context.read<ModuleRepository>(),
+        db: context.read<AppDatabase>(),
         userId: userId,
       )..add(const MarketplaceStarted()),
       child: const _MarketplaceBody(),
