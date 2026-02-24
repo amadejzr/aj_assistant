@@ -9,6 +9,15 @@ class TableNameGenerator {
     return 'm_${name}_$shortId';
   }
 
+  /// Generates a table name from [moduleName] and [schemaKey].
+  ///
+  /// Format: `m_{snake_name}_{schemaKey}`
+  static String schemaTable(String moduleName, String schemaKey) {
+    final name = _sanitize(moduleName);
+    final key = _sanitize(schemaKey);
+    return 'm_${name}_$key';
+  }
+
   /// Generates a safe column name from a field label or key.
   static String columnName(String fieldName) => _sanitize(fieldName);
 

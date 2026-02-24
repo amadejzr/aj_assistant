@@ -201,11 +201,12 @@ const toolDefinitions = <Map<String, dynamic>>[
         'Create a new module with database tables and blueprint screens. '
             'See the BLUEPRINT REFERENCE section in your system prompt for '
             'exact widget specs. Follow those specs precisely.\n\n'
-            'DATABASE RULES:\n'
-            '- Table names: m_{snake_module_name}_{schema_key}\n'
-            '- All CREATE statements MUST use IF NOT EXISTS\n'
-            '- Every table MUST have: id TEXT PRIMARY KEY, '
-            'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL\n\n'
+            'TABLE RULES:\n'
+            '- Provide structured column definitions in "tables" — '
+            'CREATE TABLE, DROP TABLE, and all mutations are auto-generated\n'
+            '- Column types use FieldType names (text, number, boolean, '
+            'datetime, enumType, currency, etc.)\n'
+            '- Do NOT write raw SQL for table creation or mutations\n\n'
             'SCREEN RULES:\n'
             '- Every module needs a "main" screen\n'
             '- Root screen type must be "screen", "form_screen", or '
@@ -213,12 +214,14 @@ const toolDefinitions = <Map<String, dynamic>>[
             '- All input widgets use "fieldKey" (NOT "key") to bind to '
             'database columns\n'
             '- Use {{fieldName}} templates in entry_card title/subtitle/trailing\n'
-            '- form_screen needs an "add_" prefixed screen ID to create entries\n\n'
-            'DATA ACCESS (CRITICAL — screens will NOT work without this):\n'
-            '- Every screen that DISPLAYS data needs a "queries" map with SQL SELECT statements\n'
-            '- Every form_screen that SAVES data needs a "mutations" map with create/update/delete SQL\n'
-            '- The main screen should also have mutations if it has swipe-to-delete or inline updates\n'
-            '- See BLUEPRINT REFERENCE in system prompt for exact format and examples',
+            '- form_screen uses "table" to specify its target schema key — '
+            'mutations are auto-generated\n\n'
+            'DATA ACCESS:\n'
+            '- Every screen that DISPLAYS data needs a "queries" map with '
+            'SQL SELECT statements using {{schemaKey}} placeholders\n'
+            '- Do NOT write mutations — they are auto-generated from '
+            'form_screen "table" property\n'
+            '- See BLUEPRINT REFERENCE in system prompt for exact format',
     'input_schema': {
       'type': 'object',
       'properties': {
@@ -239,33 +242,47 @@ const toolDefinitions = <Map<String, dynamic>>[
           'type': 'string',
           'description': 'Hex color for the module accent, e.g. "#D94E33".',
         },
-        'database': {
+        'tables': {
           'type': 'object',
-          'description': 'Database schema definition.',
-          'properties': {
-            'tableNames': {
-              'type': 'object',
-              'description':
-                  'Map of schema key → SQLite table name. '
-                      'e.g. { "default": "m_water_log_default" } for '
-                      'single-table, or { "account": "m_budget_accounts", '
-                      '"expense": "m_budget_expenses" } for multi-table.',
+          'description':
+              'Map of schema key → table definition. '
+                  'e.g. { "default": { "columns": [...] } } for single-table, '
+                  'or { "expenses": { "columns": [...] }, "categories": { "columns": [...] } } '
+                  'for multi-table. CREATE TABLE, DROP TABLE, and mutations '
+                  'are auto-generated.',
+          'additionalProperties': {
+            'type': 'object',
+            'properties': {
+              'columns': {
+                'type': 'array',
+                'description': 'Column definitions for this table.',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {
+                      'type': 'string',
+                      'description': 'Column name (snake_case).',
+                    },
+                    'type': {
+                      'type': 'string',
+                      'enum': [
+                        'text', 'number', 'boolean', 'datetime',
+                        'enumType', 'multiEnum', 'currency', 'rating',
+                        'reference', 'duration', 'url', 'phone', 'email',
+                      ],
+                      'description': 'Column type.',
+                    },
+                    'required': {
+                      'type': 'boolean',
+                      'description': 'Whether the column is NOT NULL.',
+                    },
+                  },
+                  'required': ['name', 'type'],
+                },
+              },
             },
-            'setup': {
-              'type': 'array',
-              'items': {'type': 'string'},
-              'description':
-                  'CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS '
-                      'statements, executed in order.',
-            },
-            'teardown': {
-              'type': 'array',
-              'items': {'type': 'string'},
-              'description':
-                  'DROP TABLE IF EXISTS statements, one per table.',
-            },
+            'required': ['columns'],
           },
-          'required': ['tableNames', 'setup', 'teardown'],
         },
         'screens': {
           'type': 'object',
@@ -315,25 +332,21 @@ const toolDefinitions = <Map<String, dynamic>>[
                     'tab_screen only. Array of { label, icon, content } '
                         'where content is a widget tree (usually scroll_column).',
               },
+              'table': {
+                'type': 'string',
+                'description':
+                    'form_screen only. Schema key of the table this form '
+                        'targets (e.g. "default", "expenses"). Mutations are '
+                        'auto-generated from this.',
+              },
               'queries': {
                 'type': 'object',
                 'description':
                     'REQUIRED for screens that display data. Map of query name '
-                        '→ { "sql": "SELECT ..." }. Example: '
-                        '{ "entries": { "sql": "SELECT id, name, amount FROM '
-                        '"m_expenses_default" ORDER BY created_at DESC" } }. '
-                        'Always quote table names with double quotes in SQL.',
-              },
-              'mutations': {
-                'type': 'object',
-                'description':
-                    'REQUIRED for form screens that save data. '
-                        '{ "create": "INSERT INTO ...", '
-                        '"update": "UPDATE ... WHERE id = :id", '
-                        '"delete": "DELETE FROM ... WHERE id = :id" }. '
-                        'Use :paramName for named params. :id, :created_at, '
-                        ':updated_at are auto-generated. Use COALESCE(:field, field) '
-                        'in UPDATE for partial updates.',
+                        '→ { "sql": "SELECT ..." }. Use {{schemaKey}} '
+                        'placeholders for table names — they are auto-resolved. '
+                        'Example: { "entries": { "sql": "SELECT id, name '
+                        'FROM {{default}} ORDER BY created_at DESC" } }.',
               },
             },
             'required': ['type'],
@@ -380,7 +393,7 @@ const toolDefinitions = <Map<String, dynamic>>[
           },
         },
       },
-      'required': ['name', 'description', 'database', 'screens'],
+      'required': ['name', 'description', 'tables', 'screens'],
     },
   },
 ];
@@ -403,12 +416,9 @@ String describeAction(String name, Map<String, dynamic> input) {
       return 'Update ${entries.length} entries in module';
     case 'createModule':
       final name = input['name'] as String? ?? 'Unknown';
-      final db = input['database'] as Map? ?? {};
-      final setup = db['setup'] as List? ?? [];
-      final tableCount =
-          setup.where((s) => (s as String).toUpperCase().startsWith('CREATE TABLE')).length;
+      final tables = input['tables'] as Map? ?? {};
       final screens = input['screens'] as Map? ?? {};
-      return 'Create module "$name" ($tableCount table${tableCount == 1 ? '' : 's'}, '
+      return 'Create module "$name" (${tables.length} table${tables.length == 1 ? '' : 's'}, '
           '${screens.length} screen${screens.length == 1 ? '' : 's'})';
     default:
       return '$name($input)';

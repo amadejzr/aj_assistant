@@ -1,13 +1,12 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/ai/module_builder.dart';
+import '../../../core/ai/module_validator.dart';
 import '../../../core/database/app_database.dart';
-import '../../../core/database/module_database.dart';
 import '../../../core/database/mutation_table.dart';
 import '../../../core/database/schema_manager.dart';
 import '../../../core/logging/log.dart';
-import '../../../core/models/module.dart';
 import '../../../core/repositories/module_repository.dart';
-import '../../blueprint/navigation/module_navigation.dart';
 import '../models/message.dart';
 
 const _tag = 'ChatActionExecutor';
@@ -209,56 +208,19 @@ class ChatActionExecutor {
   }
 
   Future<String> _createModule(Map<String, dynamic> input) async {
-    final name = input['name'] as String;
-    final description = input['description'] as String? ?? '';
-    final icon = input['icon'] as String? ?? 'cube';
-    final color = input['color'] as String? ?? '#D94E33';
-
-    final dbInput = Map<String, dynamic>.from(input['database'] as Map);
-    final database = ModuleDatabase(
-      tableNames: Map<String, String>.from(dbInput['tableNames'] as Map),
-      setup: List<String>.from(dbInput['setup'] as List),
-      teardown: List<String>.from(dbInput['teardown'] as List? ?? []),
-    );
-
-    final screensRaw = Map<String, dynamic>.from(input['screens'] as Map);
-    final screens = screensRaw.map(
-      (key, value) => MapEntry(key, Map<String, dynamic>.from(value as Map)),
-    );
-
-    ModuleNavigation? navigation;
-    if (input['navigation'] != null) {
-      navigation = ModuleNavigation.fromJson(
-        Map<String, dynamic>.from(input['navigation'] as Map),
-      );
+    final errors = ModuleValidator.validate(input);
+    if (errors != null) {
+      return 'Module validation failed:\n${errors.map((e) => '- $e').join('\n')}'
+          '\n\nFix these and call createModule again.';
     }
 
-    List<Map<String, String>> guide = const [];
-    if (input['guide'] != null) {
-      guide = (input['guide'] as List)
-          .cast<Map>()
-          .map((m) => Map<String, String>.from(m))
-          .toList();
-    }
-
-    final moduleId = _generateId();
-    final module = Module(
-      id: moduleId,
-      name: name,
-      description: description,
-      icon: icon,
-      color: color,
-      screens: screens,
-      database: database,
-      navigation: navigation,
-      guide: guide,
-    );
+    final module = ModuleBuilder.build(input);
 
     await _moduleRepository.createModule(_userId, module);
     await SchemaManager(db: _db).installModule(module);
 
-    Log.i('Created module "$name" (id: $moduleId)', tag: _tag);
-    return 'Created module "$name"';
+    Log.i('Created module "${module.name}" (id: ${module.id})', tag: _tag);
+    return 'Created module "${module.name}"';
   }
 
   /// Resolves a module's schema key to its SQLite table name.

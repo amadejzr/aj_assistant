@@ -43,7 +43,7 @@ void main() {
     test('includes rules section', () {
       final prompt = buildSystemPrompt([]);
       expect(prompt, contains('RULES'));
-      expect(prompt, contains('ONLY operate on modules'));
+      expect(prompt, contains('Use the tools provided'));
     });
   });
 }

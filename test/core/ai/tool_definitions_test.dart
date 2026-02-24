@@ -3,8 +3,8 @@ import 'package:aj_assistant/core/ai/tool_definitions.dart';
 
 void main() {
   group('toolDefinitions', () {
-    test('contains exactly 6 tools', () {
-      expect(toolDefinitions, hasLength(6));
+    test('contains exactly 7 tools', () {
+      expect(toolDefinitions, hasLength(7));
     });
 
     test('all tools have required fields', () {
@@ -25,6 +25,7 @@ void main() {
         'updateEntry',
         'updateEntries',
         'getModuleSummary',
+        'createModule',
       });
     });
 
@@ -34,6 +35,7 @@ void main() {
         'createEntries',
         'updateEntry',
         'updateEntries',
+        'createModule',
       });
     });
 
