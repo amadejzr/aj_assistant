@@ -1,4 +1,4 @@
-import 'package:aj_assistant/features/blueprint/navigation/module_navigation.dart';
+import 'package:bowerlab/features/blueprint/navigation/module_navigation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

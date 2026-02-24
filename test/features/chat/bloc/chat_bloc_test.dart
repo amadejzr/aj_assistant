@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:aj_assistant/core/ai/claude_client.dart';
-import 'package:aj_assistant/core/database/app_database.dart';
-import 'package:aj_assistant/core/repositories/module_repository.dart';
-import 'package:aj_assistant/features/chat/cubit/chat_cubit.dart';
-import 'package:aj_assistant/features/chat/repositories/chat_repository.dart';
+import 'package:bowerlab/core/ai/claude_client.dart';
+import 'package:bowerlab/core/database/app_database.dart';
+import 'package:bowerlab/core/repositories/module_repository.dart';
+import 'package:bowerlab/features/chat/cubit/chat_cubit.dart';
+import 'package:bowerlab/features/chat/repositories/chat_repository.dart';
 
 class MockClaudeClient extends Mock implements ClaudeClient {}
 

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aj_assistant/core/ai/claude_client.dart';
+import 'package:bowerlab/core/ai/claude_client.dart';
 
 void main() {
   group('ChatEvent', () {

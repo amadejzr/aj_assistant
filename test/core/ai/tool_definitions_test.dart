@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aj_assistant/core/ai/tool_definitions.dart';
+import 'package:bowerlab/core/ai/tool_definitions.dart';
 
 void main() {
   group('toolDefinitions', () {

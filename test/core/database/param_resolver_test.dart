@@ -1,5 +1,5 @@
-import 'package:aj_assistant/core/database/param_resolver.dart';
-import 'package:aj_assistant/core/database/screen_query.dart';
+import 'package:bowerlab/core/database/param_resolver.dart';
+import 'package:bowerlab/core/database/screen_query.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

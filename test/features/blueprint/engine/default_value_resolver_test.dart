@@ -1,6 +1,6 @@
-import 'package:aj_assistant/features/blueprint/engine/default_value_resolver.dart';
-import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
-import 'package:aj_assistant/core/models/module.dart';
+import 'package:bowerlab/features/blueprint/engine/default_value_resolver.dart';
+import 'package:bowerlab/features/blueprint/renderer/render_context.dart';
+import 'package:bowerlab/core/models/module.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 

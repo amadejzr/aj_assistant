@@ -13,7 +13,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDefault());
 
   static QueryExecutor _openDefault() {
-    return driftDatabase(name: 'aj_assistant');
+    return driftDatabase(name: 'bowerlab');
   }
 
   @override

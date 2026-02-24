@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:aj_assistant/features/settings/cubit/theme_cubit.dart';
+import 'package:bowerlab/features/settings/cubit/theme_cubit.dart';
 
 class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
 

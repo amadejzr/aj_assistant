@@ -1,4 +1,4 @@
-import 'package:aj_assistant/core/ai/module_validator.dart';
+import 'package:bowerlab/core/ai/module_validator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Returns a complete valid createModule input (habit tracker with main,

@@ -103,7 +103,7 @@ lib/
 
 **Routing.** All routes defined in `app_router.dart`. Auth redirects handled by GoRouter's `redirect` callback. Use `context.go()` / `context.push()` for navigation.
 
-**Imports.** Use relative imports within the same feature. Use package imports (`package:aj_assistant/...`) only in test files.
+**Imports.** Use relative imports within the same feature. Use package imports (`package:bowerlab/...`) only in test files.
 
 ## Code Quality
 

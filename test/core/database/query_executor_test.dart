@@ -1,10 +1,10 @@
-import 'package:aj_assistant/core/database/app_database.dart';
-import 'package:aj_assistant/core/database/module_database.dart';
-import 'package:aj_assistant/core/database/mutation_executor.dart';
-import 'package:aj_assistant/core/database/query_executor.dart';
-import 'package:aj_assistant/core/database/schema_manager.dart';
-import 'package:aj_assistant/core/database/screen_query.dart';
-import 'package:aj_assistant/core/models/module.dart';
+import 'package:bowerlab/core/database/app_database.dart';
+import 'package:bowerlab/core/database/module_database.dart';
+import 'package:bowerlab/core/database/mutation_executor.dart';
+import 'package:bowerlab/core/database/query_executor.dart';
+import 'package:bowerlab/core/database/schema_manager.dart';
+import 'package:bowerlab/core/database/screen_query.dart';
+import 'package:bowerlab/core/models/module.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull, QueryExecutor;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

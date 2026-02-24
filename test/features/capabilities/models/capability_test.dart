@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aj_assistant/features/capabilities/models/capability.dart';
+import 'package:bowerlab/features/capabilities/models/capability.dart';
 
 void main() {
   group('Capability sealed class', () {

@@ -1,4 +1,4 @@
-import 'package:aj_assistant/core/database/table_name_generator.dart';
+import 'package:bowerlab/core/database/table_name_generator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

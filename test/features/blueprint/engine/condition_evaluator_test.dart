@@ -1,4 +1,4 @@
-import 'package:aj_assistant/features/blueprint/engine/condition_evaluator.dart';
+import 'package:bowerlab/features/blueprint/engine/condition_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/ai/api_key_service.dart';
 import '../../../core/ai/claude_client.dart';
-import '../../chat/cubit/model_cubit.dart';
-import '../../../core/database/app_database.dart';
-import '../../../core/repositories/module_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../auth/bloc/auth_bloc.dart';
-import '../../auth/bloc/auth_state.dart';
-import '../../chat/repositories/chat_repository.dart';
-import '../../chat/screens/chat_dialog.dart';
 import '../widgets/breathing_fab.dart';
 
 class ShellScreen extends StatelessWidget {
@@ -29,11 +23,7 @@ class ShellScreen extends StatelessWidget {
       floatingActionButton: BreathingFab(
         colors: colors,
         onPressed: () async {
-          final authState = context.read<AuthBloc>().state;
-          if (authState is! AuthAuthenticated) return;
-
           final apiKeyService = context.read<ApiKeyService>();
-          final model = context.read<ModelCubit>().state;
           final apiKey = await apiKeyService.getKey();
           if (apiKey == null || apiKey.isEmpty) {
             if (context.mounted) {
@@ -46,17 +36,8 @@ class ShellScreen extends StatelessWidget {
             return;
           }
 
-          final claude = ClaudeClient(apiKey: apiKey);
           if (context.mounted) {
-            showChatDialog(
-              context,
-              userId: authState.user.uid,
-              claude: claude,
-              appDatabase: context.read<AppDatabase>(),
-              moduleRepository: context.read<ModuleRepository>(),
-              chatRepository: context.read<ChatRepository>(),
-              model: model,
-            );
+            context.push('/chat', extra: ClaudeClient(apiKey: apiKey));
           }
         },
       ),

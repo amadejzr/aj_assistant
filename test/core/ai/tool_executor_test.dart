@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:aj_assistant/core/ai/tool_executor.dart';
-import 'package:aj_assistant/core/database/app_database.dart';
+import 'package:bowerlab/core/ai/tool_executor.dart';
+import 'package:bowerlab/core/database/app_database.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

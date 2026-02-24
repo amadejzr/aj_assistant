@@ -1,4 +1,4 @@
-import 'package:aj_assistant/core/database/schema_registry.dart';
+import 'package:bowerlab/core/database/schema_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

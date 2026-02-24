@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'core/logging/log.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_state.dart';
+import 'core/ai/claude_client.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/chat/screens/chat_screen.dart';
 import 'features/shell/screens/home_screen.dart';
 import 'features/marketplace/screens/marketplace_screen.dart';
 import 'features/marketplace/screens/template_detail_screen.dart';
@@ -117,6 +119,17 @@ GoRouter createRouter(AuthBloc authBloc) {
           return _pageFadeSlide(
             key: state.pageKey,
             child: RemindersScreen(moduleId: moduleId),
+          );
+        },
+      ),
+      // Chat — full-screen, outside the shell
+      GoRoute(
+        path: '/chat',
+        pageBuilder: (context, state) {
+          final claude = state.extra! as ClaudeClient;
+          return _pageFadeSlide(
+            key: state.pageKey,
+            child: ChatScreen(claude: claude),
           );
         },
       ),

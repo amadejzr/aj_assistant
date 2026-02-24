@@ -1,7 +1,7 @@
-import 'package:aj_assistant/features/blueprint/models/blueprint.dart';
-import 'package:aj_assistant/features/blueprint/models/blueprint_action.dart';
-import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
-import 'package:aj_assistant/features/blueprint/renderer/blueprint_parser.dart';
+import 'package:bowerlab/features/blueprint/models/blueprint.dart';
+import 'package:bowerlab/features/blueprint/models/blueprint_action.dart';
+import 'package:bowerlab/features/blueprint/renderer/blueprint_node.dart';
+import 'package:bowerlab/features/blueprint/renderer/blueprint_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

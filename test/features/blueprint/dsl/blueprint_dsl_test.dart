@@ -1,6 +1,6 @@
-import 'package:aj_assistant/features/blueprint/dsl/blueprint_dsl.dart';
-import 'package:aj_assistant/features/blueprint/renderer/blueprint_node.dart';
-import 'package:aj_assistant/features/blueprint/renderer/blueprint_parser.dart';
+import 'package:bowerlab/features/blueprint/dsl/blueprint_dsl.dart';
+import 'package:bowerlab/features/blueprint/renderer/blueprint_node.dart';
+import 'package:bowerlab/features/blueprint/renderer/blueprint_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

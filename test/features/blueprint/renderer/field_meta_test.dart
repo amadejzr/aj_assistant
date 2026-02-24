@@ -1,6 +1,6 @@
-import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/features/blueprint/renderer/field_meta.dart';
-import 'package:aj_assistant/features/blueprint/renderer/render_context.dart';
+import 'package:bowerlab/core/models/module.dart';
+import 'package:bowerlab/features/blueprint/renderer/field_meta.dart';
+import 'package:bowerlab/features/blueprint/renderer/render_context.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

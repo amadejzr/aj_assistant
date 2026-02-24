@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "aj_assistant",
+            "name": "bowerlab",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "aj_assistant (profile mode)",
+            "name": "bowerlab (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "aj_assistant (release mode)",
+            "name": "bowerlab (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

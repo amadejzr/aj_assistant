@@ -1,4 +1,4 @@
-import 'package:aj_assistant/features/blueprint/models/blueprint_action.dart';
+import 'package:bowerlab/features/blueprint/models/blueprint_action.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

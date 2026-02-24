@@ -1,4 +1,4 @@
-import 'package:aj_assistant/core/ai/module_builder.dart';
+import 'package:bowerlab/core/ai/module_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

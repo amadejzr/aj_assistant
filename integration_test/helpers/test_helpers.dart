@@ -1,18 +1,18 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:aj_assistant/core/database/app_database.dart';
-import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/models/module_template.dart';
-import 'package:aj_assistant/core/repositories/marketplace_repository.dart';
-import 'package:aj_assistant/core/repositories/module_repository.dart';
-import 'package:aj_assistant/features/auth/bloc/auth_bloc.dart';
-import 'package:aj_assistant/features/auth/bloc/auth_event.dart';
-import 'package:aj_assistant/features/auth/bloc/auth_state.dart';
-import 'package:aj_assistant/features/auth/models/app_user.dart';
-import 'package:aj_assistant/features/capabilities/repositories/capability_repository.dart';
-import 'package:aj_assistant/core/ai/api_key_service.dart';
-import 'package:aj_assistant/features/chat/models/message.dart';
+import 'package:bowerlab/core/database/app_database.dart';
+import 'package:bowerlab/core/models/module.dart';
+import 'package:bowerlab/core/models/module_template.dart';
+import 'package:bowerlab/core/repositories/marketplace_repository.dart';
+import 'package:bowerlab/core/repositories/module_repository.dart';
+import 'package:bowerlab/features/auth/bloc/auth_bloc.dart';
+import 'package:bowerlab/features/auth/bloc/auth_event.dart';
+import 'package:bowerlab/features/auth/bloc/auth_state.dart';
+import 'package:bowerlab/features/auth/models/app_user.dart';
+import 'package:bowerlab/features/capabilities/repositories/capability_repository.dart';
+import 'package:bowerlab/core/ai/api_key_service.dart';
+import 'package:bowerlab/features/chat/models/message.dart';
 
 // ── Mocks ────────────────────────────────────────────────────────────────
 

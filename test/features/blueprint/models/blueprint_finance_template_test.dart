@@ -5,9 +5,9 @@
 /// the new features added alongside the type-safe builders.
 library;
 
-import 'package:aj_assistant/features/blueprint/models/blueprint.dart';
-import 'package:aj_assistant/features/blueprint/models/blueprint_action.dart';
-import 'package:aj_assistant/features/blueprint/navigation/module_navigation.dart';
+import 'package:bowerlab/features/blueprint/models/blueprint.dart';
+import 'package:bowerlab/features/blueprint/models/blueprint_action.dart';
+import 'package:bowerlab/features/blueprint/navigation/module_navigation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ─── Shared field lists ───

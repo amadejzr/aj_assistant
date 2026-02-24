@@ -1,5 +1,5 @@
-import 'package:aj_assistant/core/database/type_mapping.dart';
-import 'package:aj_assistant/core/database/field_type.dart';
+import 'package:bowerlab/core/database/type_mapping.dart';
+import 'package:bowerlab/core/database/field_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

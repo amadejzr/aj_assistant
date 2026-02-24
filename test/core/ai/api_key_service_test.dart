@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:aj_assistant/core/ai/api_key_service.dart';
+import 'package:bowerlab/core/ai/api_key_service.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 

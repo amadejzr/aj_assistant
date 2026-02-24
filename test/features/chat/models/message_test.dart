@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aj_assistant/features/chat/models/message.dart';
+import 'package:bowerlab/features/chat/models/message.dart';
 
 void main() {
   group('Message', () {

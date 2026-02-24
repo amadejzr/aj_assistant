@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aj_assistant/core/ai/system_prompt.dart';
-import 'package:aj_assistant/core/models/module.dart';
-import 'package:aj_assistant/core/database/module_database.dart';
+import 'package:bowerlab/core/ai/system_prompt.dart';
+import 'package:bowerlab/core/models/module.dart';
+import 'package:bowerlab/core/database/module_database.dart';
 
 void main() {
   group('buildSystemPrompt', () {
