@@ -310,20 +310,20 @@ class _OverviewTab extends StatelessWidget {
   Widget _buildStatsRow(AppColors colors) {
     final tableCount = template.database?.tableNames.length ?? 0;
 
-    return Row(
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
         _StatChip(
           icon: PhosphorIcons.gitBranch(PhosphorIconsStyle.bold),
           label: 'v${template.version}',
           colors: colors,
         ),
-        const SizedBox(width: AppSpacing.sm),
         _StatChip(
           icon: PhosphorIcons.table(PhosphorIconsStyle.bold),
           label: '$tableCount tables',
           colors: colors,
         ),
-        const SizedBox(width: AppSpacing.sm),
         _StatChip(
           icon: PhosphorIcons.browsers(PhosphorIconsStyle.bold),
           label: '${template.screens.length} screens',

@@ -47,7 +47,7 @@ void main() async {
   final themeCubit = ThemeCubit()..init();
   final modelCubit = ModelCubit()..init();
   final chatRepository = DriftChatRepository(db);
-  final marketplaceRepository = StubMarketplaceRepository();
+  final marketplaceRepository = BundledMarketplaceRepository();
 
   // Initialize notification scheduler
   final notificationScheduler = NotificationScheduler(capabilityRepository);

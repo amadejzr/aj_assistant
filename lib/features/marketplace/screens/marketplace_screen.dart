@@ -415,24 +415,28 @@ class _TemplateCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: colors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    template.category,
-                    style: TextStyle(
-                      fontFamily: 'Karla',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: colors.onBackgroundMuted,
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      template.category,
+                      style: TextStyle(
+                        fontFamily: 'Karla',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: colors.onBackgroundMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 4),
                 if (isInstalled)
                   Container(
                     padding: const EdgeInsets.symmetric(
